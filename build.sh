@@ -40,8 +40,8 @@ echo "origin: $SITE_ORIGIN"
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 15300", p.read_text()))
-print("MAX_MODEL_PAGES set to 15300")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 17500", p.read_text()))
+print("MAX_MODEL_PAGES set to 17500")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
@@ -53,6 +53,12 @@ for f in pathlib.Path("scripts").glob("*.py"):
         n += 1
 print(f"origin literals rewritten in {n} generator file(s)")
 PY_EOF
+
+# Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
+# adds the classes the first harvest missed (automobile model series, racing automobile
+# model - i.e. Cayenne, Boxster, 911, 917, 962). Never fails the build: on a Wikidata
+# outage the committed catalogue is used unchanged.
+"$PY" scripts/harvest_wikidata.py || echo "WARNING: catalogue refresh skipped"
 
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
 # models get their own page so sibling links can never point at a missing page.
