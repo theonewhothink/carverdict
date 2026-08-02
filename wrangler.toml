@@ -1,0 +1,8 @@
+# Root wrangler config — deploys the generated static site to the "carsite" Worker.
+# CI runs: wrangler deploy  (see .github/workflows/build-deploy.yml)
+name = "carsite"
+compatibility_date = "2026-07-19"
+
+[assets]
+directory = "./site"
+not_found_handling = "404-page"
