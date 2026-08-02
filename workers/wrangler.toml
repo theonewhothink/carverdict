@@ -1,0 +1,15 @@
+# wrangler.toml — Carsite worker. Deploy: wrangler deploy (needs CLOUDFLARE_API_TOKEN)
+name = "carsite-router"
+main = "router_worker.js"
+compatibility_date = "2026-07-01"
+
+# route = "https://<DOMAIN>/api/*"   # set after domain purchase; also /_ops/*
+
+[[d1_databases]]
+binding = "DB"
+database_name = "carsite"
+database_id = "REPLACE_AFTER_wrangler_d1_create_carsite"
+
+[vars]
+SITE_ORIGIN = "https://REPLACE_WITH_DOMAIN"
+# secrets (wrangler secret put): RESEND_API_KEY, INDEXNOW_KEY, OPS_KEY
