@@ -16,10 +16,19 @@ if [ -z "$PY" ]; then
 fi
 echo "python: $PY -> $($PY --version)"
 
-# Pillow is only needed for the 1200x630 Open Graph cards; the build must not die without it.
-"$PY" -m pip install --quiet --disable-pip-version-check pillow \
-  || "$PY" -m pip install --quiet --break-system-packages pillow \
-  || echo "WARNING: pillow unavailable - OG cards will be skipped"
+# Pillow drives the 1200x630 Open Graph cards. The distro Python has no pip on this image,
+# so bootstrap one; never let a missing image library kill an otherwise good build.
+install_pillow() {
+  "$PY" -c "import PIL" 2>/dev/null && { echo "pillow: already present"; return 0; }
+  "$PY" -m pip --version >/dev/null 2>&1 || "$PY" -m ensurepip --user >/dev/null 2>&1 || {
+    curl -sSfL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null &&
+    "$PY" /tmp/get-pip.py --user --quiet >/dev/null 2>&1
+  }
+  "$PY" -m pip install --user --quiet --disable-pip-version-check pillow >/dev/null 2>&1 ||
+  "$PY" -m pip install --quiet --break-system-packages pillow >/dev/null 2>&1 || return 1
+  "$PY" -c "import PIL" 2>/dev/null
+}
+if install_pillow; then echo "pillow: ready"; else echo "WARNING: pillow unavailable - OG cards will be skipped"; fi
 
 # CI has no upload ceiling, so publish the complete catalogue (site file cap is 20,000).
 "$PY" - <<'PY_EOF'
