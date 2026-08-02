@@ -86,7 +86,9 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Account ID is an identifier, not a credential (Cloudflare's own docs put it in
+          # wrangler.toml). Kept overridable by a secret; falls back to this account.
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '07330caebabe7034671e295c05accbd6' }}
           # v4 is required: assets-only Workers (no `main` entry point) are not
           # supported by wrangler 3.90, which the action installs by default.
           wranglerVersion: "4"
