@@ -87,6 +87,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # v4 is required: assets-only Workers (no `main` entry point) are not
+          # supported by wrangler 3.90, which the action installs by default.
+          wranglerVersion: "4"
           command: deploy
 
       - name: Ping IndexNow
