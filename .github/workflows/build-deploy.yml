@@ -35,8 +35,20 @@ jobs:
           grep -n "^MAX_MODEL_PAGES" scripts/build_models.py
 
       - name: Refresh NHTSA / EPA deltas
+        # Only rebuild the DB when the raw API caches are present — otherwise the committed
+        # seed database (data/cars.sqlite) would be overwritten with an empty one.
+        if: ${{ hashFiles('data/raw/**') != '' }}
         continue-on-error: true          # never block a deploy on an upstream outage
         run: python scripts/cardata_ingest.py --build
+
+      - name: Verify seed database
+        run: |
+          python - <<'PY'
+          import sqlite3, sys
+          n = sqlite3.connect('data/cars.sqlite').execute('select count(*) from model_years').fetchone()[0]
+          print(f'model_years in DB: {n}')
+          sys.exit(0 if n >= 10 else 1)
+          PY
 
       - name: Generate site
         env:
