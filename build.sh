@@ -3,32 +3,43 @@
 # Deploy command stays: npx wrangler deploy
 set -euo pipefail
 
-echo "python: $(python3 --version)"
+# Pick an interpreter that actually has sqlite3. The Cloudflare build image's default
+# asdf Python (3.13.x) is compiled without _sqlite3, and every generator reads data/cars.sqlite.
+PY=""
+for CAND in /usr/bin/python3 /usr/bin/python3.12 /usr/bin/python3.11 python3.12 python3.11 python3; do
+  if command -v "$CAND" >/dev/null 2>&1 && "$CAND" -c "import sqlite3" >/dev/null 2>&1; then
+    PY="$CAND"; break
+  fi
+done
+if [ -z "$PY" ]; then
+  echo "FATAL: no Python interpreter with the sqlite3 module is available"; exit 1
+fi
+echo "python: $PY -> $($PY --version)"
 
 # Pillow is only needed for the 1200x630 Open Graph cards; the build must not die without it.
-python3 -m pip install --quiet --disable-pip-version-check pillow \
-  || python3 -m pip install --quiet --break-system-packages pillow \
+"$PY" -m pip install --quiet --disable-pip-version-check pillow \
+  || "$PY" -m pip install --quiet --break-system-packages pillow \
   || echo "WARNING: pillow unavailable - OG cards will be skipped"
 
 # CI has no upload ceiling, so publish the complete catalogue (site file cap is 20,000).
-python3 - <<'PY'
+"$PY" - <<'PY_EOF'
 import re, pathlib
 p = pathlib.Path("scripts/build_models.py")
 p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 15300", p.read_text()))
 print("MAX_MODEL_PAGES set to 15300")
-PY
+PY_EOF
 
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
 # models get their own page so sibling links can never point at a missing page.
-python3 scripts/build_models.py --plan
-python3 scripts/gen_site.py
-python3 scripts/build_models.py
-python3 scripts/build_library.py
-python3 scripts/build_engage.py
-python3 scripts/localize.py
+"$PY" scripts/build_models.py --plan
+"$PY" scripts/gen_site.py
+"$PY" scripts/build_models.py
+"$PY" scripts/build_library.py
+"$PY" scripts/build_engage.py
+"$PY" scripts/localize.py
 
 # Gate: a dead internal link must never reach production.
-python3 - <<'PY'
+"$PY" - <<'PY_EOF'
 import re, os, glob, sys
 pages = glob.glob('site/**/*.html', recursive=True)
 hrefs = set()
@@ -45,7 +56,7 @@ if files > 19800:
     print("ABORT: over the 20,000 static-asset cap"); sys.exit(1)
 if dead:
     print("DEAD:", dead[:20]); sys.exit(1)
-PY
+PY_EOF
 
 node --test workers/calc.test.mjs
 echo "build complete"
