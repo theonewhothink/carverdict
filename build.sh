@@ -30,12 +30,28 @@ install_pillow() {
 }
 if install_pillow; then echo "pillow: ready"; else echo "WARNING: pillow unavailable - OG cards will be skipped"; fi
 
+# Canonical origin for canonicals, hreflang, JSON-LD and the sitemap. Point this at the real
+# domain (Cloudflare build variable SITE_ORIGIN) the moment one is bought; until then the
+# workers.dev hostname is the truth. A placeholder domain in canonical tags is an SEO own-goal.
+export SITE_ORIGIN="${SITE_ORIGIN:-https://carsite.adir-073.workers.dev}"
+echo "origin: $SITE_ORIGIN"
+
 # CI has no upload ceiling, so publish the complete catalogue (site file cap is 20,000).
 "$PY" - <<'PY_EOF'
-import re, pathlib
+import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
 p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 15300", p.read_text()))
 print("MAX_MODEL_PAGES set to 15300")
+
+# Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
+# every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
+origin, n = os.environ["SITE_ORIGIN"].rstrip("/"), 0
+for f in pathlib.Path("scripts").glob("*.py"):
+    s = f.read_text()
+    if "https://carverdict.example" in s:
+        f.write_text(s.replace("https://carverdict.example", origin))
+        n += 1
+print(f"origin literals rewritten in {n} generator file(s)")
 PY_EOF
 
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
