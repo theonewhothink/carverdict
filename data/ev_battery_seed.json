@@ -1,0 +1,7 @@
+{
+  "tesla~model-3": {"battery_warranty": "8 yr / 100,000-120,000 mi (trim-dependent), 70% capacity retention", "repl_low": 13000, "repl_high": 17000, "source": "Recurrent Auto pack-cost survey 2024; Tesla parts catalog. Estimate."},
+  "tesla~model-y": {"battery_warranty": "8 yr / 120,000 mi, 70% capacity retention", "repl_low": 13000, "repl_high": 16000, "source": "Recurrent Auto pack-cost survey 2024; Tesla parts catalog. Estimate."},
+  "nissan~leaf": {"battery_warranty": "8 yr / 100,000 mi defects; 5 yr / 60,000 mi capacity (9 bars)", "repl_low": 6500, "repl_high": 9500, "source": "Recurrent Auto 2024; Nissan dealer quotes (24-40 kWh packs). Estimate."},
+  "chevrolet~bolt-ev": {"battery_warranty": "8 yr / 100,000 mi (packs replaced under 2021 recall carry fresh warranty)", "repl_low": 15000, "repl_high": 17000, "source": "GM parts list pricing 2024; NHTSA recall 21V-650 documentation. Estimate."},
+  "ford~mustang-mach-e": {"battery_warranty": "8 yr / 100,000 mi, 70% capacity retention", "repl_low": 18000, "repl_high": 23000, "source": "Ford parts catalog 2024; Recurrent Auto. Estimate."}
+}

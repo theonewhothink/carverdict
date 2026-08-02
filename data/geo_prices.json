@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "purpose": "Regional cost reference table. Values are labeled ESTIMATES and are refreshed by the nightly CI job from public sources (GlobalPetrolPrices weekly retail series, national energy regulators, IEA). Never presented as live quotes.",
+    "updated": "2026-07-19",
+    "fields": "fuel_usd_l = retail gasoline USD/litre; kwh_usd = residential electricity USD/kWh; ins_idx = insurance cost index vs US=1.00; maint_idx = parts+labour index vs US=1.00"
+  },
+  "US": {"name": "United States", "flag": "🇺🇸", "cur": "USD", "sym": "$", "fx": 1.0,      "fuel_usd_l": 0.91, "kwh_usd": 0.17, "ins_idx": 1.00, "maint_idx": 1.00},
+  "CA": {"name": "Canada",        "flag": "🇨🇦", "cur": "CAD", "sym": "C$","fx": 1.37,    "fuel_usd_l": 1.16, "kwh_usd": 0.13, "ins_idx": 1.05, "maint_idx": 1.02},
+  "AR": {"name": "Argentina",     "flag": "🇦🇷", "cur": "ARS", "sym": "$", "fx": 1180.0,  "fuel_usd_l": 1.12, "kwh_usd": 0.09, "ins_idx": 0.70, "maint_idx": 0.85},
+  "BR": {"name": "Brazil",        "flag": "🇧🇷", "cur": "BRL", "sym": "R$","fx": 5.45,    "fuel_usd_l": 1.15, "kwh_usd": 0.16, "ins_idx": 0.85, "maint_idx": 0.80},
+  "MX": {"name": "Mexico",        "flag": "🇲🇽", "cur": "MXN", "sym": "$", "fx": 18.4,    "fuel_usd_l": 1.30, "kwh_usd": 0.10, "ins_idx": 0.75, "maint_idx": 0.72},
+  "GB": {"name": "United Kingdom","flag": "🇬🇧", "cur": "GBP", "sym": "£", "fx": 0.78,    "fuel_usd_l": 1.78, "kwh_usd": 0.31, "ins_idx": 1.20, "maint_idx": 1.15},
+  "DE": {"name": "Germany",       "flag": "🇩🇪", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 1.86, "kwh_usd": 0.40, "ins_idx": 0.95, "maint_idx": 1.20},
+  "FR": {"name": "France",        "flag": "🇫🇷", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 1.83, "kwh_usd": 0.28, "ins_idx": 0.98, "maint_idx": 1.10},
+  "ES": {"name": "Spain",         "flag": "🇪🇸", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 1.64, "kwh_usd": 0.26, "ins_idx": 0.80, "maint_idx": 0.95},
+  "IT": {"name": "Italy",         "flag": "🇮🇹", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 1.88, "kwh_usd": 0.34, "ins_idx": 1.10, "maint_idx": 1.05},
+  "PT": {"name": "Portugal",      "flag": "🇵🇹", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 1.79, "kwh_usd": 0.25, "ins_idx": 0.75, "maint_idx": 0.90},
+  "NL": {"name": "Netherlands",   "flag": "🇳🇱", "cur": "EUR", "sym": "€", "fx": 0.92,    "fuel_usd_l": 2.05, "kwh_usd": 0.35, "ins_idx": 1.00, "maint_idx": 1.18},
+  "IL": {"name": "Israel",        "flag": "🇮🇱", "cur": "ILS", "sym": "₪", "fx": 3.55,    "fuel_usd_l": 1.98, "kwh_usd": 0.16, "ins_idx": 1.15, "maint_idx": 1.25},
+  "AE": {"name": "UAE",           "flag": "🇦🇪", "cur": "AED", "sym": "AED","fx": 3.67,   "fuel_usd_l": 0.78, "kwh_usd": 0.08, "ins_idx": 0.90, "maint_idx": 0.95},
+  "AU": {"name": "Australia",     "flag": "🇦🇺", "cur": "AUD", "sym": "A$","fx": 1.52,    "fuel_usd_l": 1.32, "kwh_usd": 0.24, "ins_idx": 1.10, "maint_idx": 1.15},
+  "IN": {"name": "India",         "flag": "🇮🇳", "cur": "INR", "sym": "₹", "fx": 86.0,    "fuel_usd_l": 1.24, "kwh_usd": 0.09, "ins_idx": 0.45, "maint_idx": 0.40},
+  "ZA": {"name": "South Africa",  "flag": "🇿🇦", "cur": "ZAR", "sym": "R", "fx": 18.2,    "fuel_usd_l": 1.24, "kwh_usd": 0.14, "ins_idx": 0.80, "maint_idx": 0.70},
+  "JP": {"name": "Japan",         "flag": "🇯🇵", "cur": "JPY", "sym": "¥", "fx": 152.0,   "fuel_usd_l": 1.20, "kwh_usd": 0.22, "ins_idx": 0.85, "maint_idx": 1.05},
+  "PL": {"name": "Poland",        "flag": "🇵🇱", "cur": "PLN", "sym": "zł","fx": 3.95,    "fuel_usd_l": 1.55, "kwh_usd": 0.22, "ins_idx": 0.70, "maint_idx": 0.75}
+}

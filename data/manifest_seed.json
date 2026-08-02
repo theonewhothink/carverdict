@@ -1,0 +1,83 @@
+[
+ {
+  "make": "Tesla",
+  "model": "Model 3",
+  "years": [
+   2018,
+   2021
+  ],
+  "is_ev": true
+ },
+ {
+  "make": "Tesla",
+  "model": "Model Y",
+  "years": [
+   2021
+  ],
+  "is_ev": true
+ },
+ {
+  "make": "Nissan",
+  "model": "Leaf",
+  "years": [
+   2013,
+   2018
+  ],
+  "is_ev": true
+ },
+ {
+  "make": "Chevrolet",
+  "model": "Bolt EV",
+  "years": [
+   2017,
+   2020
+  ],
+  "is_ev": true
+ },
+ {
+  "make": "Ford",
+  "model": "Mustang Mach-E",
+  "years": [
+   2021
+  ],
+  "is_ev": true
+ },
+ {
+  "make": "Toyota",
+  "model": "Camry",
+  "years": [
+   2007,
+   2018
+  ]
+ },
+ {
+  "make": "Honda",
+  "model": "Accord",
+  "years": [
+   2008,
+   2018
+  ]
+ },
+ {
+  "make": "Ford",
+  "model": "F-150",
+  "years": [
+   2004,
+   2018
+  ]
+ },
+ {
+  "make": "Honda",
+  "model": "CR-V",
+  "years": [
+   2017
+  ]
+ },
+ {
+  "make": "Toyota",
+  "model": "Prius",
+  "years": [
+   2010
+  ]
+ }
+]
