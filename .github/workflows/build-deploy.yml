@@ -82,45 +82,25 @@ jobs:
       - name: Calculator unit tests
         run: node --test workers/calc.test.mjs
 
-      - name: Deploy to Cloudflare Workers
-        # Token discovery: the repo's Cloudflare token may be stored under any of several
-        # secret names. Each candidate is verified against Cloudflare's token-verify endpoint
-        # and the first valid one is used. Secret values are masked by GitHub in all logs.
-        # wrangler 4 is required: assets-only Workers (no `main` entry) need v4.
-        env:
-          CF_A: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_B: ${{ secrets.NEWONE123 }}
-          CF_C: ${{ secrets.NEWONE321 }}
-          CF_D: ${{ secrets.CF_API_TOKEN }}
-          CF_ACCT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -u
-          npm install -g wrangler@4 >/dev/null 2>&1
-          PICK=""
-          N=0
-          for CAND in "$CF_A" "$CF_B" "$CF_C" "$CF_D"; do
-            N=$((N+1))
-            [ -z "$CAND" ] && continue
-            CODE=$(curl -s -o /dev/null -w '%{http_code}' \
-              -H "Authorization: Bearer ${CAND}" \
-              https://api.cloudflare.com/client/v4/user/tokens/verify)
-            echo "candidate #${N}: verify HTTP ${CODE}"
-            if [ "$CODE" = "200" ]; then PICK="$CAND"; break; fi
-          done
-          if [ -z "$PICK" ]; then
-            echo "::error::No valid Cloudflare API token found. Add one as a repository secret named CLOUDFLARE_API_TOKEN (Cloudflare dashboard -> My Profile -> API Tokens -> 'Edit Cloudflare Workers' template)."
-            exit 1
-          fi
-          export CLOUDFLARE_API_TOKEN="$PICK"
-          export CLOUDFLARE_ACCOUNT_ID="${CF_ACCT:-07330caebabe7034671e295c05accbd6}"
-          wrangler deploy
+      # Publishing is NOT done here. Cloudflare Workers Builds is connected directly to this
+      # repository (Worker "carsite"): on every push to main Cloudflare runs `bash build.sh`
+      # and then `npx wrangler deploy`. That removes the API-token dependency entirely — there
+      # is no Cloudflare credential in this repository, and nothing to rotate or leak.
+      # This workflow stays as the fast pre-flight check: build, dead-link gate, unit tests.
+      - name: Deployment note
+        run: echo "Publish handled by Cloudflare Workers Builds (Worker 'carsite', branch main)."
 
       - name: Ping IndexNow
         continue-on-error: true
+        env:
+          ORIGIN: ${{ vars.SITE_ORIGIN }}
+          KEY: ${{ secrets.INDEXNOW_KEY }}
         run: |
-          ORIGIN="${{ vars.SITE_ORIGIN }}"
-          if [ -n "$ORIGIN" ] && [ -n "${{ secrets.INDEXNOW_KEY }}" ]; then
+          set -u
+          if [ -n "$ORIGIN" ] && [ -n "$KEY" ]; then
             curl -s -X POST "https://api.indexnow.org/indexnow" \
               -H "Content-Type: application/json" \
-              -d "{\"host\":\"${ORIGIN#https://}\",\"key\":\"${{ secrets.INDEXNOW_KEY }}\",\"urlList\":[\"$ORIGIN/\"]}" || true
+              -d "{\"host\":\"${ORIGIN#https://}\",\"key\":\"${KEY}\",\"urlList\":[\"${ORIGIN}/\"]}" || true
+          else
+            echo "SITE_ORIGIN or INDEXNOW_KEY not set - skipping."
           fi
