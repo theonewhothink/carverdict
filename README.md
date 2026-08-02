@@ -43,14 +43,24 @@ uploader is limited to roughly 4,800 files per upload.
 4. A photo click always opens the car's page — never an image file, never an external site.
 5. Ads never degrade UX: reserved heights, consent never covers content.
 
-## Secrets CI needs
+## How it publishes
 
-| Name | Where | Purpose |
+Cloudflare Workers Builds is connected straight to this repository (Worker **carsite**).
+Every push to `main` makes Cloudflare run:
+
+```
+build command   bash build.sh          # installs deps, builds, gates dead links, runs tests
+deploy command  npx wrangler deploy    # uploads ./site as Worker static assets
+```
+
+**There is no Cloudflare API token in this repository** — the connection is a GitHub App grant,
+so there is no credential to rotate, leak, or misname. GitHub Actions still runs on every push
+as a pre-flight check (build + dead-link gate + unit tests) but no longer deploys.
+
+| Optional setting | Where | Purpose |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | repo → Settings → Secrets → Actions | deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | same | deploy target account |
-| `SITE_ORIGIN` | repo → Settings → Variables | canonical URLs once a domain exists |
-| `INDEXNOW_KEY` | secrets (optional) | ping Bing/DDG/Yandex on each deploy |
+| `SITE_ORIGIN` | repo → Settings → Variables | canonical URLs once a real domain exists |
+| `INDEXNOW_KEY` | repo → Settings → Secrets | ping Bing/DuckDuckGo/Yandex after a build |
 
 ## Data sources
 
