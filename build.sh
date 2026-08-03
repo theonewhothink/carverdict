@@ -54,6 +54,12 @@ for f in pathlib.Path("scripts").glob("*.py"):
 print(f"origin literals rewritten in {n} generator file(s)")
 PY_EOF
 
+# Rebuild the ownership dataset from NHTSA and EPA. This is the substance of the site:
+# complaint volumes, recall campaigns and real fuel economy for thousands of model-years,
+# fetched fresh on every deploy. It refuses to overwrite the committed database with a
+# smaller or emptier one, so a bad API day leaves the last good data in place.
+INGEST_BUDGET="${INGEST_BUDGET:-2200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
 # model - i.e. Cayenne, Boxster, 911, 917, 962). Never fails the build: on a Wikidata
@@ -81,6 +87,7 @@ PY_EOF
 "$PY" scripts/build_models.py
 "$PY" scripts/build_library.py
 "$PY" scripts/build_engage.py
+"$PY" scripts/build_events.py || echo "WARNING: events calendar skipped"
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
