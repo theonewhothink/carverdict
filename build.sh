@@ -71,6 +71,7 @@ PY_EOF
 "$PY" scripts/build_models.py
 "$PY" scripts/build_library.py
 "$PY" scripts/build_engage.py
+"$PY" scripts/build_people.py || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
 # Gate: a dead internal link must never reach production.
