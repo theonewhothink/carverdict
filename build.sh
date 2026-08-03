@@ -64,6 +64,16 @@ PY_EOF
 # Optional: if this fails the model pages simply render without a specifications table.
 "$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped"
 
+# Real specifications — engine, power output, production years, kerb weight, transmission,
+# layout, assembly — parsed from Wikipedia infoboxes (CC BY-SA). Batched 50 pages per
+# request, so the whole catalogue costs ~700 calls rather than 17,000.
+"$PY" scripts/harvest_wiki_specs.py || echo "WARNING: infobox specification refresh skipped"
+
+# Resolve the Legends roster before gen_site runs, so the home page knows whether the
+# /legends/ section can be linked. The pages themselves are written after gen_site, which
+# wipes site/ on every run.
+"$PY" scripts/build_people.py --harvest-only || echo "WARNING: legends roster unavailable"
+
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
 # models get their own page so sibling links can never point at a missing page.
 "$PY" scripts/build_models.py --plan
@@ -71,7 +81,7 @@ PY_EOF
 "$PY" scripts/build_models.py
 "$PY" scripts/build_library.py
 "$PY" scripts/build_engage.py
-"$PY" scripts/build_people.py || echo "WARNING: legends section skipped"
+"$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
 # Gate: a dead internal link must never reach production.
