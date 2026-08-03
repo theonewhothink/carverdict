@@ -60,6 +60,10 @@ PY_EOF
 # outage the committed catalogue is used unchanged.
 "$PY" scripts/harvest_wikidata.py || echo "WARNING: catalogue refresh skipped"
 
+# Per-model technical facts (engine, mass, top speed, units built, Commons gallery category).
+# Optional: if this fails the model pages simply render without a specifications table.
+"$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped"
+
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
 # models get their own page so sibling links can never point at a missing page.
 "$PY" scripts/build_models.py --plan
