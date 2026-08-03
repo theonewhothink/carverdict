@@ -30,6 +30,15 @@ def _load_lib_photos():
 
 LIB_PHOTOS = _load_lib_photos()
 
+
+def _count_lib():
+    """Total catalogue size — the home page quotes this, so it must be measured, not typed."""
+    p = Path(__file__).resolve().parent.parent / "data" / "car_library.json"
+    return json.loads(p.read_text()) if p.exists() else []
+
+
+LIB_PHOTOS_ALL = _count_lib()
+
 def _load_lib_index():
     """display-name -> (brand_slug, model_slug) so any photo can link to its model page."""
     import re as _re
@@ -118,7 +127,7 @@ def hero_art(make, model, is_ev, year=None):
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 DBP = ROOT / "data" / "cars.sqlite"
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carverdict.example")
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
 BRAND = "CarVerdict"
 TODAY = date.today().isoformat()
 CURRENT_YEAR = 2026
@@ -544,6 +553,11 @@ def gen_home(con, all_rows):
         return '<div class="rel-grid">' + "".join(
             f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>score {x["score"]}/100 · {esc(x["verdict"])}</small></a>'
             for x in rows) + "</div>"
+    # Counts must come from the data, never from a number typed into the template — the
+    # hard-coded 12,747 survived two catalogue rebuilds and shipped a lie on the home page.
+    n_models = len(LIB_PHOTOS_ALL)
+    n_brands = len({b for b, _ in LIB_INDEX.values()}) if LIB_INDEX else 0
+
     # ---- image-led hero: real photography from the library ----
     def photo_of(name):
         for n, y, ph in LIB_PHOTOS:
@@ -574,11 +588,22 @@ def gen_home(con, all_rows):
         f'<img src="{cimg(ph, 640)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
         for nm, ph in shots[:8])
 
-    hero_cells = "".join(
-        f'<a class="mo-cell" href="{murl(nm)}">'
-        f'<img src="{cimg(ph, 700)}" alt="{esc(nm)}" {"fetchpriority=high" if i < 2 else "loading=lazy"}>'
-        f'<span>{esc(nm)}</span></a>'
-        for i, (nm, ph) in enumerate(shots[:4]))
+    # ---- single editorial hero shot ----------------------------------------------------
+    # Four mismatched snapshots read as a stock-photo collage. One large, deliberately
+    # chosen frame reads as a product. Source: Wikimedia Commons Featured Pictures of
+    # automobiles (peer-reviewed for technical quality), so it holds up at full width.
+    HERO_SHOT = "Porsche 911 GT3 Touring, IAA 2017, Frankfurt (1Y7A2766).jpg"
+    HERO_NAME = "Porsche 911 GT3"
+    HERO_HREF = model_url(HERO_NAME)
+    if HERO_HREF == "/library/":
+        HERO_HREF = model_url("Porsche 911")
+    hero_cells = (
+        f'<a class="hh-shot" href="{HERO_HREF}">'
+        f'<img src="{cimg(HERO_SHOT, 1200)}" alt="{esc(HERO_NAME)}" fetchpriority="high" '
+        f'width="1200" height="800">'
+        f'<span class="hh-shot-grad"></span>'
+        f'<span class="hh-shot-tag">{esc(HERO_NAME)}<em>Photo: Wikimedia Commons · CC</em></span>'
+        f'</a>')
     strip_cells = "".join(
         f'<a class="st-cell" href="{murl(nm)}">'
         f'<img src="{cimg(ph, 520)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
@@ -586,13 +611,13 @@ def gen_home(con, all_rows):
 
     body = f"""<section class="home-hero-v2"><div class="wrap hh-grid">
 <div class="hh-copy">
-<span class="hh-kicker">12,747 models · {len(LIB_PHOTOS):,} photographs · 19 countries</span>
+<span class="hh-kicker">{n_models:,} models · {len(LIB_PHOTOS):,} photographs · 19 countries</span>
 <h1>What does that car <em>really</em> cost to own?</h1>
 <p class="hh-sub">Every car ever made, priced for <b>your</b> country — from NHTSA complaints,
 recall campaigns and EPA data. Not opinions.</p>
 <div class="hh-cta"><a class="btn" href="/library/">Explore every car ever made</a>
 <a class="btn ghost" href="/play/">Play today's quiz</a></div>
-<div class="stat-row"><div><b>12,747</b><span>models in the library</span></div>
+<div class="stat-row"><div><b>{n_models:,}</b><span>models in the library</span></div>
 <div><b>{n_complaints:,}</b><span>complaints indexed</span></div>
 <div><b>19</b><span>countries auto-priced</span></div></div>
 </div>
@@ -606,7 +631,7 @@ recall campaigns and EPA data. Not opinions.</p>
 <div class="card"><h2>Years to avoid</h2><p style="margin-bottom:12px">Lowest data-scores in our index right now.</p>{cardlist(avoid)}</div>
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
-<a href="/library/">The Car Library<small>12,747 models, 1,048 brands</small></a>
+<a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
 <a href="/calculators/">True-cost calculator<small>priced for your country</small></a>
 <a href="/garage/">My Garage<small>your saved cars</small></a></div>
 <div class="cta-band"><h2>True-cost calculator</h2><p style="color:var(--muted);margin:8px 0 14px">Fuel + maintenance + battery risk, by model year.</p><a class="btn" href="/calculators/">Calculate</a></div>

@@ -6,7 +6,7 @@
   /notify/          notification + curated-content preference centre (local, opt-in)
 Also emits SOCIAL_QUEUE/ posts for the auto-poster (TikTok/IG/X/LinkedIn).
 """
-import json, sys, random, html
+import json, os, sys, random, html
 from pathlib import Path
 from datetime import date, timedelta
 
@@ -15,7 +15,7 @@ from i18n import LANGS, RTL, t
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-ORIGIN = "https://carverdict.example"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
 BRAND = "CarVerdict"
 LIB = json.load(open(ROOT / "data" / "car_library.json"))
 
@@ -79,7 +79,7 @@ def write(rel, html_str):
 
 
 def play_page(lang="en"):
-    body = """<div class="hero lib-hero"><div class="wrap hero-inner">
+    body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>Play</h1><p class="sub">A new car every day, a new quiz every day. Build your streak.</p></div></div>
 <div class="wrap">
 <div class="daily-grid" data-daily></div>
@@ -89,7 +89,7 @@ def play_page(lang="en"):
 Want a daily nudge? <a href="/notify/">Turn on reminders</a>.</p></div>
 <h2 class="sec">Explore the extremes</h2>
 <div class="rel-grid"><a href="/superlatives/">Most expensive · rarest · era-defining<small>data-backed lists</small></a>
-<a href="/library/">Every model ever made<small>12,747 cars</small></a>
+<a href="/library/">Every model ever made<small>{len(LIB):,} cars</small></a>
 <a href="/garage/">My Garage<small>your saved cars</small></a></div>
 </div>"""
     write("play/index.html", shell(lang, f"Play — Car of the Day & Guess the Car | {BRAND}",
@@ -189,7 +189,7 @@ def social_queue():
                 "x": f"Car of the Day: {car['n']}.\n\nWe indexed 12,747 models and every NHTSA complaint we could get. Which years are traps? →",
                 "linkedin": f"Car of the Day: {car['n']}.\n\nWe built an open, sourced dataset of vehicle ownership costs — NHTSA complaints, recalls, EPA economy, regional fuel and energy prices — and published the methodology. Data over opinions.",
             },
-            "cta": "https://carverdict.example/play/",
+            "cta": f"{ORIGIN}/play/",
         })
     (q / "queue.json").write_text(json.dumps(out, indent=1, ensure_ascii=False))
     return len(out)
