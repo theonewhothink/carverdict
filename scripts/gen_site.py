@@ -554,6 +554,19 @@ def gen_home(con, all_rows):
         return '<div class="rel-grid">' + "".join(
             f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>score {x["score"]}/100 · {esc(x["verdict"])}</small></a>'
             for x in rows) + "</div>"
+    # The Legends block is only emitted once the roster has actually been harvested,
+    # otherwise the home page would link to a /legends/ that does not exist and the
+    # dead-link gate would (correctly) fail the build.
+    legends_section = ""
+    if (Path(__file__).resolve().parent.parent / "data" / "people.json").exists():
+        legends_section = """<section class="legends-home" data-legends>
+<h2 class="sec">The Legends</h2>
+<p class="muted" style="margin:-6px 0 14px">The people who built, drew, drove and financed the
+car — founders, engineers, designers, champions and industrialists.</p>
+<div class="pp-grid" data-legends-grid></div>
+<p style="margin-top:6px"><a class="btn ghost" href="/legends/">Meet all of them</a></p>
+</section>"""
+
     # Counts must come from the data, never from a number typed into the template — the
     # hard-coded 12,747 survived two catalogue rebuilds and shipped a lie on the home page.
     n_models = len(LIB_PHOTOS_ALL)
@@ -633,13 +646,7 @@ recall campaigns and EPA data. Not opinions.</p>
 <div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
 {AD.format(slot='home')}
 <div class="card"><h2>Years to avoid</h2><p style="margin-bottom:12px">Lowest data-scores in our index right now.</p>{cardlist(avoid)}</div>
-<section class="legends-home" data-legends>
-<h2 class="sec">The Legends</h2>
-<p class="muted" style="margin:-6px 0 14px">The people who built, drew, drove and financed the
-car — founders, engineers, designers, champions and industrialists.</p>
-<div class="pp-grid" data-legends-grid></div>
-<p style="margin-top:6px"><a class="btn ghost" href="/legends/">Meet all of them</a></p>
-</section>
+{legends_section}
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>

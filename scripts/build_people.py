@@ -167,8 +167,12 @@ rel="noopener">Wikipedia</a>, used under CC BY-SA. Photograph via Wikimedia Comm
 
 
 def main():
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from build_models import shell            # reuse the model-page chrome
+    # --harvest-only runs before gen_site.py (which wipes site/) purely to fill the cache,
+    # so the home page knows whether /legends/ will exist. The page-writing pass runs after.
+    harvest_only = "--harvest-only" in sys.argv
+    if not harvest_only:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from build_models import shell        # reuse the model-page chrome
 
     people, seen = [], set()
     if "--from-cache" in sys.argv and CACHE.exists():
@@ -195,6 +199,9 @@ def main():
         return 0
 
     CACHE.write_text(json.dumps(people, ensure_ascii=False, separators=(",", ":")))
+    if harvest_only:
+        print(f"LEGENDS CACHED: {len(people)} people (pages written after gen_site)")
+        return 0
 
     # per-person pages
     for p in people:

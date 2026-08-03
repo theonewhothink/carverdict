@@ -36,6 +36,19 @@ def _load_specs():
 SPECS = _load_specs()
 
 
+def _load_wiki():
+    """Wikipedia infobox specifications — engine, power, production, weight, transmission.
+    Richer than Wikidata's structured claims, which is why it takes precedence below."""
+    p = ROOT / "data" / "wiki_specs.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+WIKI = _load_wiki()
+
+
 def esc(s):
     return html.escape(str(s), quote=True)
 
@@ -215,42 +228,61 @@ def main():
                     '<figcaption>No free photograph catalogued yet</figcaption></figure>')
 
         sp = SPECS.get(m["q"], {})
+        wk = WIKI.get(m["q"], {})
 
         # Headline facts sit beside the photo; the full spec table goes below. Rows appear
         # only when the model actually has that fact — no table of dashes.
         facts = f'<div class="fact"><span>Marque</span><b><a href="/library/{bs}/">{esc(b)}</a></b></div>'
-        years = m["y"] or ""
-        if years and sp.get("ended"):
-            years = f'{years} – {sp["ended"]}'
-        elif years:
-            years = f"{years} – present or unrecorded"
+        years = wk.get("production") or ""
+        if not years:
+            years = m["y"] or ""
+            if years and sp.get("ended"):
+                years = f'{years} – {sp["ended"]}'
         if years:
             facts += f'<div class="fact"><span>Production</span><b>{esc(years)}</b></div>'
-        if sp.get("engine"):
-            facts += f'<div class="fact"><span>Powertrain</span><b>{esc(sp["engine"])}</b></div>'
+        # the number a petrolhead looks for first
+        if wk.get("power"):
+            facts += f'<div class="fact"><span>Power</span><b>{esc(wk["power"])}</b></div>'
+        engine = wk.get("engine") or sp.get("engine")
+        if engine:
+            facts += f'<div class="fact"><span>Engine</span><b>{esc(engine)}</b></div>'
         if sp.get("built"):
             facts += f'<div class="fact"><span>Units built</span><b>{int(sp["built"]):,}</b></div>'
 
         spec_rows = []
+        if wk.get("transmission"):
+            spec_rows.append(("Transmission", wk["transmission"]))
+        if wk.get("layout"):
+            spec_rows.append(("Layout", wk["layout"]))
+        if wk.get("body"):
+            spec_rows.append(("Body style", wk["body"]))
+        weight = wk.get("weight") or (f'{sp["mass"]:g} kg' if sp.get("mass") else None)
+        if weight:
+            spec_rows.append(("Kerb weight", weight))
         if sp.get("top_speed"):
             spec_rows.append(("Top speed", f'{sp["top_speed"]:g} km/h'))
-        if sp.get("mass"):
-            spec_rows.append(("Kerb mass", f'{sp["mass"]:g} kg'))
+        if wk.get("wheelbase"):
+            spec_rows.append(("Wheelbase", wk["wheelbase"]))
         if sp.get("length"):
             spec_rows.append(("Length", f'{sp["length"]:g} m'))
-        if sp.get("made_in"):
-            spec_rows.append(("Assembled in", sp["made_in"]))
-        if sp.get("designer"):
-            spec_rows.append(("Designer", sp["designer"]))
+        assembly = wk.get("assembly") or sp.get("made_in")
+        if assembly:
+            spec_rows.append(("Assembly", assembly))
+        designer = wk.get("designer") or sp.get("designer")
+        if designer:
+            spec_rows.append(("Designer", designer))
+        if wk.get("predecessor"):
+            spec_rows.append(("Predecessor", wk["predecessor"]))
+        if wk.get("successor"):
+            spec_rows.append(("Successor", wk["successor"]))
         spec_rows.append(("Catalogue ID", m["q"]))
         spec_html = "".join(f'<div class="fact"><span>{esc(k)}</span><b>{esc(v)}</b></div>'
                             for k, v in spec_rows)
-        # State the gap instead of hiding it: power output exists on 58 of ~13,700 models
-        # in Wikidata, so quoting horsepower would mean inventing it.
-        spec_note = ('<p class="lib-note">Specifications come from the open Wikidata record for this '
-                     'model and are shown only where that record has them. Engine output and fuel '
-                     'consumption are not published as open data for most models, so they are left out '
-                     'rather than estimated.</p>')
+        src = ('the Wikipedia infobox for this model (CC BY-SA) and the open Wikidata record'
+               if wk else 'the open Wikidata record for this model')
+        spec_note = (f'<p class="lib-note">Specifications come from {src}, and are shown only where '
+                     'a source actually carries them — nothing here is estimated. Figures are '
+                     'manufacturer specifications, not measured results.</p>')
         specs_card = (f'<div class="card"><h2>Specifications</h2>'
                       f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>')
 
