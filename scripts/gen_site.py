@@ -255,6 +255,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head=""):
 <script src="/assets/lightbox.js" defer></script>
 <script src="/assets/geo.js" defer></script>
 <script src="/assets/engage.js" defer></script>
+<script src="/assets/legends.js" defer></script>
 </body></html>"""
 
 def write(path, html):
@@ -607,7 +608,10 @@ def gen_home(con, all_rows):
     strip_cells = "".join(
         f'<a class="st-cell" href="{murl(nm)}">'
         f'<img src="{cimg(ph, 520)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
-        for nm, ph in shots[4:12])
+        for nm, ph in shots[4:16])
+    # The band scrolls forever, so the sequence is emitted twice: the animation travels
+    # exactly -50% and lands on the duplicate, which makes the loop seamless.
+    strip_cells = (f'<div class="photo-strip-inner">{strip_cells}{strip_cells}</div>')
 
     body = f"""<section class="home-hero-v2"><div class="wrap hh-grid">
 <div class="hh-copy">
@@ -629,6 +633,13 @@ recall campaigns and EPA data. Not opinions.</p>
 <div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
 {AD.format(slot='home')}
 <div class="card"><h2>Years to avoid</h2><p style="margin-bottom:12px">Lowest data-scores in our index right now.</p>{cardlist(avoid)}</div>
+<section class="legends-home" data-legends>
+<h2 class="sec">The Legends</h2>
+<p class="muted" style="margin:-6px 0 14px">The people who built, drew, drove and financed the
+car — founders, engineers, designers, champions and industrialists.</p>
+<div class="pp-grid" data-legends-grid></div>
+<p style="margin-top:6px"><a class="btn ghost" href="/legends/">Meet all of them</a></p>
+</section>
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
