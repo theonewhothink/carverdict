@@ -97,7 +97,7 @@ def shell(title, desc, canon, body):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Car<em>Verdict</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
+<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
 </div></header>
 {body}
 <footer><div class="wrap"><p>Catalogue: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0) ·

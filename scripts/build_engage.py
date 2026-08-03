@@ -61,7 +61,7 @@ def shell(lang, title, desc, path, body, extra_js=""):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="{pre or '/'}">Car<em>Verdict</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="{esc(t(lang,'search_ph'))}" autocomplete="off" aria-label="search" data-none="{esc(t(lang,'search_none'))}"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">{t(lang,'nav_browse')}</a><a href="/library/">{t(lang,'nav_library')}</a><a href="/play/" class="cur">Play</a><a href="/calculators/">{t(lang,'nav_calculators')}</a></nav>
+<nav class="nav"><a href="/cars/">{t(lang,'nav_browse')}</a><a href="/library/">{t(lang,'nav_library')}</a><a href="/events/">Events</a><a href="/play/" class="cur">Play</a><a href="/calculators/">{t(lang,'nav_calculators')}</a></nav>
 <details class="langs"><summary>{lang.upper()}</summary><div>{''.join(f'<a{" class=cur" if l==lang else ""} href="{"/" if l=="en" else "/"+l+"/"}">{l.upper()}</a>' for l in LANGS)}</div></details>
 </div></header>
 <div class="geo-bar wrap" data-geo-chip></div>

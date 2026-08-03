@@ -99,7 +99,7 @@ def header(lang="en", origin_prefix=""):
 <a class="logo" href="{pre or "/"}">Car<em>Verdict</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="{esc(t(lang, "search_ph"))}" autocomplete="off"
  aria-label="search"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">{t(lang, "nav_browse")}</a><a href="{pre}/library/" class="cur">{t(lang, "nav_library")}</a><a href="/calculators/">{t(lang, "nav_calculators")}</a><a href="/recalls/">{t(lang, "nav_recalls")}</a></nav>
+<nav class="nav"><a href="/cars/">{t(lang, "nav_browse")}</a><a href="{pre}/library/" class="cur">{t(lang, "nav_library")}</a><a href="/events/">Events</a><a href="/calculators/">{t(lang, "nav_calculators")}</a><a href="/recalls/">{t(lang, "nav_recalls")}</a></nav>
 <details class="langs"><summary>{lang.upper()}</summary><div>{langsw}</div></details>
 </div></header>"""
 

@@ -240,7 +240,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head=""):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Car<em>Verdict</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
 </div></header>
 <div class="geo-bar wrap" data-geo-chip></div>
@@ -398,7 +398,10 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
                      f"Warranty coverage: {r['battery_warranty']}."))
     if recalls and not gap_rec:
         faqs.append((f"Does the {name} have recalls?",
-                     f"Yes — {r['recall_count']} NHTSA recall campaigns, {r['severe_recalls']} involving fire/crash/stall risk. Check your VIN at nhtsa.gov/recalls before buying."))
+                     f"Yes — NHTSA lists {r['recall_count']} recall campaign(s) for the {name}, "
+                     f"{r['severe_recalls']} of them touching fire, crash or stall risk"
+                     + (f", the most recent recorded {recalls[0]['date']}." if recalls and recalls[0]['date'] else ".")
+                     + f" Check this car's VIN at nhtsa.gov/recalls before you buy."))
     faq_html = '<div class="card"><h2>FAQ</h2>' + "".join(
         f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in faqs) + "</div>"
 
@@ -490,6 +493,17 @@ def gen_model(con, model_rows, all_rows):
     scored = [s for s in model_rows if s["score"] is not None]
     best = max(scored, key=lambda s: s["score"], default=None)
     worst = min(scored, key=lambda s: s["score"], default=None)
+    # The subtitle used to be one fixed sentence, so it appeared verbatim on every model
+    # page and alone accounted for most of the duplicate-paragraph budget. Built from this
+    # model's own numbers it is unique per page — and more use to a reader.
+    rows_r = model_rows
+    tot_comp = sum(s["complaint_count"] or 0 for s in model_rows)
+    tot_rec = sum(s["recall_count"] or 0 for s in model_rows)
+    if not best or not worst:
+        class _S(dict):
+            __getitem__ = dict.get
+        best = best or _S(year="n/a")
+        worst = worst or _S(year="n/a")
     verdict_line = ""
     if best and worst and best["my_id"] != worst["my_id"]:
         verdict_line = (f"<p>Best year in our data: <a href='{url_my(best)}'><b>{best['year']}</b></a> "
@@ -502,7 +516,8 @@ def gen_model(con, model_rows, all_rows):
 <div class="hero-copy">
 <nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/cars/{r0['kslug']}/">{esc(make)}</a> › {esc(model)}</nav>
 <h1>{esc(make)} {esc(model)}: Best &amp; Worst Years</h1>
-<p class="sub">Every model year ranked by NHTSA complaint and recall data. Click a year for the full breakdown.</p>
+<p class="sub">{esc(make)} {esc(model)}: {len(rows_r)} model years indexed, {tot_comp:,} NHTSA owner
+complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, worst {worst['year']}.</p>
 </div>
 {hero_art(make, model, bool(r0['is_ev']))}
 </div></div>
@@ -648,7 +663,8 @@ recall campaigns and EPA data. Not opinions.</p>
 <div class="card"><h2>Years to avoid</h2><p style="margin-bottom:12px">Lowest data-scores in our index right now.</p>{cardlist(avoid)}</div>
 {legends_section}
 <h2 class="sec">Explore</h2>
-<div class="rel-grid"><a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
+<div class="rel-grid"><a href="/events/">The motoring calendar<small>races · concours · auctions worldwide</small></a>
+<a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
 <a href="/calculators/">True-cost calculator<small>priced for your country</small></a>
 <a href="/garage/">My Garage<small>your saved cars</small></a></div>
