@@ -82,8 +82,10 @@ def play_page(lang="en"):
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>Play</h1><p class="sub">A new car every day, a new quiz every day. Build your streak.</p></div></div>
 <div class="wrap">
-<div class="daily-grid" data-daily></div>
 <div class="card game-card" data-game><p class="muted">Loading today's game…</p></div>
+<h2 class="sec">Today's picks</h2>
+<p class="muted" style="margin:-6px 0 12px">Not part of the game — two cars worth a look.</p>
+<div class="daily-grid" data-daily></div>
 <div class="card"><h2>Keep your streak</h2>
 <p class="muted">Your streak, saved cars and preferences live on this device only — no account, no email required.
 Want a daily nudge? <a href="/notify/">Turn on reminders</a>.</p></div>

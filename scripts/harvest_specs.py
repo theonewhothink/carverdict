@@ -97,6 +97,28 @@ def clean(kind, b):
     return v
 
 
+def harvest_logos():
+    """Marque logos (P154) — a wordmark on white beats a faded photo of a factory."""
+    q = ("SELECT ?m ?mLabel ?logo WHERE { ?i wdt:P31 wd:Q3231690 ; wdt:P176 ?m . "
+         "?m wdt:P154 ?logo . "
+         'SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }')
+    try:
+        rows = _query(q)
+    except Exception as e:
+        print(f"  logos      FAILED ({type(e).__name__})")
+        return
+    out = {}
+    for b in rows:
+        name = (b.get("mLabel") or {}).get("value", "").strip()
+        if not name or (name.startswith("Q") and name[1:].isdigit()):
+            continue
+        out.setdefault(name, b["logo"]["value"])
+    if out:
+        (ROOT / "data" / "brand_logos.json").write_text(
+            json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+    print(f"  logos      {len(out):6} marques")
+
+
 def main():
     specs, failed = {}, []
     for key, (prop, kind) in FIELDS.items():
@@ -120,6 +142,8 @@ def main():
             n += 1
         print(f"  {key:11} {n:6} models")
         time.sleep(1)
+
+    harvest_logos()
 
     if not specs:
         print("SPECS SKIPPED: no data retrieved; leaving any existing file untouched")

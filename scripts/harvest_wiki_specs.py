@@ -176,6 +176,29 @@ def main():
             specs[qid] = got
             filled += 1
 
+    # The prose intro — what makes a model page worth reading rather than a table.
+    # exlimit caps at 20 titles per request even though wikitext allows 50.
+    print("fetching article intros…")
+    intros, wanted = 0, list(by_title)
+    for i in range(0, len(wanted), 20):
+        chunk = wanted[i:i + 20]
+        url = (f"{WP}?action=query&format=json&prop=extracts&exintro=1&explaintext=1"
+               f"&exlimit=20&redirects=1&titles={urllib.parse.quote('|'.join(chunk))}")
+        try:
+            j = _get(url)
+        except Exception:
+            time.sleep(2)
+            continue
+        for p in ((j.get("query") or {}).get("pages") or {}).values():
+            qid = by_title.get(p.get("title"))
+            ex = (p.get("extract") or "").strip()
+            if qid and len(ex) > 120:
+                specs.setdefault(qid, {})["about"] = ex[:1600]
+                specs[qid].setdefault("wp", p.get("title"))
+                intros += 1
+        time.sleep(0.2)
+    print(f"  {intros} models have an article intro")
+
     if not specs:
         print("WIKI SPECS SKIPPED: nothing parsed; leaving existing file untouched")
         return 0
@@ -195,7 +218,8 @@ def main():
     have = lambda k: sum(1 for v in prev.values() if v.get(k))
     print(f"WIKI SPECS OK: {len(prev)} models — engine {have('engine')}, power {have('power')}, "
           f"production {have('production')}, weight {have('weight')}, "
-          f"transmission {have('transmission')}, assembly {have('assembly')}")
+          f"transmission {have('transmission')}, assembly {have('assembly')}, "
+          f"about {have('about')}")
     return 0
 
 

@@ -34,6 +34,40 @@ def _load_specs():
 
 
 SPECS = _load_specs()
+FLAT = {}
+
+
+def _load_wiki():
+    """Wikipedia infobox specifications — engine, power, production, weight, transmission."""
+    p = ROOT / "data" / "wiki_specs.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+WIKI = _load_wiki()
+
+
+def _load_people():
+    """Legends roster, so a designer's name can link to their page instead of sitting dead."""
+    p = ROOT / "data" / "people.json"
+    try:
+        rows = json.loads(p.read_text()) if p.exists() else []
+    except Exception:
+        return {}
+    import unicodedata as _u
+
+    def sl(s):
+        s = _u.normalize("NFKD", str(s))
+        s = "".join(c for c in s if not _u.combining(c))
+        s = re.sub(r"[^\w\s-]", "", s.lower()).strip()
+        return re.sub(r"[\s_]+", "-", s)[:60] or "x"
+
+    return {r["name"].lower(): "/legends/" + sl(r["name"]) + "/" for r in rows}
+
+
+PEOPLE = _load_people()
 
 
 def _load_wiki():
@@ -71,7 +105,8 @@ Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Co
 <a href="/methodology/">Methodology</a></p></div></footer>
 <script src="/assets/site.js" defer></script>
 <script src="/assets/lightbox.js" defer></script>
-<script src="/assets/gallery.js" defer></script></body></html>"""
+<script src="/assets/gallery.js" defer></script>
+<script src="/assets/rate.js" defer></script></body></html>"""
 
 
 def main():
@@ -196,6 +231,10 @@ def main():
         selected.append((b, m, bs, ms))
         index.setdefault(bs, {})[m["n"]] = ms
 
+    # name -> model-page URL, so predecessor/successor/designer can be real links
+    global FLAT
+    FLAT = {name: f"/library/{bs}/{ms}/" for bs, d in index.items() for name, ms in d.items()}
+
     (ROOT / "data" / "model_index.json").write_text(
         json.dumps(index, separators=(",", ":"), ensure_ascii=False))
     if "--plan" in sys.argv:
@@ -228,6 +267,14 @@ def main():
                     '<figcaption>No free photograph catalogued yet</figcaption></figure>')
 
         sp = SPECS.get(m["q"], {})
+        wk = WIKI.get(m["q"], {})
+
+        def linked(val):
+            """Link a referenced car or person when we actually have a page for it."""
+            if not val:
+                return val
+            u = FLAT.get(val) or PEOPLE.get(val.lower())
+            return f'<a href="{u}">{esc(val)}</a>' if u else esc(val)
         wk = WIKI.get(m["q"], {})
 
         # Headline facts sit beside the photo; the full spec table goes below. Rows appear
@@ -268,16 +315,20 @@ def main():
         assembly = wk.get("assembly") or sp.get("made_in")
         if assembly:
             spec_rows.append(("Assembly", assembly))
-        designer = wk.get("designer") or sp.get("designer")
-        if designer:
-            spec_rows.append(("Designer", designer))
-        if wk.get("predecessor"):
-            spec_rows.append(("Predecessor", wk["predecessor"]))
-        if wk.get("successor"):
-            spec_rows.append(("Successor", wk["successor"]))
-        spec_rows.append(("Catalogue ID", m["q"]))
         spec_html = "".join(f'<div class="fact"><span>{esc(k)}</span><b>{esc(v)}</b></div>'
                             for k, v in spec_rows)
+        # A predecessor, successor or designer names a real thing. If we hold a page for it,
+        # it should be a link — a dead-end string here is a wasted journey.
+        def linked(val):
+            u = FLAT.get(val) or PEOPLE.get((val or "").lower())
+            return f'<a href="{u}">{esc(val)}</a>' if u else esc(val)
+
+        for label, val in (("Designer", wk.get("designer") or sp.get("designer")),
+                           ("Predecessor", wk.get("predecessor")),
+                           ("Successor", wk.get("successor"))):
+            if val:
+                spec_html += f'<div class="fact"><span>{label}</span><b>{linked(val)}</b></div>'
+        spec_html += f'<div class="fact"><span>Catalogue ID</span><b>{esc(m["q"])}</b></div>'
         src = ('the Wikipedia infobox for this model (CC BY-SA) and the open Wikidata record'
                if wk else 'the open Wikidata record for this model')
         spec_note = (f'<p class="lib-note">Specifications come from {src}, and are shown only where '
@@ -285,6 +336,26 @@ def main():
                      'manufacturer specifications, not measured results.</p>')
         specs_card = (f'<div class="card"><h2>Specifications</h2>'
                       f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>')
+
+        about_card = ""
+        if wk.get("about"):
+            paras = [p.strip() for p in re.split(r"\n{2,}", wk["about"]) if p.strip()]
+            if len(paras) == 1 and len(paras[0]) > 480:
+                sents = re.split(r"(?<=\.)\s+", paras[0])
+                mid = len(sents) // 2
+                paras = [" ".join(sents[:mid]), " ".join(sents[mid:])]
+            prose = "".join(f"<p>{esc(p)}</p>" for p in paras[:4])
+            wp = wk.get("wp") or m["n"]
+            wp_url = "https://en.wikipedia.org/wiki/" + wp.replace(" ", "_")
+            about_card = (f'<div class="card about-card"><h2>About the {esc(m["n"])}</h2>{prose}'
+                          f'<p class="lib-note">From the Wikipedia article '
+                          f'<a href="{esc(wp_url)}" rel="noopener">{esc(wp)}</a>, CC BY-SA.</p></div>')
+
+        rate_card = (f'<div class="card rate-card" data-rate="{esc(m["q"])}" '
+                     f'data-rate-name="{esc(m["n"])}"><h2>Rate your love</h2>'
+                     f'<div class="stars" data-stars role="radiogroup" aria-label="Rate this car"></div>'
+                     f'<p class="lib-note" data-rate-note>Tap a star. Ratings are kept on your device '
+                     f'and feed the most-loved list.</p></div>')
 
         gallery_card = ""
         if sp.get("commons"):
@@ -305,7 +376,9 @@ def main():
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
+{about_card}
 {specs_card}
+{rate_card}
 {gallery_card}
 <div class="card"><h2>What it costs to run</h2>
 <p>Ownership verdicts are computed from NHTSA complaint and recall records plus EPA economy data,

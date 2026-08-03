@@ -8,7 +8,7 @@ Generates:
 Photo policy: hotlink Wikimedia Commons via Special:FilePath (redirects to upload.wikimedia.org),
 credit + link to the Commons file page on every card. No files copied -> no licensing risk.
 """
-import json, re, sys, html
+import json, os, re, sys, html
 from pathlib import Path
 from collections import defaultdict
 
@@ -17,7 +17,19 @@ from i18n import LANGS, RTL, t, S, LANG_NAMES
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
 DATA = json.load(open(ROOT / "data" / "car_library.json"))
+
+
+def _load_logos():
+    p = ROOT / "data" / "brand_logos.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+LOGOS = _load_logos()
 
 BRAND_ALIAS = {
     "Mercedes-Benz Group": "Mercedes-Benz", "Daimler AG": "Mercedes-Benz",
@@ -95,8 +107,8 @@ def header(lang="en", origin_prefix=""):
 def shell(lang, title, desc, canon, body, extra_head=""):
     d = ' dir="rtl"' if lang in RTL else ""
     hreflang = "".join(
-        f'<link rel="alternate" hreflang="{l}" href="https://carverdict.example{"" if l == "en" else "/" + l}/library/">'
-        for l in LANGS) + '<link rel="alternate" hreflang="x-default" href="https://carverdict.example/library/">'
+        f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{"" if l == "en" else "/" + l}/library/">'
+        for l in LANGS) + f'<link rel="alternate" hreflang="x-default" href="{ORIGIN}/library/">'
     return f"""<!doctype html><html lang="{lang}"{d}><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
@@ -179,21 +191,30 @@ def main():
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(shell("en", f"{b} — Complete Model Library | CarVerdict",
                              f"All {len(models)} {b} models ever catalogued, with photos.",
-                             f"https://carverdict.example/library/{bs}/", body))
+                             f"{ORIGIN}/library/{bs}/", body))
 
     # library index (EN static)
+    # Brand tiles carry the marque's logo on white. The old tiles put the name over a
+    # 16%-opacity photograph, which read as a washed-out smudge.
     top = list(brands.items())[:24]
-    top_html = "".join(
-        f'<a class="brand-tile" href="/library/{slug(b)}/"><b>{esc(b)}</b><small>{len(v)} {t("en", "lib_models")}</small>'
-        + (f'<img src="{commons_thumb(next(m["p"] for m in v if m["p"]), 360)}" alt="" loading="lazy">' if any(m["p"] for m in v) else "")
-        + "</a>" for b, v in top)
+
+    def tile(b, v):
+        logo = LOGOS.get(b)
+        mark = (f'<span class="bt-logo"><img src="{esc(logo)}" alt="{esc(b)} logo" loading="lazy"></span>'
+                if logo else f'<span class="bt-logo bt-initial">{esc(b[0].upper())}</span>')
+        return (f'<a class="brand-tile" href="/library/{slug(b)}/">{mark}'
+                f'<b>{esc(b)}</b><small>{len(v)} {t("en", "lib_models")}</small></a>')
+
+    top_html = "".join(tile(b, v) for b, v in top)
     az = defaultdict(list)
     for b, v in brands.items():
         az[b[0].upper() if b[0].isalpha() else "#"].append((b, len(v)))
+    az_nav = "".join(f'<a href="#az-{k if k.isalpha() else "num"}">{k}</a>' for k in sorted(az))
     az_html = "".join(
-        f'<div class="az-group"><h3>{k}</h3>' + "".join(
+        f'<div class="az-group" id="az-{k if k.isalpha() else "num"}"><h3>{k}</h3>' + "".join(
             f'<a href="/library/{slug(b)}/">{esc(b)} <span>{n}</span></a>' for b, n in sorted(v)) + "</div>"
         for k, v in sorted(az.items()))
+    az_html = f'<nav class="az-jump">{az_nav}</nav>' + az_html
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>{t("en", "lib_title")}</h1>
 <p class="sub"><b>{n_models:,}</b> {t("en", "lib_sub")} <b>{len(brands):,}</b> {t("en", "lib_brands")} — <b>{n_photos:,}</b> {t("en", "lib_photos")}.</p>
@@ -206,7 +227,7 @@ def main():
     (SITE / "library" / "index.html").write_text(
         shell("en", "The Car Library — Every Car Model Ever Made | CarVerdict",
               f"{n_models:,} car models from {len(brands):,} brands, with photography. The complete automotive catalog.",
-              "https://carverdict.example/library/", body))
+              f"{ORIGIN}/library/", body))
 
     # localized dynamic library (renders client-side from shared JSON)
     for lang in LANGS:
@@ -224,7 +245,7 @@ def main():
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(shell(lang, t(lang, "lib_title") + " | CarVerdict",
                              f"{n_models:,} — {len(brands):,}.",
-                             f"https://carverdict.example/{lang}/library/", body))
+                             f"{ORIGIN}/{lang}/library/", body))
 
     (SITE / "assets" / "brand-rest.json").write_text(
         json.dumps(REST_DATA, separators=(",", ":"), ensure_ascii=False))
