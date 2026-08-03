@@ -476,3 +476,12 @@ a.lib-card:hover .ph img{transform:scale(1.06)}
 a.lib-card .ph.noimg{display:flex;align-items:center;justify-content:center;color:#C9D2DC}
 a.lib-card .ph.noimg img{display:none}
 a.lib-card .ph.noimg svg{width:56%}
+
+/* Rate your love */
+.rate-card .stars{display:flex;gap:6px;margin:6px 0 4px}
+.star{background:none;border:0;padding:4px;cursor:pointer;line-height:0;color:var(--line);
+  transition:color .15s,transform .12s}
+.star svg{width:34px;height:34px;fill:currentColor}
+.star:hover{transform:translateY(-1px)}
+.star.on{color:#F2B01E}
+.star:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
