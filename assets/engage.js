@@ -65,8 +65,17 @@
       for (var i = 0; i < 5; i++) {
         var answer = db[hash(seed + i * 131) % db.length];
         var opts = [answer];
-        for (var k = 0; opts.length < 4 && k < 60; k++) {
-          var o = db[hash(seed + i * 977 + k * 31) % db.length];
+        // Decoys from roughly the same era make this a game. Drawing them at random from
+        // the whole catalogue produced rounds like "Ferrari F1/86 vs Ursus C10 Bambi",
+        // which is not a guess — it is a giveaway.
+        var ay = parseInt(answer.y, 10);
+        var near = !isNaN(ay) ? db.filter(function (x) {
+          var y = parseInt(x.y, 10);
+          return !isNaN(y) && Math.abs(y - ay) <= 12 && x.n !== answer.n;
+        }) : [];
+        var pool = near.length >= 3 ? near : db;
+        for (var k = 0; opts.length < 4 && k < 200; k++) {
+          var o = pool[hash(seed + i * 977 + k * 31) % pool.length];
           if (!opts.some(function (x) { return x.n === o.n; })) opts.push(o);
         }
         opts.sort(function (a, b) { return hash(a.n.length + i) - hash(b.n.length + i); });
@@ -82,10 +91,11 @@
         host.innerHTML =
           '<div class="game-head"><b>Guess the Car</b><span>' + (idx + 1) + ' / 5 · streak ' + (prefs.streak || 0) + ' 🔥</span></div>' +
           '<div class="game-img"><img src="' + thumb(r.a.p, 900) + '" alt="Guess this car"></div>' +
+          '<p class="game-ask">Which car is this?</p>' +
           '<div class="game-opts">' + r.o.map(function (o, i) {
-            return '<button data-i="' + i + '">' + o.n + '</button>';
+            return '<button data-i="' + i + '">' + o.n + (o.y ? ' <small>· ' + o.y + '</small>' : '') + '</button>';
           }).join('') + '</div>' +
-          '<p class="game-note">Photo: Wikimedia Commons · new set every day</p>';
+          '<p class="game-note">Photo: Wikimedia Commons · 5 cars a day, new set every morning</p>';
         host.querySelectorAll('button').forEach(function (b) {
           b.addEventListener('click', function () {
             var ok = r.o[+b.dataset.i].n === r.a.n;
