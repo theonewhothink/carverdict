@@ -8,7 +8,7 @@ File-count discipline: Cloudflare Workers static assets cap is 20,000 files. We 
 model pages for photographed models first (most valuable), then unphotographed ones,
 stopping at MAX_MODEL_PAGES. Anything beyond that still appears on its brand page.
 """
-import json, re, sys, html
+import json, os, re, sys, html
 from pathlib import Path
 from collections import defaultdict
 
@@ -18,9 +18,22 @@ from build_library import slug, norm_brand, BRAND_ALIAS, commons_thumb
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-ORIGIN = "https://carverdict.example"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
 BRAND = "CarVerdict"
 MAX_MODEL_PAGES = 3400          # keeps total site files under the 20k asset cap
+
+
+def _load_specs():
+    """Per-model technical facts from harvest_specs.py. Optional: if the harvest has not
+    run, pages render exactly as before instead of failing."""
+    p = ROOT / "data" / "car_specs.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+SPECS = _load_specs()
 
 
 def esc(s):
@@ -44,7 +57,8 @@ def shell(title, desc, canon, body):
 Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a> ·
 <a href="/methodology/">Methodology</a></p></div></footer>
 <script src="/assets/site.js" defer></script>
-<script src="/assets/lightbox.js" defer></script></body></html>"""
+<script src="/assets/lightbox.js" defer></script>
+<script src="/assets/gallery.js" defer></script></body></html>"""
 
 
 def main():
@@ -188,9 +202,11 @@ def main():
 
         if m["p"]:
             fn = m["p"].replace(" ", "_")
-            shot = (f'<figure class="model-shot"><a href="#" data-lb data-credit="Photo: Wikimedia Commons &middot; CC">'
-                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high"></a>'
-                    f'<figcaption>Photo: Wikimedia Commons &middot; click to enlarge</figcaption></figure>')
+            # No per-image credit line: it repeated on every photo and said nothing useful.
+            # Attribution (photographer + licence) is rendered once, per image, in the
+            # credits block under the gallery — which is what the CC licences actually ask for.
+            shot = (f'<figure class="model-shot"><a href="#" data-lb data-credit="Wikimedia Commons &middot; CC">'
+                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high"></a></figure>')
         else:
             shot = ('<figure class="model-shot noimg"><div class="ph noimg">'
                     '<svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" fill="none" '
@@ -198,11 +214,52 @@ def main():
                     '<circle cx="46" cy="22" r="4" fill="currentColor"/></svg></div>'
                     '<figcaption>No free photograph catalogued yet</figcaption></figure>')
 
+        sp = SPECS.get(m["q"], {})
+
+        # Headline facts sit beside the photo; the full spec table goes below. Rows appear
+        # only when the model actually has that fact — no table of dashes.
         facts = f'<div class="fact"><span>Marque</span><b><a href="/library/{bs}/">{esc(b)}</a></b></div>'
-        if m["y"]:
-            facts += f'<div class="fact"><span>Introduced</span><b>{esc(m["y"])}</b></div>'
-        facts += ('<div class="fact"><span>Catalogue ID</span><b>'
-                  f'{esc(m["q"])}</b></div>')
+        years = m["y"] or ""
+        if years and sp.get("ended"):
+            years = f'{years} – {sp["ended"]}'
+        elif years:
+            years = f"{years} – present or unrecorded"
+        if years:
+            facts += f'<div class="fact"><span>Production</span><b>{esc(years)}</b></div>'
+        if sp.get("engine"):
+            facts += f'<div class="fact"><span>Powertrain</span><b>{esc(sp["engine"])}</b></div>'
+        if sp.get("built"):
+            facts += f'<div class="fact"><span>Units built</span><b>{int(sp["built"]):,}</b></div>'
+
+        spec_rows = []
+        if sp.get("top_speed"):
+            spec_rows.append(("Top speed", f'{sp["top_speed"]:g} km/h'))
+        if sp.get("mass"):
+            spec_rows.append(("Kerb mass", f'{sp["mass"]:g} kg'))
+        if sp.get("length"):
+            spec_rows.append(("Length", f'{sp["length"]:g} m'))
+        if sp.get("made_in"):
+            spec_rows.append(("Assembled in", sp["made_in"]))
+        if sp.get("designer"):
+            spec_rows.append(("Designer", sp["designer"]))
+        spec_rows.append(("Catalogue ID", m["q"]))
+        spec_html = "".join(f'<div class="fact"><span>{esc(k)}</span><b>{esc(v)}</b></div>'
+                            for k, v in spec_rows)
+        # State the gap instead of hiding it: power output exists on 58 of ~13,700 models
+        # in Wikidata, so quoting horsepower would mean inventing it.
+        spec_note = ('<p class="lib-note">Specifications come from the open Wikidata record for this '
+                     'model and are shown only where that record has them. Engine output and fuel '
+                     'consumption are not published as open data for most models, so they are left out '
+                     'rather than estimated.</p>')
+        specs_card = (f'<div class="card"><h2>Specifications</h2>'
+                      f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>')
+
+        gallery_card = ""
+        if sp.get("commons"):
+            gallery_card = (f'<div class="card gallery-card" data-commons-cat="{esc(sp["commons"])}">'
+                            f'<h2>Photo gallery</h2>'
+                            f'<div class="gal-grid" data-gal></div>'
+                            f'<p class="lib-note" data-gal-credits></p></div>')
 
         body = f"""<div class="model-hero"><div class="wrap">
 <nav class="crumbs"><a href="/library/">Library</a> › <a href="/library/{bs}/">{esc(b)}</a> › {esc(m["n"])}</nav>
@@ -216,10 +273,12 @@ def main():
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
-<div class="card"><h2>What we can tell you about running one</h2>
-<p>CarVerdict computes ownership verdicts from NHTSA complaint and recall records plus EPA economy
-data, re-priced for your country. Model-year verdicts are published as the data is ingested —
-<a href="/cars/">browse the verdicts live today</a>, or open the
+{specs_card}
+{gallery_card}
+<div class="card"><h2>What it costs to run</h2>
+<p>Ownership verdicts are computed from NHTSA complaint and recall records plus EPA economy data,
+re-priced for your country. Verdicts are published per model year as the data is ingested —
+<a href="/cars/">browse them live</a>, or open the
 <a href="/calculators/">true-cost calculator</a> to price any year yourself.</p></div>
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
 </div>"""
