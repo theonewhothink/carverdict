@@ -58,7 +58,9 @@ PY_EOF
 # complaint volumes, recall campaigns and real fuel economy for thousands of model-years,
 # fetched fresh on every deploy. It refuses to overwrite the committed database with a
 # smaller or emptier one, so a bad API day leaves the last good data in place.
-INGEST_BUDGET="${INGEST_BUDGET:-2200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# 1,100 model-years costs about four minutes of the twenty-minute build window, which leaves
+# room for the Wikidata and Wikipedia harvests. Raise it only if the build finishes early.
+INGEST_BUDGET="${INGEST_BUDGET:-1100}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
