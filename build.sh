@@ -60,7 +60,10 @@ PY_EOF
 # smaller or emptier one, so a bad API day leaves the last good data in place.
 # 1,100 model-years costs about four minutes of the twenty-minute build window, which leaves
 # room for the Wikidata and Wikipedia harvests. Raise it only if the build finishes early.
-INGEST_BUDGET="${INGEST_BUDGET:-1100}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# Cloudflare kills the Building stage at 20 minutes. 1,100 model-years cost 10 of them and
+# the rest of the pipeline needs 12, so the build died at the cap. 450 fits: ingest ~5 min,
+# still 28x the old seed, and the round-robin keeps the most-searched cars covered first.
+INGEST_BUDGET="${INGEST_BUDGET:-450}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
