@@ -519,3 +519,12 @@ a.lib-card .ph.noimg svg{width:56%}
   .ev-controls input{grid-column:1/-1}
   .ev-controls .btn{grid-column:1/-1;text-align:center}
 }
+
+/* ------------------------------------------------- motion (muted, running) */
+.hh-shot{overflow:hidden}
+.hh-shot img{animation:kenburns 24s ease-in-out infinite alternate;will-change:transform}
+@keyframes kenburns{from{transform:scale(1) translateX(0)}to{transform:scale(1.09) translateX(-2.2%)}}
+.ev-card,.rel-grid a,.brand-tile,.pp-card{transition:transform .18s ease,box-shadow .18s ease}
+.rel-grid a:hover,.brand-tile:hover,.pp-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);text-decoration:none}
+@media (prefers-reduced-motion:reduce){.hh-shot img{animation:none}}
+.fact .est{display:block;font-size:11px;color:var(--faint);font-weight:400}
