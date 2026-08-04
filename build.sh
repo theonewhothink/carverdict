@@ -63,7 +63,10 @@ PY_EOF
 # Cloudflare kills the Building stage at 20 minutes. 1,100 model-years cost 10 of them and
 # the rest of the pipeline needs 12, so the build died at the cap. 450 fits: ingest ~5 min,
 # still 28x the old seed, and the round-robin keeps the most-searched cars covered first.
-INGEST_BUDGET="${INGEST_BUDGET:-450}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# The 20-minute clock covers build AND deploy. 450 model-years left the deploy only ~3
+# minutes and it was killed mid-upload. 200 keeps the whole run near 16 minutes: still
+# 12x the old seed, and the budget can rise once a deploy lands and uploads shrink to diffs.
+INGEST_BUDGET="${INGEST_BUDGET:-200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
