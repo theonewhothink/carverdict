@@ -46,6 +46,12 @@ FIELDS = {
     "wheelbase": ["wheelbase"],
     "predecessor": ["predecessor"],
     "successor": ["successor"],
+    # money and motorsport — the two things readers asked for that infoboxes carry
+    "msrp": ["price", "msrp"],
+    "wins": ["wins", "race_wins"],
+    "races": ["races", "entries"],
+    "podiums": ["podiums"],
+    "championships": ["cons_champ", "teams_champ", "titles", "drivers_champ"],
 }
 
 

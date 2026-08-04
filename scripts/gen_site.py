@@ -555,10 +555,62 @@ def gen_brand(con, kslug, make, models, all_rows):
                       f"{make} models ranked by real NHTSA complaint and recall data.", ORIGIN + url, body))
 
 def gen_cars_index(brands):
-    items = "".join(f'<a href="/cars/{k}/">{esc(m)}<small>{n} model years</small></a>' for k, m, n in brands)
-    body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Browse by brand</h1></div></div>
-<div class="wrap" style="padding:28px 0"><div class="card"><div class="rel-grid">{items}</div></div></div>"""
-    return write("cars/index.html", page(f"All Brands | {BRAND}", "Browse true ownership cost data by brand.", ORIGIN + "/cars/", body))
+    """Two layers: the marques with deep NHTSA/EPA verdict data on top, then every marque
+    ever catalogued, A-Z with its logo. Browse used to stop at six brands one click from a
+    home page promising every car ever made - that contradiction ends here."""
+    items = "".join(f'<a href="/cars/{k}/">{esc(m)}<small>{n} model years of verdict data</small></a>' for k, m, n in brands)
+
+    az_html = ""
+    try:
+        lib = json.loads((ROOT / "data" / "car_library.json").read_text())
+        try:
+            logos = json.loads((ROOT / "data" / "brand_logos.json").read_text())
+        except Exception:
+            logos = {}
+        try:
+            sys.path.insert(0, str(ROOT / "scripts"))
+            from build_library import BRAND_ALIAS as _ALIAS
+        except Exception:
+            _ALIAS = {}
+        counts = {}
+        for x in lib:
+            bb = _ALIAS.get((x.get("m") or "").strip(), (x.get("m") or "").strip())
+            if bb:
+                counts[bb] = counts.get(bb, 0) + 1
+
+        def bslug(t):
+            # must byte-match build_library.slug or these links die at the gate
+            t = re.sub(r"[^\w\s-]", "", t.lower()).strip()
+            return re.sub(r"[\s_]+", "-", t)[:60] or "x"
+
+        az = {}
+        for bb, n in counts.items():
+            az.setdefault(bb[0].upper() if bb[0].isalpha() else "#", []).append((bb, n))
+        nav = "".join(f'<a href="#az-{k if k.isalpha() else "num"}">{k}</a>' for k in sorted(az))
+        groups = ""
+        for k in sorted(az):
+            tiles = ""
+            for bb, n in sorted(az[k]):
+                logo = logos.get(bb)
+                mark = (f'<span class="bt-logo"><img src="{esc(logo)}" alt="" loading="lazy"></span>'
+                        if logo else f'<span class="bt-logo bt-initial">{esc(bb[0].upper())}</span>')
+                tiles += (f'<a class="brand-tile" href="/library/{bslug(bb)}/">{mark}'
+                          f'<b>{esc(bb)}</b><small>{n} models</small></a>')
+            groups += f'<div class="az-group" id="az-{k if k.isalpha() else "num"}"><h3>{k}</h3><div class="brand-grid">{tiles}</div></div>'
+        az_html = (f'<h2 class="sec">Every marque ever made</h2>'
+                   f'<p class="muted" style="margin:-6px 0 12px">{len(counts):,} manufacturers, A to Z. '
+                   f'Each opens the full catalogue in the Library.</p>'
+                   f'<nav class="az-jump">{nav}</nav>{groups}')
+    except Exception:
+        pass
+
+    body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Browse by brand</h1>
+<p class="sub">Ownership verdicts where the United States data runs deep, and the complete
+A-Z of every marque ever catalogued below.</p></div></div>
+<div class="wrap" style="padding:28px 0"><h2 class="sec">Deep ownership data</h2>
+<div class="card"><div class="rel-grid">{items}</div></div>
+{az_html}</div>"""
+    return write("cars/index.html", page(f"All Car Brands A-Z | {BRAND}", "Every car marque ever made, A-Z with logos, plus deep NHTSA ownership data by brand.", ORIGIN + "/cars/", body))
 
 def gen_home(con, all_rows):
     gated = [r for r in all_rows if gate(r)]
@@ -705,8 +757,8 @@ P.forEach((p,i)=>{{const o=document.createElement('option');o.value=i;o.textCont
 function calc(){{const p=P[sel.value];const keep=Math.min(10,Math.max(1,+document.getElementById('cy').value||5));
 const age0=Math.max(0,{CURRENT_YEAR}-p.y);let lo=0,hi=0;
 for(let k=0;k<keep;k++){{const a=Math.min(p.c.length-1,age0+k);lo+=p.c[a][0];hi+=p.c[a][1];}}
-out.textContent='$'+Math.round(lo/keep).toLocaleString()+'–$'+Math.round(hi/keep).toLocaleString()+' / year';
-note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included in the annual figure).':'')+' Total over '+keep+' yr: $'+lo.toLocaleString()+'–$'+hi.toLocaleString()+'.';}}
+out.textContent='$'+Math.round(lo/keep).toLocaleString()+'–$'+Math.round(hi/keep).toLocaleString()+' / year (USD)';
+note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included in the annual figure).':'')+' Total over '+keep+' yr: $'+lo.toLocaleString()+'–$'+hi.toLocaleString()+' USD. Local fuel and electricity prices from the country bar feed the per-country figures on each car page.';}}
 sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);calc();
 </script>"""
     return write("calculators/index.html", page(f"True Car Cost Calculator | {BRAND}",

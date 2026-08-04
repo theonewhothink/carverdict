@@ -70,6 +70,39 @@ def _load_people():
 PEOPLE = _load_people()
 
 
+def _load_fuel():
+    """EPA fuel economy per (make, model) from the ownership database, so library pages
+    can answer 'what does it drink?' where the data exists."""
+    import sqlite3
+    db = ROOT / "data" / "cars.sqlite"
+    out = {}
+    if not db.exists():
+        return out
+    try:
+        con = sqlite3.connect(db)
+        for mk, mo, comb, cost in con.execute(
+            """SELECT mk.name, mo.name, MAX(f.mpg_comb), MAX(f.annual_fuel_cost)
+               FROM fuel f JOIN model_years my ON my.id=f.my_id
+               JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
+               GROUP BY mk.name, mo.name"""):
+            if comb:
+                out[(mk.lower(), mo.lower())] = (comb, cost)
+        con.close()
+    except Exception:
+        pass
+    return out
+
+
+FUEL = _load_fuel()
+
+
+def _msrp_num(v):
+    """'US$139,900' / '£113,000 (2021)' -> a USD-ish number for the depreciation model,
+    or None when the currency is not dollars (an honest model beats a wrong conversion)."""
+    m = re.search(r"(?:US)?\$\s?([\d,]{4,})", v or "")
+    return int(m.group(1).replace(",", "")) if m else None
+
+
 def _load_wiki():
     """Wikipedia infobox specifications — engine, power, production, weight, transmission.
     Richer than Wikidata's structured claims, which is why it takes precedence below."""
@@ -274,6 +307,9 @@ def main():
             if not val:
                 return val
             u = FLAT.get(val) or PEOPLE.get(val.lower())
+            if not u:
+                base = re.sub(r"\s*\([^)]*\)$", "", val).strip()
+                u = FLAT.get(base) or PEOPLE.get(base.lower())
             return f'<a href="{u}">{esc(val)}</a>' if u else esc(val)
         wk = WIKI.get(m["q"], {})
 
@@ -295,6 +331,35 @@ def main():
             facts += f'<div class="fact"><span>Engine</span><b>{esc(engine)}</b></div>'
         if sp.get("built"):
             facts += f'<div class="fact"><span>Units built</span><b>{int(sp["built"]):,}</b></div>'
+        # what it cost new, and what age has done to that number since
+        if wk.get("msrp"):
+            facts += f'<div class="fact"><span>Price when new</span><b>{esc(wk["msrp"])}</b></div>'
+            usd = _msrp_num(wk["msrp"])
+            yr = re.search(r"(19|20)\d\d", str(wk.get("production") or m["y"] or ""))
+            # A depreciation curve is honest for a Camry and a lie for a collector car.
+            # Skip anything older than 15 years or with a race record - those appreciate,
+            # and a wrong number is worse than no number.
+            if usd and yr and not wk.get("wins"):
+                age = max(0, 2026 - int(yr.group(0)))
+                if age <= 15:
+                    mid = usd * max(0.12, 0.85 ** age)
+                    lo, hi = int(mid * 0.8), int(mid * 1.25)
+                    facts += (f'<div class="fact"><span>Estimated value today</span>'
+                              f'<b>${lo:,}–${hi:,}<small class="est"> depreciation model, not a quote</small></b></div>')
+        fe = FUEL.get((b.lower(), m["n"].lower().replace(b.lower(), "").strip()))
+        if not fe:
+            for (fmk, fmo), v in FUEL.items():
+                if fmk in b.lower() and fmo in m["n"].lower():
+                    fe = v
+                    break
+        if fe:
+            facts += (f'<div class="fact"><span>Fuel economy (EPA)</span>'
+                      f'<b>{fe[0]:g} mpg combined{f" · ${int(fe[1]):,}/yr fuel" if fe[1] else ""}</b></div>')
+        if wk.get("wins"):
+            rec = wk["wins"] + (f' wins from {wk["races"]} races' if wk.get("races") else " race wins")
+            if wk.get("championships"):
+                rec += f' · {wk["championships"]} championships'
+            facts += f'<div class="fact"><span>Race record</span><b>{esc(rec)}</b></div>'
 
         spec_rows = []
         if wk.get("transmission"):
