@@ -1,4 +1,5 @@
-/* gallery.js — pulls extra photographs of this model from its Wikimedia Commons category.
+/* gallery.js — pulls extra photographs of this model from its Wikimedia Commons category,
+   scored by resolution, aspect and detail so the best press-style shots lead the grid.
 
    Why client-side: there are ~17,000 model pages and Commons allows one category listing
    per request. Doing it at build time would add roughly an hour to every deploy. Fetching
@@ -73,9 +74,11 @@
         .catch(function () { return files; });
     })
     .then(function (files) {
-      files = files.slice(0, MAX);
+      // Score every candidate instead of taking the category's first files. 50 titles is
+      // the API ceiling for one imageinfo call, and one call is all the scoring costs.
+      files = files.slice(0, 50);
       if (!files.length) throw new Error('empty');
-      return jsonp('action=query&prop=imageinfo&iiprop=extmetadata|url&iiurlwidth=640&titles=' +
+      return jsonp('action=query&prop=imageinfo&iiprop=extmetadata|url|size&iiurlwidth=640&titles=' +
                    encodeURIComponent(files.join('|')))
         .then(function (info) { return { files: files, info: info }; });
     })
@@ -88,9 +91,36 @@
         meta[p.title] = {
           artist: strip((ex.Artist || {}).value) || 'Unknown photographer',
           licence: strip((ex.LicenseShortName || {}).value) || 'see file page',
-          page: ii.descriptionurl || ('https://commons.wikimedia.org/wiki/' + encodeURIComponent(p.title))
+          page: ii.descriptionurl || ('https://commons.wikimedia.org/wiki/' + encodeURIComponent(p.title)),
+          w: ii.width || 0, h: ii.height || 0, bytes: ii.size || 0
         };
       });
+
+      // Press-style shot preference: high resolution, landscape framing, real detail.
+      // Sharpness is approximated by JPEG bytes per pixel - a soft or heavily
+      // compressed frame carries measurably fewer bytes than a crisp one.
+      function score(m) {
+        if (!m || !m.w || !m.h) return 0;
+        if (m.w < 640 || m.h < 400) return 0;              // below hero quality
+        var res = Math.min(m.w, 2400) / 2400;              // resolution, capped
+        var r = m.w / m.h, asp;
+        if (r >= 1.2 && r <= 1.9) asp = 1;                 // classic press landscape
+        else if (r > 1.9) asp = Math.max(0.4, 1 - (r - 1.9) / 2); // panorama
+        else if (r >= 1) asp = 0.75;                       // near-square
+        else asp = 0.35;                                   // portrait
+        var bpp = m.bytes ? m.bytes / (m.w * m.h) : 0;
+        var sharp = bpp ? 0.8 + Math.min(bpp / 0.5, 1) * 0.2 : 0.85;
+        return res * asp * sharp;
+      }
+      var ranked = res.files
+        .map(function (f) { return { f: f, s: score(meta[f]) }; })
+        .filter(function (x) { return x.s > 0; })
+        .sort(function (a, b) { return b.s - a.s; })
+        .slice(0, MAX)
+        .map(function (x) { return x.f; });
+      // If Commons returned no usable size metadata, fall back to the old behaviour
+      // rather than an empty gallery.
+      res.files = ranked.length ? ranked : res.files.slice(0, MAX);
 
       grid.innerHTML = res.files.map(function (f) {
         var name = f.replace(/^File:/, '').replace(/\.[^.]+$/, '');
