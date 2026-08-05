@@ -173,6 +173,18 @@ def fetch_one(t):
                 if part:
                     comp[part] = comp.get(part, 0) + 1
     row["components"] = sorted(comp.items(), key=lambda kv: -kv[1])[:6]
+    # The narratives are the product: real owners describing real failures, public record.
+    # Keep three substantial ones per model-year for the "what owners say" section.
+    quotes = []
+    for rr in (c.get("results") or []):
+        tx = (rr.get("summary") or "").strip()
+        if 120 <= len(tx) <= 900 and not tx.isupper():
+            quotes.append(tx[:420])
+        elif 120 <= len(tx) <= 900:
+            quotes.append(tx[:420].capitalize())
+        if len(quotes) == 3:
+            break
+    row["quotes"] = quotes
 
     rc = get(f"{NHTSA}/recalls/recallsByVehicle?make={mk}&model={mo}&modelYear={yr}")
     recalls = []
@@ -259,6 +271,9 @@ def main():
         for part, n in r["components"]:
             con.execute("INSERT INTO complaints(my_id,component,count,sample) VALUES(?,?,?,?)",
                         (my, part, n, None))
+        for q in r.get("quotes", []):
+            con.execute("INSERT INTO complaints(my_id,component,count,sample) VALUES(?,?,?,?)",
+                        (my, "__quote__", 0, q))
         for x in r["recalls"]:
             con.execute("""INSERT INTO recalls(my_id,campaign,date,component,summary,severe)
                            VALUES(?,?,?,?,?,?)""",

@@ -300,7 +300,9 @@ def gen_model_year(con, r, all_rows):
     name = f"{year} {make} {model}"
     url = url_my(r)
     canon = ORIGIN + url
-    comps = con.execute("SELECT component, count, sample FROM complaints WHERE my_id=? ORDER BY count DESC LIMIT 8", (r["my_id"],)).fetchall()
+    comps = con.execute("SELECT component, count, sample FROM complaints WHERE my_id=? AND component!='__quote__' ORDER BY count DESC LIMIT 8", (r["my_id"],)).fetchall()
+    quotes = [q["sample"] for q in con.execute(
+        "SELECT sample FROM complaints WHERE my_id=? AND component='__quote__' LIMIT 3", (r["my_id"],))]
     recalls = con.execute("SELECT * FROM recalls WHERE my_id=? ORDER BY date", (r["my_id"],)).fetchall()
     curve = json.loads(r["cost_curve"] or "[]")
     reasons = json.loads(r["reasons"] or "[]")
@@ -323,6 +325,28 @@ def gen_model_year(con, r, all_rows):
     comp_html = f"""<div class="card"><h2>Owner complaints: {(r['complaint_count'] or 0):,} filed with NHTSA</h2>
 <p>Complaints per year on the road: <span class="num">{r['complaints_per_year'] or 'n/a'}</span></p>
 <div class="chart">{svg_bars([(c['component'], c['count']) for c in comps])}</div>{comp_note}</div>"""
+
+    # what owners actually say - verbatim narratives from the federal complaint record,
+    # and the live conversation elsewhere. Not Wikipedia, not us: owners.
+    q_html = ""
+    if quotes:
+        q_html = ('<div class="card"><h2>What owners say</h2>'
+                  '<p style="font-size:13px;color:var(--faint)">Verbatim reports filed with the United States '
+                  'safety regulator (NHTSA) by owners of this exact model year. Public record.</p>'
+                  + "".join(f'<blockquote class="owner-q">{esc(q.lower().capitalize() if q.isupper() else q)}'
+                            f'{"…" if len(q) >= 420 else ""}</blockquote>' for q in quotes)
+                  + '</div>')
+    import urllib.parse as _u
+    _q = _u.quote(f'{r["make"]} {r["model"]} {year}')
+    _qr = _u.quote(f'{r["make"]} {r["model"]}')
+    conv_html = (f'<div class="card"><h2>The conversation</h2>'
+                 f'<p style="font-size:13px;color:var(--faint)">What the community is saying right now.</p>'
+                 f'<div class="rel-grid">'
+                 f'<a href="https://www.reddit.com/search/?q={_qr}" rel="nofollow noopener" target="_blank">Reddit owner threads<small>r/cars, r/whatcarshouldibuy and more</small></a>'
+                 f'<a href="https://www.youtube.com/results?search_query={_q}+review" rel="nofollow noopener" target="_blank">Video reviews<small>YouTube, long-term and road tests</small></a>'
+                 f'<a href="https://www.google.com/search?q={_qr}+owners+forum" rel="nofollow noopener" target="_blank">Owner forums<small>model-specific communities</small></a>'
+                 f'</div></div>')
+    comp_html += q_html + conv_html
 
     # recalls block
     rec_rows = "".join(
