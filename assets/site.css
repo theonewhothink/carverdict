@@ -531,3 +531,14 @@ a.lib-card .ph.noimg svg{width:56%}
 
 .owner-q{margin:10px 0;padding:10px 14px;border-left:3px solid var(--brand);background:var(--card2);
   border-radius:0 10px 10px 0;font-size:14px;color:var(--muted);font-style:italic}
+.story-list{margin:18px 0;padding:0;list-style:none;counter-reset:st}
+.story-list li{counter-increment:st;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)}
+.story-list li::before{content:counter(st);font-size:20px;font-weight:800;color:var(--faint);min-width:34px;text-align:right}
+.story-list li a{flex:1;display:block;padding:13px 0;color:var(--text)}
+.story-list li a small{display:block;color:var(--faint);font-size:13px}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.cmp-side{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.cmp-score{font-size:44px;font-weight:800;margin:6px 0}
+.cmp-score small{font-size:18px;color:var(--faint)}
+.cmp-side ul{margin:12px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+@media(max-width:700px){.cmp-grid{grid-template-columns:1fr}}
