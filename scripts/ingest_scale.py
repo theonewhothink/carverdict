@@ -68,6 +68,55 @@ def base_model(name):
     return re.sub(r"\s{2,}", " ", n).strip(" -")
 
 
+# The cars people actually search, per marque. With a small budget the round-robin used to
+# pick alphabetically - Toyota became the 4Runner and the Camry vanished. Priority names are
+# taken first; anything unlisted follows alphabetically after them.
+PRIORITY = {
+ "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Tacoma", "Prius", "4Runner", "Sienna"],
+ "Honda": ["Civic", "Accord", "CR-V", "Pilot", "Odyssey", "HR-V"],
+ "Ford": ["F-150", "F150", "Escape", "Explorer", "Mustang", "Focus", "Fusion", "Edge"],
+ "Chevrolet": ["Silverado", "Equinox", "Malibu", "Tahoe", "Traverse", "Cruze", "Bolt EV", "Camaro"],
+ "Nissan": ["Altima", "Rogue", "Sentra", "Pathfinder", "Frontier", "Leaf", "Murano"],
+ "Jeep": ["Grand Cherokee", "Wrangler", "Cherokee", "Compass", "Gladiator"],
+ "Subaru": ["Outback", "Forester", "Crosstrek", "Impreza", "Ascent", "WRX"],
+ "Hyundai": ["Elantra", "Tucson", "Santa Fe", "Sonata", "Kona", "Palisade"],
+ "Kia": ["Sorento", "Sportage", "Telluride", "Forte", "Soul", "Optima"],
+ "BMW": ["3 Series", "330i", "X3", "X5", "5 Series", "530i", "X1"],
+ "Mercedes-Benz": ["C-Class", "C300", "GLC", "E-Class", "E350", "GLE"],
+ "Volkswagen": ["Jetta", "Tiguan", "Atlas", "Golf", "Passat", "ID.4"],
+ "Audi": ["Q5", "A4", "Q7", "A6", "Q3"],
+ "Lexus": ["RX", "RX 350", "ES", "ES 350", "NX", "GX"],
+ "Mazda": ["CX-5", "Mazda3", "3", "CX-9", "CX-30", "MX-5", "MX-5 Miata"],
+ "Dodge": ["Charger", "Challenger", "Durango", "Grand Caravan"],
+ "Ram": ["1500", "2500", "ProMaster"],
+ "GMC": ["Sierra", "Sierra 1500", "Acadia", "Terrain", "Yukon"],
+ "Tesla": ["Model 3", "Model Y", "Model S", "Model X"],
+ "Volvo": ["XC90", "XC60", "XC40", "S60"],
+ "Acura": ["MDX", "RDX", "TLX", "Integra"],
+ "Infiniti": ["Q50", "QX60", "QX80"],
+ "Cadillac": ["Escalade", "XT5", "CT5"],
+ "Buick": ["Enclave", "Encore", "Envision"],
+ "Chrysler": ["Pacifica", "300"],
+ "Porsche": ["911", "Cayenne", "Macan", "Taycan", "Boxster"],
+ "Land Rover": ["Range Rover", "Range Rover Sport", "Defender", "Discovery"],
+ "Jaguar": ["F-Pace", "XE", "F-Type"],
+ "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage"],
+ "Mini": ["Cooper", "Countryman"],
+}
+
+
+def rank(mk, names):
+    """Priority nameplates first (in listed order), then the rest alphabetically."""
+    pri = PRIORITY.get(mk, [])
+
+    def key(n):
+        for i, want in enumerate(pri):
+            if n.lower() == want.lower() or n.lower().startswith(want.lower()):
+                return (0, i, n)
+        return (1, 0, n)
+    return sorted(dict.fromkeys(names), key=key)
+
+
 def plan():
     """Ask EPA which models actually existed per make-year. Guarantees valid names and
     means we never waste NHTSA calls on a car that was not sold that year."""
@@ -83,7 +132,7 @@ def plan():
                 b = base_model(it.get("value", ""))
                 if b and len(b) < 30:
                     names.append(b)
-            by_make.setdefault(mk, {})[y] = sorted(dict.fromkeys(names))
+            by_make.setdefault(mk, {})[y] = rank(mk, names)
     # round-robin across makes so the budget is not eaten by one manufacturer
     depth = 0
     while len(targets) < MODEL_YEAR_BUDGET and depth < 40:

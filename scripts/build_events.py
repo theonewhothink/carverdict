@@ -323,8 +323,9 @@ def index_page(rows):
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>The motoring calendar</h1>
 <p class="sub">{len(rows)} events across {len(countries)} countries — Grands Prix, 24-hour races,
-rallies, concours, auctions and motor shows. {confirmed} have a confirmed date right now;
-the rest show the window they always occupy.</p></div></div>
+rallies, concours, auctions and motor shows. Confirmed dates appear here automatically the
+moment organisers publish them{f" - {confirmed} confirmed so far" if confirmed else ""}; until
+then each event shows the window it always occupies.</p></div></div>
 <div class="wrap">
 <div class="ev-controls">
 <input id="ev-q" type="search" placeholder="Search events, venues, series…" aria-label="Search events">
