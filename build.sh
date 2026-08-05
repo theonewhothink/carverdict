@@ -20,10 +20,15 @@ echo "python: $PY -> $($PY --version)"
 # so bootstrap one; never let a missing image library kill an otherwise good build.
 install_pillow() {
   "$PY" -c "import PIL" 2>/dev/null && { echo "pillow: already present"; return 0; }
-  "$PY" -m pip --version >/dev/null 2>&1 || "$PY" -m ensurepip --user >/dev/null 2>&1 || {
-    curl -sSfL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null &&
-    "$PY" /tmp/get-pip.py --user --quiet >/dev/null 2>&1
+  # A venv always carries its own pip, even when the distro python ships without one.
+  # PYTHONPATH exposes the venv's site-packages to $PY so every generator sees PIL.
+  VENV=/tmp/ogvenv
+  "$PY" -m venv "$VENV" >/dev/null 2>&1 &&
+  "$VENV/bin/pip" install --quiet --disable-pip-version-check pillow >/dev/null 2>&1 && {
+    SITE=$(ls -d "$VENV"/lib/python*/site-packages 2>/dev/null | head -1)
+    [ -n "$SITE" ] && export PYTHONPATH="$SITE${PYTHONPATH:+:$PYTHONPATH}"
   }
+  "$PY" -c "import PIL" 2>/dev/null && return 0
   "$PY" -m pip install --user --quiet --disable-pip-version-check pillow >/dev/null 2>&1 ||
   "$PY" -m pip install --quiet --break-system-packages pillow >/dev/null 2>&1 || return 1
   "$PY" -c "import PIL" 2>/dev/null
