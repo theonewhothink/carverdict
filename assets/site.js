@@ -31,6 +31,29 @@
     return 99;
   }
 
+  /* Enthusiast synonyms: expand nicknames before scoring so "Vette" finds the
+     Corvette and "Bimmer" finds BMW. Both the raw and the expanded query are
+     scored; the better rank wins, so real names are never penalised. */
+  var SYN = {
+    'vette': 'corvette', 'stang': 'mustang',
+    'bimmer': 'bmw', 'beemer': 'bmw', 'beamer': 'bmw',
+    'merc': 'mercedes-benz', 'benz': 'mercedes-benz',
+    'chevy': 'chevrolet', 'vw': 'volkswagen',
+    'lambo': 'lamborghini', 'jag': 'jaguar',
+    'caddy': 'cadillac', 'landy': 'land rover'
+  };
+  function variants(v) {
+    var out = [v];
+    var swapped = v.split(/\s+/).map(function (w) { return SYN[w] || w; }).join(' ');
+    if (swapped !== v) out.push(swapped);
+    return out;
+  }
+  function best(name, vs) {
+    var b = 99, i, s;
+    for (i = 0; i < vs.length; i++) { s = score(name, vs[i]); if (s < b) b = s; }
+    return b;
+  }
+
   function render(rows) {
     if (!rows.length) {
       out.innerHTML = '<div class="q-none">' + (q.getAttribute('data-none') || 'No matches') + '</div>';
@@ -55,14 +78,14 @@
     if (v.length < 2) { out.hidden = true; return; }
     T = setTimeout(function () {
       load(function () {
-        var hits = [], i, sc;
+        var hits = [], i, sc, vs = variants(v);
         for (i = 0; i < BRANDS.length; i++) {
-          sc = score(BRANDS[i].n, v);
+          sc = best(BRANDS[i].n, vs);
           if (sc < 4) hits.push({ kind: 'brand', sc: sc - 10, n: BRANDS[i].n, s: BRANDS[i].s, c: BRANDS[i].c });
         }
         for (i = 0; i < MODELS.length; i++) {
-          sc = score(MODELS[i].n, v);
-          if (sc > 3) sc = score(MODELS[i].b + ' ' + MODELS[i].n, v);
+          sc = best(MODELS[i].n, vs);
+          if (sc > 3) sc = best(MODELS[i].b + ' ' + MODELS[i].n, vs);
           if (sc < 4) hits.push({ kind: 'model', sc: sc, n: MODELS[i].n, b: MODELS[i].b, s: MODELS[i].s, y: MODELS[i].y });
           if (hits.length > 400) break;
         }
