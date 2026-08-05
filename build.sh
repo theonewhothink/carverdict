@@ -101,6 +101,7 @@ INGEST_BUDGET="${INGEST_BUDGET:-200}" "$PY" scripts/ingest_scale.py || echo "WAR
 "$PY" scripts/build_library.py
 "$PY" scripts/build_engage.py
 "$PY" scripts/build_events.py || echo "WARNING: events calendar skipped"
+"$PY" scripts/build_stories.py || echo "WARNING: data stories skipped"
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
