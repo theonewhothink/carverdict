@@ -97,6 +97,58 @@ def clean(kind, b):
     return v
 
 
+# Currency label -> symbol for the "Price when new" fact. Anything unmapped renders
+# as "12,345 <currency name>" - honest, if less pretty.
+CURRENCY = {"United States dollar": "US$", "euro": "\u20ac", "pound sterling": "\u00a3",
+            "Japanese yen": "\u00a5", "Swiss franc": "CHF ", "Canadian dollar": "CA$",
+            "Australian dollar": "A$", "Indian rupee": "\u20b9", "renminbi": "CN\u00a5",
+            "South Korean won": "\u20a9", "Russian ruble": "\u20bd",
+            "Deutsche Mark": "DM ", "French franc": "FF ", "Italian lira": "\u20a4",
+            "Swedish krona": "SEK ", "Brazilian real": "R$", "Mexican peso": "MX$"}
+
+MSRP_TPL = """SELECT ?i ?v ?unitLabel WHERE {
+  ?i wdt:P31 wd:%(cls)s ; p:P2284/psv:P2284 ?n .
+  ?n wikibase:quantityAmount ?v ; wikibase:quantityUnit ?unit .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}"""
+
+
+def harvest_msrp(specs):
+    """Launch price (P2284) with its currency unit -> a formatted "Price when new" string.
+    Wikidata's price claims need the statement node (p:/psv:) because wdt: drops the unit,
+    and a bare number without a currency is meaningless to a reader."""
+    n = 0
+    for cls in CLASSES:
+        q = MSRP_TPL % {"cls": cls}
+        try:
+            rows = _query(q)
+        except Exception as e:
+            print(f"  msrp       class {cls} FAILED ({type(e).__name__})")
+            time.sleep(2)
+            continue
+        for b in rows:
+            qid = b["i"]["value"].rsplit("/", 1)[-1]
+            unit = (b.get("unitLabel") or {}).get("value", "").strip()
+            if not unit or (unit.startswith("Q") and unit[1:].isdigit()):
+                continue                      # unresolved or dimensionless: not a price
+            try:
+                amt = float(b["v"]["value"])
+            except ValueError:
+                continue
+            if amt <= 0:
+                continue
+            num = f"{amt:,.0f}" if amt % 1 == 0 else f"{amt:,.2f}"
+            sym = CURRENCY.get(unit)
+            val = f"{sym}{num}" if sym else f"{num} {unit}"
+            slot = specs.setdefault(qid, {})
+            if "msrp" in slot:
+                continue
+            slot["msrp"] = val
+            n += 1
+        time.sleep(0.5)
+    print(f"  msrp       {n:6} models")
+
+
 def harvest_logos():
     """Marque logos (P154) — a wordmark on white beats a faded photo of a factory."""
     q = ("SELECT ?m ?mLabel ?logo WHERE { ?i wdt:P31 wd:Q3231690 ; wdt:P176 ?m . "
@@ -143,6 +195,7 @@ def main():
         print(f"  {key:11} {n:6} models")
         time.sleep(1)
 
+    harvest_msrp(specs)
     harvest_logos()
 
     if not specs:

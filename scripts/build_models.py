@@ -332,9 +332,11 @@ def main():
         if sp.get("built"):
             facts += f'<div class="fact"><span>Units built</span><b>{int(sp["built"]):,}</b></div>'
         # what it cost new, and what age has done to that number since
-        if wk.get("msrp"):
-            facts += f'<div class="fact"><span>Price when new</span><b>{esc(wk["msrp"])}</b></div>'
-            usd = _msrp_num(wk["msrp"])
+        # Infobox price first (richer, often carries the year); Wikidata P2284 fills the gaps.
+        msrp = wk.get("msrp") or sp.get("msrp")
+        if msrp:
+            facts += f'<div class="fact"><span>Price when new</span><b>{esc(msrp)}</b></div>'
+            usd = _msrp_num(msrp)
             yr = re.search(r"(19|20)\d\d", str(wk.get("production") or m["y"] or ""))
             # A depreciation curve is honest for a Camry and a lie for a collector car.
             # Skip anything older than 15 years or with a race record - those appreciate,
