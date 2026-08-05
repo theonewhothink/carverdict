@@ -274,6 +274,56 @@ def main():
         print(f"PLAN OK: {len(selected)} model pages planned across {len(index)} brands")
         return
 
+    # ---- sideways mesh: cross-brand rivals of the same era ----
+    # A model page used to link only up (its brand) and down (its siblings). The mesh
+    # adds sideways links: contemporaries from other marques, introduced within three
+    # years. Famous nameplates and photographed cars rank first; a CRC tiebreaker
+    # spreads the picks so the same six cars do not appear on every page; at most two
+    # per rival marque. Candidates come from the selected set, so every link resolves.
+    import zlib
+
+    def _era_year(m2):
+        """Introduction year for the era mesh: catalogue year first, then the harvested
+        Wikipedia production span, then Wikidata facts — whichever exists."""
+        ym = re.search(r"(18|19|20)\d\d", str(m2["y"] or ""))
+        if not ym:
+            wk2 = WIKI.get(m2["q"]) or {}
+            sp2 = SPECS.get(m2["q"]) or {}
+            ym = re.search(r"(18|19|20)\d\d",
+                           str(wk2.get("production") or sp2.get("started") or ""))
+        return int(ym.group(0)) if ym else None
+
+    year_buckets = defaultdict(list)
+    for b2, m2, bs2, ms2 in selected:
+        y2 = _era_year(m2)
+        if y2:
+            year_buckets[y2].append((b2, m2, bs2, ms2, y2))
+
+    def rivals_of(b, m, ms):
+        y0 = _era_year(m)
+        if not y0:
+            return []
+        cand = []
+        for y in range(y0 - 3, y0 + 4):
+            for b2, m2, bs2, ms2, y2 in year_buckets.get(y, ()):
+                if b2 == b:
+                    continue
+                cand.append((0 if m2["n"].lower() in FEATURED else 1,
+                             0 if m2["p"] else 1, abs(y2 - y0),
+                             zlib.crc32(f"{ms}:{bs2}/{ms2}".encode()) & 0xffff,
+                             b2, m2, bs2, ms2, y2))
+        cand.sort(key=lambda c: c[:4])
+        out, per = [], defaultdict(int)
+        for c in cand:
+            b2 = c[4]
+            if per[b2] >= 2:
+                continue
+            per[b2] += 1
+            out.append(c[4:])
+            if len(out) == 6:
+                break
+        return out
+
     # ---- pass 2: render ----
     for b, m, bs, ms in selected:
         url = f"/library/{bs}/{ms}/"
@@ -283,6 +333,17 @@ def main():
             f'<a href="/library/{bs}/{index[bs][s["n"]]}/">{esc(s["n"])}'
             + (f'<small>{s["y"]}</small>' if s["y"] else "<small>&nbsp;</small>") + "</a>"
             for s in sib) or '<p class="muted">No other catalogued models yet.</p>'
+        riv = rivals_of(b, m, ms)
+        rivals_card = ""
+        if riv:
+            rivals_html = "".join(
+                f'<a href="/library/{bs2}/{ms2}/">{esc(m2["n"])}'
+                f'<small>{esc(b2)}{f" · {y2}" if y2 else ""}</small></a>'
+                for b2, m2, bs2, ms2, y2 in riv)
+            rivals_card = ('<div class="card"><h2>Rivals of its era</h2>'
+                           f'<div class="rel-grid">{rivals_html}</div>'
+                           '<p class="lib-note">Contemporaries from other marques, '
+                           'introduced within three years of this car.</p></div>')
         made += 1
 
         if m["p"]:
@@ -453,6 +514,7 @@ re-priced for your country. Verdicts are published per model year as the data is
 <a href="/cars/">browse them live</a>, or open the
 <a href="/calculators/">true-cost calculator</a> to price any year yourself.</p></div>
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
+{rivals_card}
 </div>"""
 
         jsonld = json.dumps({"@context": "https://schema.org", "@type": "Vehicle", "name": m["n"],
