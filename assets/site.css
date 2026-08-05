@@ -528,3 +528,6 @@ a.lib-card .ph.noimg svg{width:56%}
 .rel-grid a:hover,.brand-tile:hover,.pp-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);text-decoration:none}
 @media (prefers-reduced-motion:reduce){.hh-shot img{animation:none}}
 .fact .est{display:block;font-size:11px;color:var(--faint);font-weight:400}
+
+.owner-q{margin:10px 0;padding:10px 14px;border-left:3px solid var(--brand);background:var(--card2);
+  border-radius:0 10px 10px 0;font-size:14px;color:var(--muted);font-style:italic}
