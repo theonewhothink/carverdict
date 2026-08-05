@@ -36,7 +36,7 @@
   function card(r) {
     var when = r.dh
       ? '<span class="ev-when ok">' + esc(r.dh) + '</span>'
-      : '<span class="ev-when">' + esc(r.mo) + ' · ' + esc(r.w) + '</span>';
+      : '<span class="ev-when">' + (r.w.toLowerCase().indexOf(r.mo.toLowerCase()) === 0 ? esc(r.w) : esc(r.mo) + ' · ' + esc(r.w)) + '</span>';
     return '<a class="ev-card" href="' + r.u + '">' +
       '<span class="ev-cat">' + esc(r.c) + '</span>' +
       '<b>' + esc(r.n) + '</b>' +
