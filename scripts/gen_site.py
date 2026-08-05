@@ -879,7 +879,26 @@ Canonical citation format: "{BRAND} ({CURRENT_YEAR}), {ORIGIN}<page-url>, based 
     (SITE / "sitemap-0.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{shard}</urlset>')
     (SITE / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>{ORIGIN}/sitemap-0.xml</loc><lastmod>{TODAY}</lastmod></sitemap></sitemapindex>')
     (SITE / "ads.txt").write_text("# populate with AdSense line after approval: google.com, pub-XXXX, DIRECT, f08c47fec0942fa0\n")
-    (SITE / "404.html").write_text(page("Not found", "404", ORIGIN + "/404", '<div class="wrap prose"><h1>Page not found</h1><p><a href="/cars/">Browse all data →</a></p></div>'))
+    nf_body = (
+        '<div class="wrap nf">'
+        '<p class="nf-code">404</p>'
+        '<h1>This page took a wrong turn</h1>'
+        '<p class="nf-sub">That address does not match anything in the record. The data is all still here &mdash; '
+        'search any car ever made, or start from a section.</p>'
+        '<div class="searchbox nf-search"><input id="q404" type="search" '
+        'placeholder="Search any car ever made&hellip;" autocomplete="off" aria-label="search" '
+        'data-none="No matches &mdash; try a brand like Toyota or a nickname like Vette">'
+        '<div id="q404-out" hidden></div></div>'
+        '<div class="nf-links">'
+        '<a href="/cars/">Browse ownership data</a>'
+        '<a href="/library/">The model library</a>'
+        '<a href="/stories/">Data stories</a>'
+        '<a href="/compare/">Head to head</a>'
+        '<a href="/events/">Events calendar</a>'
+        '<a href="/calculators/">Calculators</a>'
+        '</div></div>'
+    )
+    (SITE / "404.html").write_text(page("Page not found", "That page is not in the record. Search any car ever made or browse the data.", ORIGIN + "/404", nf_body))
 
 def dup_check(pages):
     """duplicate-paragraph detector: % of <p> blocks appearing on >1 page (excluding boilerplate)."""
