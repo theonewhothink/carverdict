@@ -14,7 +14,8 @@ from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
-from build_library import slug, norm_brand, BRAND_ALIAS, commons_thumb
+from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
+                           is_qid, resolve_qid_brands)
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
@@ -147,10 +148,11 @@ def main():
     known = {}
     for x in data:
         m = (x.get("m") or "").strip()
-        if m:
+        if m and not is_qid(m):
             k = BRAND_ALIAS.get(m, m)
             known[k.lower()] = k
 
+    resolve_qid_brands(data, known)
     brands = defaultdict(list)
     for x in data:
         name = x["n"].strip()
