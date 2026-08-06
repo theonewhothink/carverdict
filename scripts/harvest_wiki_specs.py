@@ -80,9 +80,22 @@ def clean(v):
         unit = parts[1] if len(parts) > 1 else ""
         return f"{num} {unit}".strip()
 
-    v = re.sub(r"\{\{\s*(?:cvt|convert)\s*\|([^{}]*)\}\}", cvt, v, flags=re.I)
-    v = re.sub(r"\{\{\s*(?:nowrap|nobr)\s*\|([^{}]*)\}\}", r"\1", v, flags=re.I)
+    def lst(m):
+        items = [p.strip() for p in m.group(1).split("|")
+                 if p.strip() and "=" not in p.split("}", 1)[0]]
+        return " / ".join(items)
+
+    for _ in range(4):  # innermost-out: nested templates resolve across passes
+        before = v
+        v = re.sub(r"\{\{\s*(?:cvt|convert)\s*\|([^{}]*)\}\}", cvt, v, flags=re.I)
+        v = re.sub(r"\{\{\s*(?:nowrap|nobr)\s*\|([^{}]*)\}\}", r"\1", v, flags=re.I)
+        v = re.sub(r"\{\{\s*(?:unbulleted list|ubl|plainlist|plain list|hlist|flatlist|"
+                   r"bulleted list|cslist|comma separated entries)\s*\|([^{}]*)\}\}",
+                   lst, v, flags=re.I)
+        if v == before:
+            break
     v = re.sub(r"\{\{[^{}]*\}\}", " ", v)                 # drop remaining templates
+    v = v.replace("{{", " ").replace("}}", " ")           # never leak brace fragments
     v = re.sub(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]", r"\1", v)   # [[A|B]] -> B
     v = v.replace("[[", "").replace("]]", "").replace("'''", "").replace("''", "")
     v = re.sub(r"\s*\*\s*", " / ", v)
@@ -99,13 +112,40 @@ def parse_infobox(text):
     out = {}
     for field, keys in FIELDS.items():
         for k in keys:
-            m = re.search(r"\|\s*" + k + r"\s*=\s*(.+?)(?=\n\s*\||\n\}\})", box, re.S | re.I)
+            m = re.search(r"\|\s*" + k + r"\s*=\s*", box, re.I)
             if m:
-                c = clean(m.group(1))
+                c = clean(_capture(box, m.end()))
                 if c:
                     out[field] = c
                     break
     return out
+
+
+def _capture(box, start):
+    """Capture a field value, tracking {{template}} depth so multi-line templates
+    ({{unbulleted list |a |b}}) are kept whole instead of truncated at the next
+    line that happens to start with a pipe."""
+    depth = 0
+    j, n = start, len(box)
+    while j < n:
+        if box.startswith("{{", j):
+            depth += 1
+            j += 2
+            continue
+        if box.startswith("}}", j):
+            if depth == 0:
+                break
+            depth -= 1
+            j += 2
+            continue
+        if box[j] == "\n" and depth == 0:
+            k = j + 1
+            while k < n and box[k] in " \t":
+                k += 1
+            if k < n and (box[k] == "|" or box.startswith("}}", k)):
+                break
+        j += 1
+    return box[start:j]
 
 
 def titles_for(qids):
