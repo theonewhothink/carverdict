@@ -65,7 +65,13 @@ def to_record(b):
     if img:
         photo = urllib.parse.unquote(img.rsplit("/", 1)[-1]).replace("_", " ")
     inc = (b.get("inc") or {}).get("value", "")
-    return {"q": qid, "n": name, "m": (b.get("mLabel") or {}).get("value", ""),
+    # the label service echoes the Q-id when the manufacturer item has no English label;
+    # storing that would render "Mini - Q796364" on the site, so drop it and let the
+    # build infer the marque from the model name instead
+    mk = (b.get("mLabel") or {}).get("value", "").strip()
+    if mk.startswith("Q") and mk[1:].isdigit():
+        mk = ""
+    return {"q": qid, "n": name, "m": mk,
             "p": photo, "y": inc[:4] if inc else ""}
 
 
