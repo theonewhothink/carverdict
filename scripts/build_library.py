@@ -10,7 +10,7 @@ credit + link to the Commons file page on every card. No files copied -> no lice
 """
 import json, os, re, sys, html
 from pathlib import Path
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t, S, LANG_NAMES
@@ -56,8 +56,49 @@ def commons_page(fname):
     return "https://commons.wikimedia.org/wiki/File:" + fname.replace(" ", "_")
 
 
+def is_qid(s):
+    """True for a bare Wikidata identifier like 'Q796364'. The label service returns the
+    Q-id itself when an item has no English label, so these leak in as 'brand names'."""
+    s = (s or "").strip()
+    return bool(re.fullmatch(r"Q\d+", s))
+
+
+def resolve_qid_brands(rows, known):
+    """Wikidata's label service echoes the bare Q-id when a manufacturer item has no
+    English label, so 48 Bugattis were catalogued under a marque literally called
+    "Q2308012". Recover the real marque from the models themselves: inside one Q-id
+    group every name starts with the same word ("Bugatti Veyron", "Bugatti Type 57"),
+    so that word is the brand. Requires a group of at least two models and 60% agreement;
+    anything weaker is left blank for the existing name-inference and catch-all to handle.
+    Mutates rows in place and returns how many were relabelled."""
+    groups = defaultdict(list)
+    for x in rows:
+        if is_qid(x.get("m")):
+            groups[x["m"].strip()].append(x)
+    fixed = 0
+    for qid, members in groups.items():
+        firsts = Counter(x["n"].split()[0] for x in members if x.get("n", "").split())
+        if not firsts:
+            continue
+        word, hits = firsts.most_common(1)[0]
+        if len(members) < 2 or hits / len(members) < 0.6:
+            continue
+        if len(word) < 2 or word.isdigit() or is_qid(word):
+            continue
+        brand = known.get(word.lower(), word)   # canonical casing when we already know it
+        for x in members:
+            x["m"] = brand
+        fixed += len(members)
+    return fixed
+
+
 def norm_brand(m):
     m = (m or "").strip()
+    # An unlabelled manufacturer item comes back as its own Q-id. That is not a marque:
+    # treat it as missing so the model-name inference below can find the real brand
+    # (and, failing that, the honest catch-all bucket is used instead of "Q796364").
+    if is_qid(m):
+        m = ""
     m = BRAND_ALIAS.get(m, m)
     return m if m else "Independent & coachbuilders"
 
@@ -67,9 +108,12 @@ def build_dataset():
     known = {}
     for x in DATA:
         m = (x.get("m") or "").strip()
-        if m:
+        if m and not is_qid(m):
             k = BRAND_ALIAS.get(m, m)
             known[k.lower()] = k
+    n_fixed = resolve_qid_brands(DATA, known)
+    if n_fixed:
+        print(f"  brand labels recovered from unlabelled Wikidata ids: {n_fixed} models")
     brands = defaultdict(list)
     for x in DATA:
         name = x["n"].strip()
