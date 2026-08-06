@@ -69,9 +69,12 @@ PY_EOF
 # the rest of the pipeline needs 12, so the build died at the cap. 450 fits: ingest ~5 min,
 # still 28x the old seed, and the round-robin keeps the most-searched cars covered first.
 # The 20-minute clock covers build AND deploy. 450 model-years left the deploy only ~3
-# minutes and it was killed mid-upload. 200 keeps the whole run near 16 minutes: still
-# 12x the old seed, and the budget can rise once a deploy lands and uploads shrink to diffs.
-INGEST_BUDGET="${INGEST_BUDGET:-200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# minutes and it was killed mid-upload, so the budget was cut to 200 until a deploy landed.
+# Measured 2026-08-06 on build #59e4336d (commit 75d75f4): 12m35s total - 11m48s building,
+# 40s deploying. Uploads are diffs now, so the deploy stage costs under a minute and there
+# is roughly 7 minutes of headroom. 450 costs about 3 minutes more than 200, landing near
+# 15m30s and keeping a safety margin. Raise again only against fresh timing evidence.
+INGEST_BUDGET="${INGEST_BUDGET:-450}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
