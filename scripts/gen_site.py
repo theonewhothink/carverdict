@@ -591,15 +591,28 @@ def gen_cars_index(brands):
             logos = json.loads((ROOT / "data" / "brand_logos.json").read_text())
         except Exception:
             logos = {}
+        _resolve, _is_qid = None, lambda v: False
         try:
             sys.path.insert(0, str(ROOT / "scripts"))
             from build_library import BRAND_ALIAS as _ALIAS
+            from build_library import resolve_qid_brands as _resolve, is_qid as _is_qid
         except Exception:
             _ALIAS = {}
+        # Wikidata returns a bare Q-id when a manufacturer item has no English label.
+        # Recover the real marque exactly as the Library does, so Browse never shows a
+        # tile called "Q2308012" (and never links to a brand page that does not exist).
+        if _resolve:
+            known = {}
+            for x in lib:
+                m0 = (x.get("m") or "").strip()
+                if m0 and not _is_qid(m0):
+                    k0 = _ALIAS.get(m0, m0)
+                    known[k0.lower()] = k0
+            _resolve(lib, known)
         counts = {}
         for x in lib:
             bb = _ALIAS.get((x.get("m") or "").strip(), (x.get("m") or "").strip())
-            if bb:
+            if bb and not _is_qid(bb):
                 counts[bb] = counts.get(bb, 0) + 1
 
         def bslug(t):
