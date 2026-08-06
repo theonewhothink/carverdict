@@ -160,14 +160,33 @@ SEVERE = re.compile(r"air ?bag|brake|steering|fuel|fire|stall|seat belt|electric
 
 
 def fetch_one(t):
+    """Fetch one model-year. Never raises: a single bad response must not kill the run.
+
+    get() returns None on a timeout or an HTTP error, and NHTSA does time out under load.
+    Every read of a response is therefore guarded, and the whole body is wrapped so that
+    one unlucky model-year costs one row rather than the entire ingest. Before this guard
+    a single None response raised AttributeError inside the thread pool, ex.map re-raised
+    it in main(), and build.sh swallowed the traceback as "ingest skipped" - so every
+    deploy since silently shipped the committed seed database instead of fresh federal data.
+    """
+    try:
+        return _fetch_one(t)
+    except Exception as e:                                    # noqa: BLE001 - deliberate
+        r = dict(t)
+        r["error"] = f"{type(e).__name__}: {e}"[:200]
+        return r
+
+
+def _fetch_one(t):
     mk, mo, yr = urllib.parse.quote(t["make"]), urllib.parse.quote(t["model"]), t["year"]
     row = dict(t)
 
     c = get(f"{NHTSA}/complaints/complaintsByVehicle?make={mk}&model={mo}&modelYear={yr}")
+    results = (c.get("results") or []) if isinstance(c, dict) else []
     comp = {}
-    if c:
-        row["complaints"] = c.get("count") or len(c.get("results") or [])
-        for r in (c.get("results") or []):
+    if isinstance(c, dict):
+        row["complaints"] = c.get("count") or len(results)
+        for r in results:
             for part in (r.get("components") or "").split(","):
                 part = part.strip()
                 if part:
@@ -176,7 +195,7 @@ def fetch_one(t):
     # The narratives are the product: real owners describing real failures, public record.
     # Keep three substantial ones per model-year for the "what owners say" section.
     quotes = []
-    for rr in (c.get("results") or []):
+    for rr in results:
         tx = (rr.get("summary") or "").strip()
         if 120 <= len(tx) <= 900 and not tx.isupper():
             quotes.append(tx[:420])
@@ -188,7 +207,7 @@ def fetch_one(t):
 
     rc = get(f"{NHTSA}/recalls/recallsByVehicle?make={mk}&model={mo}&modelYear={yr}")
     recalls = []
-    if rc:
+    if isinstance(rc, dict):
         for r in (rc.get("results") or [])[:12]:
             part = r.get("Component") or ""
             recalls.append({"campaign": r.get("NHTSACampaignNumber") or "",
@@ -201,7 +220,7 @@ def fetch_one(t):
     menu = get(f"{EPA}/menu/options?year={yr}&make={mk}&model={mo}")
     veh = None
     its = items(menu)
-    if its:
+    if its and isinstance(its[0], dict) and its[0].get("value"):
         veh = get(f"{EPA}/{its[0].get('value')}")
     row["epa"] = veh
     return row
@@ -225,6 +244,19 @@ def main():
             rows.append(r)
             if i % 250 == 0:
                 print(f"  fetched {i}/{len(targets)}  ({time.time()-t0:.0f}s)")
+
+    errs = [r for r in rows if r.get("error")]
+    if errs:
+        # Loud, not silent: build.sh swallows a non-zero exit, so the only way a broken
+        # ingest gets noticed is if it says so in the build log in plain words.
+        kinds = {}
+        for r in errs:
+            k = r["error"].split(":")[0]
+            kinds[k] = kinds.get(k, 0) + 1
+        print(f"INGEST WARNING: {len(errs)}/{len(rows)} model-years failed to fetch "
+              f"({', '.join(f'{k} x{v}' for k, v in sorted(kinds.items()))}); "
+              f"first: {errs[0].get('make')} {errs[0].get('model')} {errs[0].get('year')} "
+              f"-> {errs[0]['error']}")
 
     got = [r for r in rows if r.get("complaints") or r.get("recalls") or r.get("epa")]
     print(f"fetched {len(rows)}; {len(got)} carry data ({time.time()-t0:.0f}s)")
