@@ -171,6 +171,188 @@ def harvest_logos():
     print(f"  logos      {len(out):6} marques")
 
 
+
+# ---------------------------------------------------------------- image quality
+# Wikidata often carries several P18 images for one car, and the harvester used to keep
+# whichever row arrived first: a 640px interior shot could beat a Featured Picture of the
+# car itself. This scores every candidate against the Commons file record and rewrites
+# data/car_library.json with the winner, so the library grid and every model page show
+# the best available photograph. Time-boxed and fail-safe: on a slow or broken API the
+# existing photographs are left exactly as they are.
+COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+
+# Filename words that mean "this is not a photograph of the whole car".
+PENALTY = {"interior": 45, "dashboard": 45, "dash ": 30, "cockpit": 40, "engine": 40,
+           "motor ": 25, "badge": 50, "logo": 55, "emblem": 50, "wheel": 30, "seat": 35,
+           "boot": 25, "trunk": 25, "headlamp": 35, "headlight": 35, "taillight": 35,
+           "tail light": 35, "gauge": 35, "steering": 40, "chassis": 30, "cutaway": 25,
+           "diagram": 45, "drawing": 40, "blueprint": 45, "sketch": 35, "poster": 30,
+           "advert": 35, "brochure": 35, "stamp": 40, "model car": 45, "toy": 45,
+           "scale model": 45, "miniature": 40, "wreck": 30, "crash": 30, "junkyard": 30,
+           "scrapyard": 30, "rusty": 25, "burn": 25, "engine bay": 40}
+BONUS = {"front": 8, "side": 6, "rear": 4, "exterior": 8, "profile": 4}
+
+
+def score_image(name, w, h, assessments):
+    """Higher is better. Community assessment dominates, resolution breaks ties, and
+    filenames that describe a part rather than the car are pushed down."""
+    n = (name or "").lower()
+    a = (assessments or "").lower()
+    s = 0.0
+    if "featured" in a:
+        s += 100
+    if "quality" in a:
+        s += 60
+    if "valued" in a:
+        s += 30
+    w, h = int(w or 0), int(h or 0)
+    s += min((w * h) / 1e6, 16.0) * 1.5        # up to +24: a tiebreaker, not a trump card
+    if w and w < 800:
+        s -= 60                                 # too small to run at 1100px on a model page
+    if w and h and 0.45 <= h / w <= 1.10:
+        s += 10                                 # landscape-ish: how a car is normally shot
+    if n.endswith(".svg"):
+        s -= 80                                 # a diagram or wordmark, never a car photo
+    for word, pen in PENALTY.items():
+        if word in n:
+            s -= pen
+    for word, bon in BONUS.items():
+        if word in n:
+            s += bon
+    return s
+
+
+MULTI_TPL = """SELECT ?i (GROUP_CONCAT(?img; separator="|") AS ?imgs) WHERE {
+  ?i wdt:P31 wd:%(cls)s ; wdt:P18 ?img .
+} GROUP BY ?i HAVING(COUNT(?img) > 1)"""
+
+
+def _fname(url):
+    """P18 value -> Commons file name. The claim is a Special:FilePath URL."""
+    part = urllib.parse.unquote(url.rsplit("/", 1)[-1])
+    return part.replace("_", " ").strip()
+
+
+def _commons_meta(names, timeout=60):
+    """imageinfo for up to 50 files in one call. Returns {name: (w, h, assessments)}."""
+    params = {"action": "query", "format": "json", "prop": "imageinfo",
+              "iiprop": "size|extmetadata", "iiextmetadatafilter": "Assessments",
+              "titles": "|".join("File:" + n for n in names)}
+    req = urllib.request.Request(COMMONS_API + "?" + urllib.parse.urlencode(params),
+                                 headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        pages = json.loads(r.read().decode()).get("query", {}).get("pages", {})
+    out = {}
+    for p in pages.values():
+        title = p.get("title", "")[5:]          # strip the "File:" prefix
+        ii = (p.get("imageinfo") or [{}])[0]
+        ext = ii.get("extmetadata") or {}
+        out[title] = (ii.get("width", 0), ii.get("height", 0),
+                      (ext.get("Assessments") or {}).get("value", ""))
+    return out
+
+
+def harvest_image_quality(budget_s=None):
+    """Pick the best P18 image for every model that has more than one, and write the
+    winner back into data/car_library.json. Never raises, never blocks the build."""
+    import os
+    budget = float(budget_s if budget_s is not None else os.environ.get("IMG_SCORE_BUDGET", 150))
+    started = time.monotonic()
+    lib_path = ROOT / "data" / "car_library.json"
+    try:
+        lib = json.loads(lib_path.read_text())
+    except Exception as e:
+        print(f"  imagequality skipped ({type(e).__name__}: no catalogue to patch)")
+        return
+    known = {r.get("q") for r in lib if r.get("q")}
+
+    cands = {}
+    for cls in CLASSES:
+        if time.monotonic() - started > budget:
+            break
+        try:
+            rows = _query(MULTI_TPL % {"cls": cls}, timeout=90)
+        except Exception as e:
+            print(f"  imagequality class {cls} FAILED ({type(e).__name__})")
+            time.sleep(2)
+            continue
+        for b in rows:
+            qid = b["i"]["value"].rsplit("/", 1)[-1]
+            if qid not in known or qid in cands:
+                continue
+            files = [_fname(u) for u in b["imgs"]["value"].split("|") if u]
+            files = [f for f in dict.fromkeys(files) if f]
+            if len(files) > 1:
+                cands[qid] = files[:8]          # eight candidates is already generous
+        time.sleep(0.4)
+    if not cands:
+        print("  imagequality      0 models with a choice to make")
+        return
+
+    names = sorted({f for fs in cands.values() for f in fs})
+    meta, batches = {}, 0
+    for i in range(0, len(names), 50):
+        if time.monotonic() - started > budget:
+            print(f"  imagequality time budget hit after {batches} batches; scoring what we have")
+            break
+        try:
+            meta.update(_commons_meta(names[i:i + 50]))
+            batches += 1
+        except Exception as e:
+            print(f"  imagequality batch {batches} FAILED ({type(e).__name__})")
+            time.sleep(1)
+        time.sleep(0.15)
+    if not meta:
+        print("  imagequality      no Commons metadata; photographs left unchanged")
+        return
+
+    best, changed = {}, 0
+    for qid, files in cands.items():
+        scored = [(score_image(f, *meta[f]), f) for f in files if f in meta]
+        if not scored:
+            continue
+        best[qid] = max(scored)[1]
+    by_q = {r["q"]: r for r in lib if r.get("q")}
+    for qid, winner in best.items():
+        row = by_q.get(qid)
+        if row is not None and row.get("p") != winner:
+            row["p"] = winner
+            changed += 1
+    if changed:
+        lib_path.write_text(json.dumps(lib, ensure_ascii=False, separators=(",", ":")))
+    (ROOT / "data" / "image_best.json").write_text(
+        json.dumps(best, ensure_ascii=False, separators=(",", ":")))
+    print(f"  imagequality {len(best):6} models scored ({len(meta)} files, "
+          f"{batches} batches); {changed} photograph(s) upgraded")
+
+
+# Ordered best to worst. Dimensions are held constant where the point is the filename,
+# so the assertion tests the ranking rule and not an accident of resolution.
+SELFTEST = [
+    ("Porsche 911 front three quarter.jpg", 4000, 2600, "featured picture"),
+    ("Porsche 911 side.jpg", 4000, 2600, "quality image"),
+    ("Porsche 911 rear.jpg", 4000, 2600, "valued image"),
+    ("Porsche 911.jpg", 4000, 2600, ""),
+    ("Porsche 911.jpg", 1600, 1050, ""),
+    ("Porsche 911 wheel.jpg", 4000, 2600, ""),
+    ("Porsche 911 interior.jpg", 4000, 2600, ""),
+    ("Porsche 911 badge.jpg", 4000, 2600, ""),
+    ("Porsche 911 tiny.jpg", 400, 300, ""),
+    ("Porsche 911 logo.svg", 4000, 2600, ""),
+]
+
+
+def selftest():
+    """Ranking is the whole point, so assert the order rather than eyeball it."""
+    scores = [(score_image(*c), c[0]) for c in SELFTEST]
+    for i in range(len(scores) - 1):
+        assert scores[i][0] > scores[i + 1][0], f"{scores[i]} should outrank {scores[i+1]}"
+    for s, n in scores:
+        print(f"  {s:8.1f}  {n}")
+    print("SELFTEST OK: image ranking holds")
+    return 0
+
+
 def main():
     specs, failed = {}, []
     for key, (prop, kind) in FIELDS.items():
@@ -197,6 +379,7 @@ def main():
 
     harvest_msrp(specs)
     harvest_logos()
+    harvest_image_quality()
 
     if not specs:
         print("SPECS SKIPPED: no data retrieved; leaving any existing file untouched")
@@ -209,4 +392,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(selftest() if "--selftest" in sys.argv else main())
