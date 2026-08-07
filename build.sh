@@ -84,7 +84,11 @@ INGEST_BUDGET="${INGEST_BUDGET:-450}" "$PY" scripts/ingest_scale.py || echo "WAR
 
 # Per-model technical facts (engine, mass, top speed, units built, Commons gallery category).
 # Optional: if this fails the model pages simply render without a specifications table.
-"$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped"
+# IMG_SCORE_BUDGET caps the Commons image-quality pass (Wikidata P18 candidates scored
+# against the Commons file record). 90 seconds is the worst case it can add to a build
+# that already lands near 15m30s of the 20-minute build+deploy cap; the pass stops on the
+# clock and keeps whatever it scored, so a slow Commons day cannot cost the deploy.
+IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped"
 
 # Real specifications — engine, power output, production years, kerb weight, transmission,
 # layout, assembly — parsed from Wikipedia infoboxes (CC BY-SA). Batched 50 pages per
