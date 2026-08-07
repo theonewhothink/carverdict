@@ -74,7 +74,12 @@ PY_EOF
 # 40s deploying. Uploads are diffs now, so the deploy stage costs under a minute and there
 # is roughly 7 minutes of headroom. 450 costs about 3 minutes more than 200, landing near
 # 15m30s and keeping a safety margin. Raise again only against fresh timing evidence.
-INGEST_BUDGET="${INGEST_BUDGET:-450}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# 2026-08-08: no deploy has landed since 2026-08-06. Both 08-07 pushes (Commons image
+# scoring and its 90s cap) went out and every live page is still stamped 2026-08-06, so the
+# 450-budget build is dying on the 20-minute build+deploy cap. Stepped back to 200, the last
+# budget with a measured landed deploy (12m35s); the 90s image pass still leaves ~5 minutes
+# spare. Raise again only after a deploy lands and a fresh timing is recorded here.
+INGEST_BUDGET="${INGEST_BUDGET:-200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
