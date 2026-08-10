@@ -97,6 +97,28 @@ def _load_fuel():
 FUEL = _load_fuel()
 
 
+def _length(v):
+    """Render Wikidata P2043 with the unit it was actually recorded in.
+
+    `wdt:P2043` returns a bare number: the unit lives on the statement node and is
+    dropped, so every model page printed "4805 m" for a 4,805 mm Camry - a Camry
+    the length of fifty buses. Car items record length in millimetres, centimetres
+    or metres, and for a road vehicle the three ranges cannot overlap (a 12 m bus
+    is 1,200 cm is 12,000 mm), so the magnitude identifies the unit unambiguously.
+    """
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    if f <= 0:
+        return None
+    if f >= 1000:                      # millimetres
+        return f"{f:,.0f} mm"
+    if f >= 100:                       # centimetres
+        return f"{f:,.0f} cm"
+    return f"{f:g} m"                  # metres
+
+
 def _msrp_num(v):
     """'US$139,900' / '£113,000 (2021)' -> a USD-ish number for the depreciation model,
     or None when the currency is not dollars (an honest model beats a wrong conversion)."""
@@ -440,8 +462,9 @@ def main():
             spec_rows.append(("Top speed", f'{sp["top_speed"]:g} km/h'))
         if wk.get("wheelbase"):
             spec_rows.append(("Wheelbase", wk["wheelbase"]))
-        if sp.get("length"):
-            spec_rows.append(("Length", f'{sp["length"]:g} m'))
+        length = _length(sp.get("length"))
+        if length:
+            spec_rows.append(("Length", length))
         assembly = wk.get("assembly") or sp.get("made_in")
         if assembly:
             spec_rows.append(("Assembly", assembly))
