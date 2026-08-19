@@ -5,9 +5,20 @@ The problem this fixes: data/cars.sqlite shipped with 16 model-years and 8 fuel 
 site promising "true ownership costs from public data" was running on a seed. The original
 ingest worked but was only ever pointed at a handful of cars.
 
-Design: the build container has network and ~20 usable minutes, so the whole dataset is
-rebuilt from source every deploy rather than persisted. Nothing to migrate, nothing to
-drift, and a failed fetch just means that model-year is skipped this run.
+Design: the dataset ACCUMULATES. Every run opens the existing database, plans only
+model-years it does not already hold, and merges what it fetches back in. Coverage
+therefore grows run over run instead of resetting to whatever one build window could
+fetch. A failed fetch costs that model-year this run and nothing else.
+
+This replaces the original "rebuild everything on every deploy" design, which capped the
+site permanently: a Cloudflare build has ~20 usable minutes, ~5 of them affordable for
+ingestion, which bought about 200 model-years - and because plan() is deterministic, every
+single deploy fetched the SAME 200. Fifteen thousand catalogue pages sat on top of an
+ownership dataset that could never exceed two hundred rows. Nothing in the design or the
+copy fixed that; only persistence does.
+
+Set INGEST_REFRESH=<n> to spend part of the budget re-checking the n stalest model-years
+already held, so complaint and recall counts do not go stale as coverage widens.
 
 Sources (all free, all public, no key):
   EPA fueleconomy.gov  menu/make -> menu/model -> menu/options -> vehicle/{id}
@@ -19,7 +30,7 @@ Budget is explicit: MODEL_YEAR_BUDGET caps the run so a deploy cannot hang. Rais
 build minutes allow; the selection is ordered so the most-searched cars are always covered.
 """
 import concurrent.futures as cf
-import json, os, re, sqlite3, sys, time, urllib.parse, urllib.request
+import json, os, re, shutil, sqlite3, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -117,24 +128,41 @@ def rank(mk, names):
     return sorted(dict.fromkeys(names), key=key)
 
 
-def plan():
-    """Ask EPA which models actually existed per make-year, and fall back to the built-in
-    catalogue when it will not answer.
+def held():
+    """(make, model, year) already carrying data, plus the stalest of them.
 
-    EPA's menu/model endpoint used to be a single point of failure for the whole ingest.
-    When it times out or rate-limits the build container, every make-year comes back empty,
-    plan() returns zero targets, main() reports "too little data returned" and exits 0 -
-    a green build that silently ships the 16-model-year committed seed. That is exactly
-    what production has been serving: /cars/hyundai/ 404s and Toyota lists two nameplates.
-
-    PRIORITY is already a hand-ranked list of ~140 real nameplates across all 30 marques,
-    so it is a perfectly good target list on its own. NHTSA is queried by name and answers
-    for whichever spelling it knows; a nameplate that was not sold in a given year returns
-    no complaints, no recalls and no EPA record, and is dropped by the `got` filter before
-    anything is written. A dead EPA menu therefore now costs model coverage, not the run.
+    Returned lowercase so a name that comes back from EPA with different capitalisation
+    than the one already stored does not read as a new car and get fetched twice.
     """
-    targets, seen = [], set()
-    epa_ok = 0
+    if not DB.exists():
+        return set(), []
+    try:
+        con = sqlite3.connect(DB)
+        con.row_factory = sqlite3.Row
+        cols = {r[1] for r in con.execute("PRAGMA table_info(model_years)")}
+        order = "my.ingested_at IS NOT NULL, my.ingested_at" if "ingested_at" in cols else "my.id"
+        rows = con.execute(f"""SELECT mk.name make, mo.name model, my.year
+                               FROM model_years my
+                               JOIN models mo ON mo.id = my.model_id
+                               JOIN makes mk ON mk.id = mo.make_id
+                               ORDER BY {order}""").fetchall()
+        con.close()
+    except Exception as e:                                    # noqa: BLE001
+        print(f"ingest: could not read existing database ({e}); planning from scratch")
+        return set(), []
+    have = {(r["make"].lower(), r["model"].lower(), r["year"]) for r in rows}
+    stale = [{"make": r["make"], "model": r["model"], "year": r["year"]} for r in rows]
+    return have, stale
+
+
+def plan(have=frozenset(), refresh=()):
+    """Ask EPA which models actually existed per make-year. Guarantees valid names and
+    means we never waste NHTSA calls on a car that was not sold that year.
+
+    `have` is skipped: the budget buys NEW coverage every run. `refresh` is prepended, so
+    a slice of each run re-checks rows already held and keeps their counts current."""
+    targets = [dict(t) for t in refresh]
+    seen = {(t["make"].lower(), t["model"].lower(), t["year"]) for t in targets}
     with cf.ThreadPoolExecutor(WORKERS) as ex:
         jobs = {ex.submit(get, f"{EPA}/menu/model?year={y}&make={urllib.parse.quote(mk)}"): (y, mk)
                 for y in YEARS for mk in MAKES}
@@ -146,15 +174,7 @@ def plan():
                 b = base_model(it.get("value", ""))
                 if b and len(b) < 30:
                     names.append(b)
-            if names:
-                epa_ok += 1
-            else:
-                names = list(PRIORITY.get(mk, []))
             by_make.setdefault(mk, {})[y] = rank(mk, names)
-    asked = len(YEARS) * len(MAKES)
-    if epa_ok < asked:
-        print(f"EPA model menu answered {epa_ok}/{asked} make-years; "
-              f"{asked - epa_ok} planned from the built-in priority catalogue")
     # round-robin across makes so the budget is not eaten by one manufacturer
     depth = 0
     while len(targets) < MODEL_YEAR_BUDGET and depth < 40:
@@ -163,11 +183,12 @@ def plan():
             for y in sorted(by_make.get(mk, {}), reverse=True):
                 lst = by_make[mk][y]
                 if depth < len(lst):
-                    key = (mk, lst[depth], y)
+                    key = (mk.lower(), lst[depth].lower(), y)
                     if key not in seen:
                         seen.add(key)
-                        targets.append({"make": mk, "model": lst[depth], "year": y})
                         added = True
+                        if key not in have:          # already in the database: skip, do not refetch
+                            targets.append({"make": mk, "model": lst[depth], "year": y})
                 if len(targets) >= MODEL_YEAR_BUDGET:
                     break
             if len(targets) >= MODEL_YEAR_BUDGET:
@@ -257,8 +278,15 @@ def num(v, cast=float):
 
 def main():
     t0 = time.time()
-    targets = plan()
-    print(f"planned {len(targets)} model-years across {len(MAKES)} makes, {YEARS[0]}–{YEARS[-1]}")
+    have, stale = held()
+    n_refresh = int(os.environ.get("INGEST_REFRESH", "0"))
+    refresh = stale[:max(0, min(n_refresh, MODEL_YEAR_BUDGET // 2))]
+    targets = plan(have, refresh)
+    print(f"planned {len(targets)} model-years across {len(MAKES)} makes, {YEARS[0]}–{YEARS[-1]} "
+          f"({len(have)} already held, {len(refresh)} of them queued for refresh)")
+    if not targets:
+        print("INGEST: nothing new to fetch at this budget; database unchanged")
+        return 0
 
     rows = []
     with cf.ThreadPoolExecutor(WORKERS) as ex:
@@ -282,17 +310,25 @@ def main():
 
     got = [r for r in rows if r.get("complaints") or r.get("recalls") or r.get("epa")]
     print(f"fetched {len(rows)}; {len(got)} carry data ({time.time()-t0:.0f}s)")
-    if len(got) < 50:
-        print(f"INGEST ABORTED: only {len(got)} of {len(rows)} planned model-years carried "
-              f"data ({len(errs)} fetch errors); keeping the committed database")
+    floor = 50 if not have else max(5, len(targets) // 20)
+    if len(got) < floor:
+        print(f"INGEST ABORTED: {len(got)} rows carry data, below the floor of {floor}; "
+              "keeping the existing database")
         return 0
 
     tmp = ROOT / "data" / "cars.new.sqlite"
     if tmp.exists():
         tmp.unlink()
+    # Start from what is already held. This one line is the difference between a dataset
+    # that grows every night and one that is re-fetched from zero on every deploy.
+    if DB.exists():
+        shutil.copy2(DB, tmp)
     con = sqlite3.connect(tmp)
     con.executescript((ROOT / "scripts" / "schema.sql").read_text()
                       if (ROOT / "scripts" / "schema.sql").exists() else SCHEMA)
+    if "ingested_at" not in {r[1] for r in con.execute("PRAGMA table_info(model_years)")}:
+        con.execute("ALTER TABLE model_years ADD COLUMN ingested_at TEXT")
+    today = time.strftime("%Y-%m-%d")
 
     def slug(s):
         s = re.sub(r"[^\w\s-]", "", str(s).lower()).strip()
@@ -315,13 +351,20 @@ def main():
         fuel_type = (e.get("fuelType") or "").strip()
         is_ev = 1 if "electric" in fuel_type.lower() else 0
         severe = sum(x["severe"] for x in r["recalls"])
+        vals = (r.get("complaints") or 0, r.get("complaints") or 0, len(r["recalls"]), severe,
+                is_ev, None if r.get("complaints") is not None else "complaints", today)
         con.execute("""INSERT OR IGNORE INTO model_years
             (model_id,year,complaint_count,complaint_sample,recall_count,severe_recalls,is_ev,data_gap)
-            VALUES(?,?,?,?,?,?,?,?)""",
-            (mo_id[key], r["year"], r.get("complaints") or 0, r.get("complaints") or 0,
-             len(r["recalls"]), severe, is_ev, None if r.get("complaints") is not None else "complaints"))
+            VALUES(?,?,0,0,0,0,?,NULL)""", (mo_id[key], r["year"], is_ev))
         my = con.execute("SELECT id FROM model_years WHERE model_id=? AND year=?",
                          (mo_id[key], r["year"])).fetchone()[0]
+        # A refreshed model-year must overwrite, not stack: without this the row keeps its
+        # first-ever counts and its complaint and recall children double on every re-fetch.
+        con.execute("""UPDATE model_years SET complaint_count=?, complaint_sample=?,
+            recall_count=?, severe_recalls=?, is_ev=?, data_gap=?, ingested_at=?
+            WHERE id=?""", vals + (my,))
+        con.execute("DELETE FROM complaints WHERE my_id=?", (my,))
+        con.execute("DELETE FROM recalls WHERE my_id=?", (my,))
 
         for part, n in r["components"]:
             con.execute("INSERT INTO complaints(my_id,component,count,sample) VALUES(?,?,?,?)",
@@ -382,7 +425,7 @@ def main():
         tmp.unlink()
         return 0
     tmp.replace(DB)
-    print(f"INGEST OK: {n_my} model-years (was {old}), {n_f} fuel rows, "
+    print(f"INGEST OK: {n_my} model-years (+{n_my - old} this run), {n_f} fuel rows, "
           f"{n_c:,} complaints, {n_r} recall campaigns in {time.time()-t0:.0f}s")
     return 0
 
