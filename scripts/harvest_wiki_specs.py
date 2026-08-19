@@ -20,7 +20,7 @@ Other free sources verified and wired in elsewhere / queued:
   EPA           fueleconomy.gov     public domain, MPG city/highway/combined, annual fuel
                 cost, CO2, per trim
 """
-import json, re, sys, time, urllib.parse, urllib.request
+import json, os, re, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -30,6 +30,25 @@ WD = "https://www.wikidata.org/w/api.php"
 WP = "https://en.wikipedia.org/w/api.php"
 UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
 BATCH = 50
+
+# Wall-clock budget. This harvest is three sequential loops over the whole catalogue —
+# ~350 title requests, ~350 wikitext requests and, at 20 titles per call, ~700 intro
+# requests. That is ~1,400 round trips with no concurrency. At 15,212 models it fit the
+# build window; at 17,432 (build #68204727, 2026-08-07) it did not, and Cloudflare killed
+# the Building stage at 30m55s with the deploy never running — so a *green* ingest of 397
+# model-years never reached production. Nothing here is required for a correct site: every
+# field it adds is rendered only when present. So it now stops on the clock and writes what
+# it has, and a slow Wikipedia costs specification coverage instead of the whole deploy.
+BUDGET = int(os.environ.get("WIKI_SPECS_BUDGET", "420"))
+DEADLINE = time.time() + BUDGET
+
+
+def out_of_time(phase, done, total):
+    if time.time() < DEADLINE:
+        return False
+    print(f"  WIKI SPECS BUDGET REACHED in {phase}: {done}/{total} done after "
+          f"{BUDGET}s; continuing with what was fetched", flush=True)
+    return True
 
 # infobox key -> our field. Wikipedia uses several spellings for the same thing.
 FIELDS = {
@@ -152,6 +171,8 @@ def titles_for(qids):
     """Wikidata id -> English Wikipedia title, 50 at a time."""
     out = {}
     for i in range(0, len(qids), BATCH):
+        if out_of_time("title resolution", i, len(qids)):
+            break
         chunk = qids[i:i + BATCH]
         url = (f"{WD}?action=wbgetentities&format=json&props=sitelinks"
                f"&sitefilter=enwiki&ids={'|'.join(chunk)}")
@@ -160,8 +181,9 @@ def titles_for(qids):
                 j = _get(url)
                 break
             except Exception:
-                if attempt == 2:
+                if attempt == 2 or time.time() > DEADLINE:
                     j = {}
+                    break
                 time.sleep(2 * (attempt + 1))
         for qid, ent in (j.get("entities") or {}).items():
             t = ((ent.get("sitelinks") or {}).get("enwiki") or {}).get("title")
@@ -176,6 +198,8 @@ def wikitext_for(titles):
     out = {}
     items = list(titles)
     for i in range(0, len(items), BATCH):
+        if out_of_time("wikitext fetch", i, len(items)):
+            break
         chunk = items[i:i + BATCH]
         url = (f"{WP}?action=query&format=json&prop=revisions&rvprop=content&rvslots=main"
                f"&titles={urllib.parse.quote('|'.join(chunk))}")
@@ -227,6 +251,8 @@ def main():
     print("fetching article intros…")
     intros, wanted = 0, list(by_title)
     for i in range(0, len(wanted), 20):
+        if out_of_time("article intros", i, len(wanted)):
+            break
         chunk = wanted[i:i + 20]
         url = (f"{WP}?action=query&format=json&prop=extracts&exintro=1&explaintext=1"
                f"&exlimit=20&redirects=1&titles={urllib.parse.quote('|'.join(chunk))}")
