@@ -15,7 +15,7 @@ from collections import defaultdict
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
 from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
-                           is_qid, resolve_qid_brands)
+                           is_qid, resolve_qid_brands, brand_of, real_engine)
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
@@ -180,13 +180,7 @@ def main():
         name = x["n"].strip()
         if name.startswith("Q") and name[1:].isdigit():
             continue
-        b = norm_brand(x["m"])
-        if b == "Independent & coachbuilders":
-            low = name.lower()
-            for n_words in (3, 2, 1):
-                if " ".join(low.split()[:n_words]) in known:
-                    b = known[" ".join(low.split()[:n_words])]
-                    break
+        b = brand_of(name, x["m"], known)
         brands[b].append({"n": name, "p": x["p"], "y": x["y"], "q": x["q"]})
 
     # de-duplicate model slugs inside a brand
@@ -411,7 +405,7 @@ def main():
         # the number a petrolhead looks for first
         if wk.get("power"):
             facts += f'<div class="fact"><span>Power</span><b>{esc(wk["power"])}</b></div>'
-        engine = wk.get("engine") or sp.get("engine")
+        engine = real_engine(wk.get("engine")) or real_engine(sp.get("engine"))
         if engine:
             facts += f'<div class="fact"><span>Engine</span><b>{esc(engine)}</b></div>'
         if sp.get("built"):
@@ -481,14 +475,18 @@ def main():
                            ("Successor", wk.get("successor"))):
             if val:
                 spec_html += f'<div class="fact"><span>{label}</span><b>{linked(val)}</b></div>'
-        spec_html += f'<div class="fact"><span>Catalogue ID</span><b>{esc(m["q"])}</b></div>'
+        # The catalogue id is provenance, not a specification. On a model with no harvested
+        # facts it would be the Specifications card's only row - a card that tells the reader
+        # nothing and costs a scroll. Show it beside real facts, and drop the card otherwise.
+        if spec_html:
+            spec_html += f'<div class="fact"><span>Catalogue ID</span><b>{esc(m["q"])}</b></div>'
         src = ('the Wikipedia infobox for this model (CC BY-SA) and the open Wikidata record'
                if wk else 'the open Wikidata record for this model')
         spec_note = (f'<p class="lib-note">Specifications come from {src}, and are shown only where '
                      'a source actually carries them — nothing here is estimated. Figures are '
                      'manufacturer specifications, not measured results.</p>')
         specs_card = (f'<div class="card"><h2>Specifications</h2>'
-                      f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>')
+                      f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>') if spec_html else ""
 
         about_card = ""
         if wk.get("about"):
@@ -542,9 +540,21 @@ re-priced for your country. Verdicts are published per model year as the data is
 {rivals_card}
 </div>"""
 
-        jsonld = json.dumps({"@context": "https://schema.org", "@type": "Vehicle", "name": m["n"],
-                             "brand": {"@type": "Brand", "name": b},
-                             "url": ORIGIN + url}, separators=(",", ":"))
+        # Vehicle plus the breadcrumb trail the page already shows visually. Google renders the
+        # BreadcrumbList as the result's path line instead of a bare URL, so every library model
+        # page earns "Library > Brand > Model" in the SERP. A top-level array is valid JSON-LD.
+        jsonld = json.dumps([
+            {"@context": "https://schema.org", "@type": "Vehicle", "name": m["n"],
+             "brand": {"@type": "Brand", "name": b},
+             "url": ORIGIN + url},
+            {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Library",
+                 "item": ORIGIN + "/library/"},
+                {"@type": "ListItem", "position": 2, "name": b,
+                 "item": f"{ORIGIN}/library/{bs}/"},
+                {"@type": "ListItem", "position": 3, "name": m["n"],
+                 "item": ORIGIN + url}]},
+        ], separators=(",", ":"))
         page = shell(f"{m['n']} — {b} | {BRAND}",
                      f"{m['n']} by {b}: photograph, catalogue facts and ownership-cost context.",
                      ORIGIN + url, body).replace("</head>",
