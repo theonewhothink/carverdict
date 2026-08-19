@@ -45,8 +45,8 @@ echo "origin: $SITE_ORIGIN"
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 17500", p.read_text()))
-print("MAX_MODEL_PAGES set to 17500")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 11000", p.read_text()))
+print("MAX_MODEL_PAGES set to 11000")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
@@ -126,10 +126,12 @@ dead = [u for u in hrefs
         and not u.startswith(skip) and u not in allow]
 files = sum(len(f) for _, _, f in os.walk('site'))
 print(f"pages={len(pages)} files={files} links={len(hrefs)} dead={len(dead)}")
+if dead:
+    print("DEAD:", dead[:20])
 if files > 19800:
     print("ABORT: over the 20,000 static-asset cap"); sys.exit(1)
 if dead:
-    print("DEAD:", dead[:20]); sys.exit(1)
+    sys.exit(1)
 PY_EOF
 
 node --test workers/calc.test.mjs
