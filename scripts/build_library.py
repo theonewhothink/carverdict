@@ -271,6 +271,33 @@ def main():
                              f"All {len(models)} {b} models ever catalogued, with photos.",
                              f"{ORIGIN}/library/{bs}/", body))
 
+    # Model pages (build_models.py) link /library/{brand}/ for every brand slug in
+    # model_index.json. Label recovery can rename a marque between the two builders,
+    # leaving a referenced slug with no page. Write a plain roster page for each such
+    # orphan so a marque link can never 404.
+    written_slugs = {slug(b) for b in brands}
+    orphans = 0
+    for obs, entries in MODEL_INDEX.items():
+        if obs in written_slugs or not entries:
+            continue
+        label = obs.replace("-", " ").title()
+        links = "".join(f'<a href="/library/{obs}/{ms}/">{esc(n)}</a>'
+                        for n, ms in sorted(entries.items()))
+        obody = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
+<nav class="crumbs"><a href="/library/">{t("en", "nav_library")}</a> › {esc(label)}</nav>
+<h1>{esc(label)}</h1>
+<p class="sub">{len(entries)} {t("en", "lib_models")}</p></div></div>
+<div class="wrap"><div class="az-group">{links}</div>
+<p class="lib-note"><a href="/library/">{t("en", "nav_library")}</a></p></div>"""
+        out = SITE / "library" / obs / "index.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(shell("en", f"{label} — Model Library | CarVerdict",
+                             f"{label}: {len(entries)} models catalogued.",
+                             f"{ORIGIN}/library/{obs}/", obody))
+        orphans += 1
+    if orphans:
+        print(f"  orphan marque pages written: {orphans}")
+
     # library index (EN static)
     # Brand tiles carry the marque's logo on white. The old tiles put the name over a
     # 16%-opacity photograph, which read as a washed-out smudge.
