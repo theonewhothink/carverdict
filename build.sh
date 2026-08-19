@@ -108,6 +108,7 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 "$PY" scripts/build_engage.py
 "$PY" scripts/build_events.py || echo "WARNING: events calendar skipped"
 "$PY" scripts/build_stories.py || echo "WARNING: data stories skipped"
+"$PY" scripts/build_problems.py || echo "WARNING: problems pages skipped"
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
