@@ -63,14 +63,19 @@ def _load_lib_index():
     out = {}
     for x in rows:
         n = x["n"].strip()
-        b = ALIAS.get((x.get("m") or "").strip(), (x.get("m") or "").strip()) or ""
+        # Marque inference must match build_library.brand_of: when the model's own
+        # name opens with a marque the catalogue knows, that marque wins over the
+        # manufacturer (a "Kia Sportage" built by Jiangsu Yueda Kia files under Kia,
+        # which is the heading the library actually writes).
+        b = ""
+        low = n.lower()
+        for w in (3, 2, 1):
+            cand = " ".join(low.split()[:w])
+            if cand in known:
+                b = known[cand]
+                break
         if not b:
-            low = n.lower()
-            for w in (3, 2, 1):
-                cand = " ".join(low.split()[:w])
-                if cand in known:
-                    b = known[cand]
-                    break
+            b = ALIAS.get((x.get("m") or "").strip(), (x.get("m") or "").strip()) or ""
         if not b:
             b = "Independent & coachbuilders"
         out.setdefault(n.lower(), (sl(b), sl(n)))
@@ -93,7 +98,8 @@ def model_url(display):
     for name, sl_ in PLANNED.get(bs, {}).items():
         if sl_ == ms:
             return f"/library/{bs}/{ms}/"
-    return f"/library/{bs}/"
+    # A brand slug the planner never saw has no guaranteed page: link the index.
+    return f"/library/{bs}/" if bs in PLANNED else "/library/"
 
 def lib_photo(make, model, year=None):
     """Exact model name, or the generation entry (\"Model (XVnn)\") whose production window
