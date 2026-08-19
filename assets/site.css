@@ -552,3 +552,174 @@ a.lib-card .ph.noimg svg{width:56%}
 .nf-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
 .nf-links a{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--text);text-decoration:none}
 .nf-links a:hover{border-color:var(--brand);color:var(--brand)}
+
+/* ============================================================================
+   v6 — Editorial reference system.
+   The site read as a 2021 SaaS landing page: three competing accents, drop
+   shadows on every surface, cards that lift on hover, gradient bands, and a
+   heavy geometric sans doing the work of a headline face. Reference sites that
+   actually hold authority (Britannica, and geniuses.club's own visual system)
+   do the opposite: white canvas, serif for names and headings, system sans for
+   everything functional, hairline borders instead of shadows, and exactly one
+   reserved accent that only ever signals rank or record.
+   Rules enforced below:
+     Five colours. Two families. Six sizes. Eight spacing values.
+     One accent (gold) — verdict, rank and record only, never decoration.
+     No shadows, no lift, no scale, no gradient decoration.
+     Hover = a navy hairline ring. Nothing moves.
+   ========================================================================== */
+:root{
+    /* five values + two utilities, replacing fifteen */
+  --bg:#FFFFFF; --bg2:#F6F8F9; --card:#FFFFFF; --card2:#F6F8F9; --line:#E6E9EC;
+    --text:#111417; --muted:#6B7580; --faint:#8A939C;
+    --brand:#10233F;            /* navy — links, nav, primary action */
+  --gold:#A8751A;             /* the one accent: verdict, rank, record */
+  --gold-wash:#FDF6E6;
+    --accent-ev:#10233F; --accent-ice:#A8751A;   /* legacy names, remapped */
+  --good:#1B6B4A; --warn:#A8751A; --bad:#9E2A2A;
+    --shadow:none; --shadow-lg:none;
+    --r:12px; --r-media:10px; --maxw:1180px;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif;
+}
+body{font-size:17px;line-height:1.62}
+/* serif is reserved for names and headings — it is the whole visual difference
+   between a reference work and a listicle */
+h1,h2,h3,.sec,.logo,.cmp-score,.calc-out,.nf-code,.stat-row b,
+.lb-fig figcaption b,.hh-shot-tag,.model-side h1{
+    font-family:var(--serif);font-weight:700;letter-spacing:-.01em}
+h1{font-size:clamp(30px,4.2vw,44px);line-height:1.14;font-weight:700}
+h2,.card h2,.sec{font-size:26px;line-height:1.25;letter-spacing:-.01em}
+.card h3{font-size:17px;font-weight:700}
+.card p,.prose p,.prose li{font-size:17px}
+.logo{font-size:22px;letter-spacing:-.02em}
+.logo em{color:var(--gold);font-style:normal}
+/* one accent, and it never decorates */
+a{color:var(--brand)}
+.hdr{background:rgba(255,255,255,.94);border-bottom:1px solid var(--line)}
+.nav{font-size:15px}
+.nav a:hover{color:var(--brand)}
+/* surfaces: hairline, never shadow */
+.card,.brand-tile,.lib-card,a.lib-card,.pp-card,.ev-card,.sup-card,.cmp-side,
+.game-opts button,.sbtn,.share-row button,.gbtn,.daily,.model-shot,.hh-shot,
+#q-out,.langs div,.lb-fig,.gal-cell,.hero-img{box-shadow:none}
+.card{padding:22px;border-radius:var(--r)}
+.grid{gap:24px;padding:32px 0}
+.sec{margin:64px 0 16px}
+/* hover is a ring, not a jump */
+.ev-card,.rel-grid a,.brand-tile,.pp-card,.lib-card,a.lib-card,.sup-card{
+    transition:border-color .16s ease,color .16s ease}
+.ev-card:hover,.rel-grid a:hover,.brand-tile:hover,.pp-card:hover,
+.lib-card:hover,a.lib-card:hover,.sup-card:hover{
+    transform:none;box-shadow:none;border-color:var(--brand);text-decoration:none}
+.pp-card:hover .pp-ph img,.lib-card:hover .ph img,a.lib-card:hover .ph img,
+.gal-cell:hover img,.st-cell:hover img,.mo-cell:hover img,.daily:hover img{transform:none}
+.st-cell:hover img{filter:saturate(1)}
+/* photo-led: the photograph is the product, type is the caption */
+.pp-card,.lib-card,a.lib-card,.sup-card,.brand-tile{border-radius:var(--r-media)}
+.pp-ph,.lib-card .ph,a.lib-card .ph,.gal-cell,.model-shot,.hh-shot,.hero-img,.hero-art .photo{
+    border-radius:var(--r-media)}
+.pp-card b,a.lib-card b,.lib-card b,.sup-b b{font-size:15px;font-weight:700;
+                                               font-family:var(--font);letter-spacing:0;color:var(--text)}
+.pp-card small,a.lib-card small,.lib-card small,.sup-b small{font-size:13px;color:var(--muted)}
+/* the rank / record chip — gold, tabular, top-left of a card */
+.rank{position:absolute;top:8px;left:8px;z-index:2;background:rgba(17,20,23,.82);color:#fff;
+        border-radius:6px;padding:2px 7px;font-size:11.5px;font-weight:700;
+        font-variant-numeric:tabular-nums}
+/* verdict: a chip that states a finding, not a marketing badge */
+.verdict .badge{font-family:var(--font);font-size:15px;font-weight:700;letter-spacing:.10em;
+                  padding:7px 20px;border-radius:6px;border-width:1px;border-style:solid}
+.v-BUY{background:rgba(27,107,74,.07);color:var(--good);border-color:rgba(27,107,74,.35)}
+.v-CAUTION{background:var(--gold-wash);color:var(--gold);border-color:rgba(168,117,26,.38)}
+.v-AVOID{background:rgba(158,42,42,.06);color:var(--bad);border-color:rgba(158,42,42,.32)}
+.v-DATA{background:var(--bg2);color:var(--muted);border-color:var(--line)}
+.verdict li::before{color:var(--gold)}
+/* actions: navy, flat, one weight */
+.btn{background:var(--brand);border-radius:8px;font-weight:600;font-size:16px;
+       padding:12px 24px;box-shadow:none;letter-spacing:0}
+.btn:hover{background:#1B3657}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+.btn.ghost:hover{border-color:var(--brand);color:var(--brand);box-shadow:none}
+.btn:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+/* headings and labels */
+th,.label,.ev-facts span,.ad{font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+                               color:var(--faint)}
+table,td{font-size:15px}
+/* strip the decoration the old system leaned on */
+.cta-band{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r)}
+.home-hero-v2,.model-hero{background:#fff}
+.hh-kicker{background:transparent;border:1px solid var(--line);color:var(--muted);
+             font-weight:600;letter-spacing:.12em;border-radius:999px}
+.home-hero-v2 h1{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;
+                   font-size:clamp(34px,4.8vw,54px);line-height:1.06}
+.home-hero-v2 h1 em{color:var(--gold);font-style:normal}
+.hh-sub{font-size:18px}
+.stat-row b{font-size:30px;font-weight:700}
+.stat-row span{font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.hero-art svg{filter:none}
+.hero-art{animation:none}
+/* hero drift stays: motion on a photograph is editorial, and it measurably holds
+   attention above the fold. What goes is motion on cards, which only ever adds noise. */
+.az-group h3{color:var(--text);font-family:var(--serif);font-size:16px}
+.geo-chip select{color:var(--brand)}
+.chip.on,.gbtn.on,.ev-controls .btn.on{border-color:var(--brand);color:var(--brand);
+                                         background:var(--bg2);font-weight:600}
+.ev-cat{color:var(--gold);letter-spacing:.09em}
+.daily-k{color:#E8C87A}
+.nf-code{color:var(--brand);font-family:var(--serif)}
+.game-done b{color:var(--brand);font-family:var(--serif)}
+.star.on{color:var(--gold)}
+.owner-q{border-left-color:var(--gold);background:var(--bg2);border-radius:0}
+.story-list li::before{font-family:var(--serif);color:var(--gold)}
+.searchbox input{border-radius:8px;background:#fff}
+.searchbox input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(16,35,63,.10)}
+.q-brand{background:var(--bg2)}
+.q-n i{color:var(--gold)}
+.years-strip a{border-radius:6px}
+.years-strip a:hover{border-color:var(--brand);color:var(--text)}
+.years-strip a.cur{border-color:var(--brand);color:var(--brand)}
+.rel-grid a{background:#fff;border-radius:var(--r-media)}
+.az-jump a:hover{border-color:var(--brand);color:var(--brand)}
+.brand-tile{padding:16px;min-height:88px}
+.bt-initial{color:var(--brand);opacity:.22;font-family:var(--serif)}
+/* ad units: reserved, quiet, and never dressed up as content */
+.ad{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r)}
+/* the fact strip — fixed slots, hairline, no fill */
+.facts{border-radius:var(--r)}
+.fact{font-size:15px}
+.fact b{font-weight:700;font-variant-numeric:tabular-nums}
+.ev-facts>div{background:#fff;border-radius:var(--r)}
+.calc-out{font-size:34px;font-weight:700}
+.calc-tabs{background:var(--bg2);border-radius:10px}
+.calc-tabs button.on{background:#fff;box-shadow:none;border:1px solid var(--line)}
+.cmp-score{font-weight:700}
+.nf-links a{background:#fff}
+.nf-links a:hover{border-color:var(--brand);color:var(--brand)}
+/* mobile is the design, not a breakpoint */
+@media(max-width:767px){
+    body{font-size:16px}
+    h1{font-size:clamp(26px,7vw,34px)}
+    h2,.card h2,.sec{font-size:21px}
+    .sec{margin:48px 0 12px}
+    .card{padding:18px}
+    .pp-grid{grid-template-columns:1fr 1fr;gap:14px}
+    .lib-grid{grid-template-columns:1fr 1fr;gap:14px}
+    a,button{-webkit-tap-highlight-color:rgba(16,35,63,.12)}
+}
+/* trust triad — who checked this, against what, and when. Reference sites carry it
+   above the fold; it is also the cheapest E-E-A-T signal on the page. */
+.triad{font-size:13px;color:var(--faint);margin-top:10px}
+.triad b{color:var(--muted);font-weight:600}
+.triad a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+/* stat row: three figures on one line, labels quiet */
+.stat-row{gap:40px;flex-wrap:wrap}
+.stat-row span{font-size:11px;letter-spacing:.05em;white-space:nowrap}
+.home-hero-v2 .stat-row{gap:40px}
+@media(max-width:520px){.stat-row{gap:24px}}
+/* verdict tags inside tables read as data, not as buttons */
+.tag{border-radius:5px;font-size:11px;letter-spacing:.06em;padding:3px 9px;
+       font-variant-numeric:tabular-nums}
+/* Accessibility: #A8751A clears 3:1 only at display sizes. Anything set small — category
+   kickers, verdict chips, table tags — uses the darker ink so it passes AA at 4.5:1. */
+:root{--gold-ink:#8A5F12;--warn:#8A5F12}
+.ev-cat,.q-n i,.v-CAUTION,.tag.v-CAUTION{color:var(--gold-ink)}
