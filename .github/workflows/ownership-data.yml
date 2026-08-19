@@ -1,0 +1,65 @@
+name: Ownership data
+
+# Why this exists: the ingest used to run inside the Cloudflare deploy, which has a hard
+# 20-minute build+deploy cap. About five of those minutes could be spent fetching, which
+# bought roughly 200 model-years - and because the plan is deterministic, every deploy
+# fetched the same 200. The dataset could never grow. Here it has hours, and what it
+# fetches is kept: each run extends the database and republishes it, so coverage compounds.
+
+on:
+  schedule:
+    - cron: "0 1 * * *"          # nightly, an hour before the site rebuild
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "New model-years to fetch this run"
+        default: "1200"
+      refresh:
+        description: "Model-years already held to re-check for stale counts"
+        default: "150"
+
+permissions:
+  contents: write                # required to publish the rolling data release
+
+concurrency:
+  group: ownership-data          # never let two runs race the same release asset
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pull the current published dataset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern cars.sqlite --output /tmp/cars.sqlite --clobber \
+            || echo "no published dataset yet - starting from the committed one"
+          python scripts/adopt_dataset.py /tmp/cars.sqlite
+
+      - name: Extend coverage
+        env:
+          INGEST_BUDGET: ${{ github.event.inputs.budget || '1200' }}
+          INGEST_REFRESH: ${{ github.event.inputs.refresh || '150' }}
+        run: python scripts/ingest_scale.py
+
+      - name: Compact and verify
+        run: |
+          python scripts/verify_dataset.py 10
+          ls -lh data/cars.sqlite
+
+      - name: Publish as the rolling dataset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view data-latest >/dev/null 2>&1 || \
+            gh release create data-latest --title "Ownership dataset (rolling)" \
+              --notes "NHTSA complaints and recalls plus EPA fuel economy, extended nightly by the Ownership data workflow. Consumed by build.sh at deploy time."
+          gh release upload data-latest data/cars.sqlite --clobber
+          echo "::notice::$(python scripts/verify_dataset.py 10 | head -1)"
