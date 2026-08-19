@@ -92,6 +92,48 @@ def resolve_qid_brands(rows, known):
     return fixed
 
 
+# Values Wikidata's "powered by" (P516) returns that describe every car ever built.
+# A Camry whose Engine fact reads "diesel engine" is worse than a Camry with no
+# Engine fact: it is wrong, and it is wrong in a way a reader can see.
+GENERIC_ENGINE = {
+    "engine", "motor", "automobile engine", "car engine", "piston engine",
+    "internal combustion engine", "combustion engine", "reciprocating engine",
+    "four-stroke engine", "two-stroke engine", "spark-ignition engine",
+    "compression-ignition engine", "diesel engine", "petrol engine",
+    "gasoline engine", "gas engine", "electric motor", "electric engine",
+    "hybrid", "hybrid vehicle", "hybrid electric vehicle",
+}
+
+
+def real_engine(v):
+    """Drop engine values that name a category rather than an engine.
+
+    Wikidata P516 mixes real answers ("2.85 L PRV ZMJ-159 V6") with taxonomy
+    ("diesel engine"), and the taxonomy rows sort first often enough to win. A
+    multi-valued string keeps whichever parts actually say something."""
+    if not v:
+        return None
+    parts = [p.strip() for p in str(v).split(" / ") if p.strip()]
+    keep = [p for p in parts if p.lower() not in GENERIC_ENGINE]
+    return " / ".join(keep) or None
+
+
+def brand_of(name, manufacturer, known):
+    """The marque a reader expects, which is not always the manufacturer.
+
+    Wikidata's P176 names the company that built the car, so the Daihatsu Altis,
+    the Chevrolet Cavalier and the Lexus ES were all filed under "Toyota" - right
+    for a factory, wrong under a heading that reads "More from Toyota". When the
+    model's own name opens with a marque the catalogue already knows, that marque
+    wins; otherwise the manufacturer stands."""
+    low = (name or "").lower().split()
+    for n_words in (3, 2, 1):
+        cand = " ".join(low[:n_words])
+        if cand in known:
+            return known[cand]
+    return norm_brand(manufacturer)
+
+
 def norm_brand(m):
     m = (m or "").strip()
     # An unlabelled manufacturer item comes back as its own Q-id. That is not a marque:
@@ -119,15 +161,7 @@ def build_dataset():
         name = x["n"].strip()
         if name.startswith("Q") and name[1:].isdigit():
             continue  # unlabeled junk
-        b = norm_brand(x["m"])
-        if b == "Independent & coachbuilders":
-            # infer the marque from the model name (e.g. "Mazda 616" -> Mazda)
-            low = name.lower()
-            for n_words in (3, 2, 1):
-                cand = " ".join(low.split()[:n_words])
-                if cand in known:
-                    b = known[cand]
-                    break
+        b = brand_of(name, x["m"], known)
         brands[b].append({"n": name, "p": x["p"], "y": x["y"], "q": x["q"]})
     for b in brands:
         brands[b].sort(key=lambda r: (r["y"] or "9999", r["n"]))
