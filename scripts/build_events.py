@@ -248,10 +248,18 @@ def pick(best, yr, mon, d1, d2):
     return cand if best is None or cand[0] < best[0] else best
 
 
-def harvest():
-    """Wikipedia intro per event: a fresh description, and a confirmed date when stated."""
+def soonest(a, b):
+    """Of two (iso, human) dates, the earlier one; either may be None."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return b if b[0] < a[0] else a
+
+
+def extracts(titles):
+    """title -> article intro, batched 20 per request. Missing articles are simply absent."""
     out = {}
-    titles = sorted({e[8] for e in E})
     for i in range(0, len(titles), 20):
         batch = titles[i:i + 20]
         q = ("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1"
@@ -262,14 +270,44 @@ def harvest():
             continue
         for page in (j.get("query", {}).get("pages", {}) or {}).values():
             ex = (page.get("extract") or "").strip()
-            if not ex:
-                continue
-            out[page.get("title", "")] = {"extract": ex[:900], "date": parse_date(ex[:1500])}
+            if ex:
+                out[page.get("title", "")] = ex
         # normalise redirects back onto the title we asked for
         for r in (j.get("query", {}).get("redirects") or []):
             if r.get("to") in out:
                 out[r.get("from")] = out[r["to"]]
         time.sleep(0.2)
+    return out
+
+
+def harvest():
+    """Wikipedia per event: a fresh description, and a confirmed date when one is stated.
+
+    The description comes from the evergreen article ("Monaco Grand Prix"), which is
+    written in the present tense about the event in general and therefore almost never
+    carries a date. The date of the next running lives in the year-prefixed edition
+    article ("2027 Monaco Grand Prix": "scheduled to take place on 12-13 June 2027"),
+    which is what English Wikipedia consistently names them. Asking only the evergreen
+    article is why this harvest reported zero confirmed dates: both this year's and next
+    year's edition are now requested alongside it, and the soonest future date wins.
+    Editions that do not exist yet come back missing and cost nothing.
+    """
+    titles = sorted({e[8] for e in E})
+    years = (TODAY.year, TODAY.year + 1)
+    editions = {t: [f"{y} {t}" for y in years] for t in titles}
+    raw = extracts(titles + [e for t in titles for e in editions[t]])
+
+    out = {}
+    for t in titles:
+        ex = raw.get(t, "")
+        d = None
+        for e in editions[t]:
+            d = soonest(d, parse_date(raw.get(e, "")[:1500]))
+        if d is None:                      # a few evergreen articles do state the next date
+            d = parse_date(ex[:1500])
+        if ex or d:
+            out[t] = {"extract": ex[:900], "date": d}
+
     if out:
         CACHE.parent.mkdir(parents=True, exist_ok=True)
         CACHE.write_text(json.dumps(out, ensure_ascii=False))
@@ -354,9 +392,16 @@ def event_page(r, rows):
     rel = "".join(f'<a href="{x["u"]}">{esc(x["n"])}<small>{esc(x["mo"])} · {esc(x["co"])}</small></a>'
                   for x in near)
     ex = f'<p>{esc(r["ex"])}</p>' if r["ex"] else ""
-    ld = ""
+    # Breadcrumbs are emitted for every event, dated or not - the trail is a property of the
+    # page, not of whether organisers have published next year's date yet.
+    ld = ('<script type="application/ld+json">' + json.dumps({
+        "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": ORIGIN + "/"},
+            {"@type": "ListItem", "position": 2, "name": "Events", "item": ORIGIN + "/events/"},
+            {"@type": "ListItem", "position": 3, "name": r["n"], "item": ORIGIN + r["u"]}],
+    }, ensure_ascii=False) + "</script>")
     if r["d"]:
-        ld = ('<script type="application/ld+json">' + json.dumps({
+        ld += ('<script type="application/ld+json">' + json.dumps({
             "@context": "https://schema.org", "@type": "Event", "name": r["n"],
             "startDate": r["d"], "eventStatus": "https://schema.org/EventScheduled",
             "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
