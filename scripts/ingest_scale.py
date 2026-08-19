@@ -118,9 +118,23 @@ def rank(mk, names):
 
 
 def plan():
-    """Ask EPA which models actually existed per make-year. Guarantees valid names and
-    means we never waste NHTSA calls on a car that was not sold that year."""
+    """Ask EPA which models actually existed per make-year, and fall back to the built-in
+    catalogue when it will not answer.
+
+    EPA's menu/model endpoint used to be a single point of failure for the whole ingest.
+    When it times out or rate-limits the build container, every make-year comes back empty,
+    plan() returns zero targets, main() reports "too little data returned" and exits 0 -
+    a green build that silently ships the 16-model-year committed seed. That is exactly
+    what production has been serving: /cars/hyundai/ 404s and Toyota lists two nameplates.
+
+    PRIORITY is already a hand-ranked list of ~140 real nameplates across all 30 marques,
+    so it is a perfectly good target list on its own. NHTSA is queried by name and answers
+    for whichever spelling it knows; a nameplate that was not sold in a given year returns
+    no complaints, no recalls and no EPA record, and is dropped by the `got` filter before
+    anything is written. A dead EPA menu therefore now costs model coverage, not the run.
+    """
     targets, seen = [], set()
+    epa_ok = 0
     with cf.ThreadPoolExecutor(WORKERS) as ex:
         jobs = {ex.submit(get, f"{EPA}/menu/model?year={y}&make={urllib.parse.quote(mk)}"): (y, mk)
                 for y in YEARS for mk in MAKES}
@@ -132,7 +146,15 @@ def plan():
                 b = base_model(it.get("value", ""))
                 if b and len(b) < 30:
                     names.append(b)
+            if names:
+                epa_ok += 1
+            else:
+                names = list(PRIORITY.get(mk, []))
             by_make.setdefault(mk, {})[y] = rank(mk, names)
+    asked = len(YEARS) * len(MAKES)
+    if epa_ok < asked:
+        print(f"EPA model menu answered {epa_ok}/{asked} make-years; "
+              f"{asked - epa_ok} planned from the built-in priority catalogue")
     # round-robin across makes so the budget is not eaten by one manufacturer
     depth = 0
     while len(targets) < MODEL_YEAR_BUDGET and depth < 40:
@@ -261,7 +283,8 @@ def main():
     got = [r for r in rows if r.get("complaints") or r.get("recalls") or r.get("epa")]
     print(f"fetched {len(rows)}; {len(got)} carry data ({time.time()-t0:.0f}s)")
     if len(got) < 50:
-        print("INGEST ABORTED: too little data returned; keeping the committed database")
+        print(f"INGEST ABORTED: only {len(got)} of {len(rows)} planned model-years carried "
+              f"data ({len(errs)} fetch errors); keeping the committed database")
         return 0
 
     tmp = ROOT / "data" / "cars.new.sqlite"
