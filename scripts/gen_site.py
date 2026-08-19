@@ -6,7 +6,7 @@ Quality gate: model-year page generated ONLY if complaint_count>=30 OR recall_co
 OR (is_ev AND ev_extras present); years failing the gate (or with data gaps) merge into
 the model overview. Every page: >=8 contextual internal links, JSON-LD, data-sources box.
 """
-import hashlib, json, math, os, shutil, sqlite3, sys, re
+import hashlib, json, math, os, shutil, sqlite3, sys, re, tempfile, atexit
 from pathlib import Path
 from datetime import date, datetime
 
@@ -135,8 +135,11 @@ CURRENT_YEAR = 2026
 def db():
     p = DBP
     if Path("/sessions").exists():  # sandbox mount lacks sqlite locking -> read from /tmp copy
-        tmp = Path("/tmp/cars_read.sqlite")
+        # Per-process name: a fixed /tmp path is left behind owned by whichever user ran
+        # the previous build, and the next run dies on PermissionError before page one.
+        tmp = Path(tempfile.gettempdir()) / f"cars_read.{os.getpid()}.sqlite"
         shutil.copy(DBP, tmp)
+        atexit.register(lambda f=tmp: f.unlink(missing_ok=True))
         p = tmp
     con = sqlite3.connect(p)
     con.row_factory = sqlite3.Row
@@ -331,7 +334,7 @@ def gen_model_year(con, r, all_rows):
     q_html = ""
     if quotes:
         q_html = ('<div class="card"><h2>What owners say</h2>'
-                  '<p style="font-size:13px;color:var(--faint)">Verbatim reports filed with the United States '
+                  '<p class="src-note" style="font-size:13px;color:var(--faint)">Verbatim reports filed with the United States '
                   'safety regulator (NHTSA) by owners of this exact model year. Public record.</p>'
                   + "".join(f'<blockquote class="owner-q">{esc(q.lower().capitalize() if q.isupper() else q)}'
                             f'{"…" if len(q) >= 420 else ""}</blockquote>' for q in quotes)
@@ -568,6 +571,9 @@ def gen_brand(con, kslug, make, models, all_rows):
     items = "".join(
         f'<a href="/cars/{kslug}/{ms}/">{esc(make)} {esc(mn)}<small>{n} model years indexed</small></a>'
         for ms, mn, n in models)
+    jsonld = [{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Cars", "item": ORIGIN + "/cars/"},
+        {"@type": "ListItem", "position": 2, "name": make, "item": ORIGIN + url}]}]
     body = f"""<div class="hero"><div class="wrap hero-inner">
 <nav class="crumbs"><a href="/cars/">Cars</a> › {esc(make)}</nav>
 <h1>{esc(make)} ownership costs &amp; problem years</h1></div></div>
@@ -576,7 +582,8 @@ def gen_brand(con, kslug, make, models, all_rows):
 <div class="card sources"><p><a href="/methodology/">Methodology</a> · <a href="/calculators/">Calculators</a> · Updated {TODAY}</p></div></div>"""
     return write(url.lstrip("/") + "index.html",
                  page(f"{make}: True Ownership Costs by Model & Year | {BRAND}",
-                      f"{make} models ranked by real NHTSA complaint and recall data.", ORIGIN + url, body))
+                      f"{make} models ranked by real NHTSA complaint and recall data.",
+                      ORIGIN + url, body, jsonld))
 
 def gen_cars_index(brands):
     """Two layers: the marques with deep NHTSA/EPA verdict data on top, then every marque
@@ -591,27 +598,37 @@ def gen_cars_index(brands):
             logos = json.loads((ROOT / "data" / "brand_logos.json").read_text())
         except Exception:
             logos = {}
-        _resolve, _is_qid = None, lambda v: False
+        _resolve, _is_qid, _brand_of = None, lambda v: False, None
         try:
             sys.path.insert(0, str(ROOT / "scripts"))
             from build_library import BRAND_ALIAS as _ALIAS
             from build_library import resolve_qid_brands as _resolve, is_qid as _is_qid
+            from build_library import brand_of as _brand_of
         except Exception:
             _ALIAS = {}
         # Wikidata returns a bare Q-id when a manufacturer item has no English label.
         # Recover the real marque exactly as the Library does, so Browse never shows a
         # tile called "Q2308012" (and never links to a brand page that does not exist).
+        known = {}
         if _resolve:
-            known = {}
             for x in lib:
                 m0 = (x.get("m") or "").strip()
                 if m0 and not _is_qid(m0):
                     k0 = _ALIAS.get(m0, m0)
                     known[k0.lower()] = k0
             _resolve(lib, known)
+        # Browse must bucket models exactly as the Library does, or a tile links to a
+        # brand page that was never written. brand_of prefers the marque in the model's
+        # own name over the manufacturer, so the Daihatsu Altis is a Daihatsu here too.
         counts = {}
         for x in lib:
-            bb = _ALIAS.get((x.get("m") or "").strip(), (x.get("m") or "").strip())
+            raw = (x.get("m") or "").strip()
+            if _brand_of:
+                bb = _brand_of(x.get("n") or "", raw, known)
+                if bb == "Independent & coachbuilders":
+                    continue          # a bucket, not a marque: not an A-Z tile
+            else:
+                bb = _ALIAS.get(raw, raw)
             if bb and not _is_qid(bb):
                 counts[bb] = counts.get(bb, 0) + 1
 
@@ -921,8 +938,16 @@ def dup_check(pages):
         body = html.split('<div class="wrap', 1)[-1].rsplit("<footer", 1)[0]
         # exclude citation/CTA boilerplate blocks — the budget measures CONTENT prose
         body = re.sub(r'<div class="(?:card sources|cta-band)">.*?</div>', "", body, flags=re.S)
-        # geo/legal explainer lines are UI chrome, not content prose
-        body = re.sub(r'<p class="geo-note">.*?</p>', "", body, flags=re.S)
+        # Chart furniture is not prose. The cost-curve SVG carries its axis ticks and the
+        # legend carries its series name as text, and the paragraph regex was sweeping both
+        # into the measurement - identical on every model-year page by construction. With 16
+        # model-years that noise was invisible (4.6%); with 397 it alone pushed the figure to
+        # 36.1% and failed the build, so a green ingest could never reach production.
+        body = re.sub(r"<svg\b.*?</svg>", "", body, flags=re.S)
+        body = re.sub(r'<div class="legend">.*?</div>', "", body, flags=re.S)
+        # Fixed explainer captions are UI chrome too: they say where the data comes from and
+        # are meant to read identically everywhere. Duplicating them is the point.
+        body = re.sub(r'<p class="(?:geo-note|src-note)"[^>]*>.*?</p>', "", body, flags=re.S)
         for m in re.finditer(r"<p[^>]*>(.*?)</p>", body, re.S):
             t = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()
             if len(t) < 60:
