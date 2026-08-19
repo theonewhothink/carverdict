@@ -59,27 +59,21 @@ for f in pathlib.Path("scripts").glob("*.py"):
 print(f"origin literals rewritten in {n} generator file(s)")
 PY_EOF
 
-# Rebuild the ownership dataset from NHTSA and EPA. This is the substance of the site:
-# complaint volumes, recall campaigns and real fuel economy for thousands of model-years,
-# fetched fresh on every deploy. It refuses to overwrite the committed database with a
-# smaller or emptier one, so a bad API day leaves the last good data in place.
-# 1,100 model-years costs about four minutes of the twenty-minute build window, which leaves
-# room for the Wikidata and Wikipedia harvests. Raise it only if the build finishes early.
-# Cloudflare kills the Building stage at 20 minutes. 1,100 model-years cost 10 of them and
-# the rest of the pipeline needs 12, so the build died at the cap. 450 fits: ingest ~5 min,
-# still 28x the old seed, and the round-robin keeps the most-searched cars covered first.
-# The 20-minute clock covers build AND deploy. 450 model-years left the deploy only ~3
-# minutes and it was killed mid-upload, so the budget was cut to 200 until a deploy landed.
-# Measured 2026-08-06 on build #59e4336d (commit 75d75f4): 12m35s total - 11m48s building,
-# 40s deploying. Uploads are diffs now, so the deploy stage costs under a minute and there
-# is roughly 7 minutes of headroom. 450 costs about 3 minutes more than 200, landing near
-# 15m30s and keeping a safety margin. Raise again only against fresh timing evidence.
-# 2026-08-08: no deploy has landed since 2026-08-06. Both 08-07 pushes (Commons image
-# scoring and its 90s cap) went out and every live page is still stamped 2026-08-06, so the
-# 450-budget build is dying on the 20-minute build+deploy cap. Stepped back to 200, the last
-# budget with a measured landed deploy (12m35s); the 90s image pass still leaves ~5 minutes
-# spare. Raise again only after a deploy lands and a fresh timing is recorded here.
-INGEST_BUDGET="${INGEST_BUDGET:-200}" "$PY" scripts/ingest_scale.py || echo "WARNING: ingest skipped, using committed dataset"
+# The ownership dataset is no longer fetched here. It is fetched nightly by the
+# "Ownership data" GitHub Action, which has hours instead of the ~5 minutes this stage could
+# afford, and is published as the rolling `data-latest` release asset. This build just
+# downloads it. Two things follow: the 20-minute build+deploy cap stops governing how much
+# data the site can carry, and coverage compounds night over night instead of resetting to
+# whatever one build window could fetch.
+#
+# The download is advisory. If the asset is missing, stale-URL, or smaller than the database
+# committed in the repository, the committed one is kept and the build continues.
+DATA_URL="${DATA_URL:-https://github.com/theonewhothink/carverdict/releases/download/data-latest/cars.sqlite}"
+if curl -fsSL --max-time 120 -o /tmp/cars.remote.sqlite "$DATA_URL"; then
+  "$PY" scripts/adopt_dataset.py /tmp/cars.remote.sqlite
+else
+  echo "WARNING: published dataset unreachable; building on the committed database"
+fi
 
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
