@@ -38,7 +38,7 @@ if install_pillow; then echo "pillow: ready"; else echo "WARNING: pillow unavail
 # Canonical origin for canonicals, hreflang, JSON-LD and the sitemap. Point this at the real
 # domain (Cloudflare build variable SITE_ORIGIN) the moment one is bought; until then the
 # workers.dev hostname is the truth. A placeholder domain in canonical tags is an SEO own-goal.
-export SITE_ORIGIN="${SITE_ORIGIN:-https://carsite.adir-073.workers.dev}"
+export SITE_ORIGIN="${SITE_ORIGIN:-https://motorjury.com}"
 echo "origin: $SITE_ORIGIN"
 
 # CI has no upload ceiling, so publish the complete catalogue (site file cap is 20,000).
