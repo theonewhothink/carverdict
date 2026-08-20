@@ -122,13 +122,33 @@
       // rather than an empty gallery.
       res.files = ranked.length ? ranked : res.files.slice(0, MAX);
 
-      grid.innerHTML = res.files.map(function (f) {
+      function cell(f, w, cls) {
         var name = f.replace(/^File:/, '').replace(/\.[^.]+$/, '');
-        return '<a class="gal-cell" href="#" data-lb data-credit="' +
+        return '<a class="' + cls + '" href="#" data-lb data-credit="' +
           ((meta[f] || {}).artist || '') + ' · ' + ((meta[f] || {}).licence || '') + '">' +
-          '<img loading="lazy" src="' + thumb(f, 520) + '" alt="' +
-          name.replace(/"/g, '&quot;') + '"></a>';
-      }).join('');
+          '<img loading="lazy" referrerpolicy="no-referrer" src="' + thumb(f, w) + '" alt="' +
+          name.replace(/"/g, '&quot;') + '">' + '</a>';
+      }
+
+      // Weave the strongest shots through the article first: every
+      // <figure data-gal-slot> in the biography takes one photograph, the rest
+      // fill the grid at the end. One sequence, one lightbox.
+      var slots = document.querySelectorAll('figure[data-gal-slot]');
+      var used = 0;
+      slots.forEach(function (slot) {
+        if (used >= res.files.length) return;
+        var f = res.files[used++];
+        slot.innerHTML = cell(f, 900, 'bio-shot') +
+          '<figcaption>' + ((meta[f] || {}).artist || 'Wikimedia Commons') +
+          ' · ' + ((meta[f] || {}).licence || 'CC') + '</figcaption>';
+        slot.removeAttribute('hidden');
+      });
+      var rest = res.files.slice(used);
+      if (rest.length) {
+        grid.innerHTML = rest.map(function (f) { return cell(f, 520, 'gal-cell'); }).join('');
+      } else {
+        grid.closest('.card').style.display = 'none';
+      }
 
       if (creditEl) {
         var seen = {}, credits = [];

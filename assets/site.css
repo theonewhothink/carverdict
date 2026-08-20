@@ -723,3 +723,24 @@ table,td{font-size:15px}
    kickers, verdict chips, table tags — uses the darker ink so it passes AA at 4.5:1. */
 :root{--gold-ink:#8A5F12;--warn:#8A5F12}
 .ev-cat,.q-n i,.v-CAUTION,.tag.v-CAUTION{color:var(--gold-ink)}
+
+/* ---- lightbox gallery navigation (v7) ---- */
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:44px;
+  border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#111417;font-size:26px;
+  line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.lb-nav:hover{background:#fff}
+.lb-prev{left:10px}
+.lb-next{right:10px}
+.lb-count{position:absolute;top:14px;left:16px;z-index:3;font-size:12px;letter-spacing:.4px;
+  color:#fff;background:rgba(0,0,0,.45);padding:3px 9px;border-radius:20px}
+@media (max-width:640px){.lb{padding:0}.lb-fig{border-radius:0}.lb-nav{width:38px;height:38px}}
+
+/* ---- model biography: figures woven through the article ---- */
+.bio-fig{margin:0;border:1px solid var(--line);border-radius:var(--r,10px);overflow:hidden;background:var(--wash)}
+.bio-fig a{display:block}
+.bio-fig img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}
+.bio-fig figcaption{padding:8px 12px;font-size:12px;color:var(--faint)}
+.bio-fig[hidden]{display:none}
+.about-card p,.bio-card p{line-height:1.75;margin:0 0 12px}
+.bio-card h2{margin-bottom:10px}

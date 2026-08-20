@@ -129,3 +129,19 @@
     });
   });
 })();
+
+/* Photo self-heal — any catalogue image still unloaded after the page settles is
+   reloaded eagerly once. Recovers from native lazy-load stalls and transient
+   Commons throttling, both of which otherwise leave grey boxes. */
+window.addEventListener('load', function () {
+  function heal() {
+    document.querySelectorAll('.ph img, .gal-cell img, .st-cell img, .hh-mosaic img, .model-shot img, .bio-fig img').forEach(function (im) {
+      if ((im.complete && im.naturalWidth > 0) || im.dataset.healed) return;
+      im.dataset.healed = '1';
+      im.loading = 'eager';
+      var s = im.src; im.removeAttribute('src'); im.src = s;
+    });
+  }
+  setTimeout(heal, 1200);
+  setTimeout(heal, 4000);
+});
