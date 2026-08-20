@@ -136,6 +136,16 @@ DBP = ROOT / "data" / "cars.sqlite"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
 BRAND = "CarVerdict"
 TODAY = date.today().isoformat()
+
+def _geo_country_count():
+    try:
+        t = json.loads((Path(__file__).resolve().parent.parent / "data" / "geo_prices.json").read_text())
+        return sum(1 for k in t if k != "_meta")
+    except Exception:
+        return 19
+
+N_GEO = _geo_country_count()
+
 CURRENT_YEAR = 2026
 
 def db():
@@ -756,7 +766,7 @@ car — founders, engineers, designers, champions and industrialists.</p>
 
     body = f"""<section class="home-hero-v2"><div class="wrap hh-grid">
 <div class="hh-copy">
-<span class="hh-kicker">{n_models:,} models · {len(LIB_PHOTOS):,} photographs · 19 countries</span>
+<span class="hh-kicker">{n_models:,} models · {len(LIB_PHOTOS):,} photographs · {N_GEO} countries</span>
 <h1>What does that car <em>really</em> cost to own?</h1>
 <p class="hh-sub">Every car ever made, priced for <b>your</b> country — from NHTSA complaints,
 recall campaigns and EPA data. Not opinions.</p>
@@ -764,7 +774,7 @@ recall campaigns and EPA data. Not opinions.</p>
 <a class="btn ghost" href="/play/">Play today's quiz</a></div>
 <div class="stat-row"><div><b>{n_models:,}</b><span>models in the library</span></div>
 <div><b>{n_complaints:,}</b><span>complaints indexed</span></div>
-<div><b>19</b><span>countries auto-priced</span></div></div>
+<div><b>{N_GEO}</b><span>countries auto-priced</span></div></div>
 </div>
 <div class="hh-mosaic">{hero_cells}</div>
 </div></section>
