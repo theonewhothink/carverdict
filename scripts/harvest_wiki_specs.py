@@ -28,7 +28,7 @@ LIB = ROOT / "data" / "car_library.json"
 OUT = ROOT / "data" / "wiki_specs.json"
 WD = "https://www.wikidata.org/w/api.php"
 WP = "https://en.wikipedia.org/w/api.php"
-UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
+UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
 BATCH = 50
 
 # Wall-clock budget. This harvest is three sequential loops over the whole catalogue —

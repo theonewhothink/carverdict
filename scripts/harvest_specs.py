@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "car_specs.json"
 ENDPOINT = "https://query.wikidata.org/sparql"
-UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
+UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
 
 CLASSES = ["Q3231690", "Q1420", "Q850270", "Q59773381", "Q90834785",
            "Q673687", "Q10429667", "Q3882470"]

@@ -35,7 +35,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "cars.sqlite"
-UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
+UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
 EPA = "https://www.fueleconomy.gov/ws/rest/vehicle"
 NHTSA = "https://api.nhtsa.gov"
 

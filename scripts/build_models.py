@@ -19,8 +19,8 @@ from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
-BRAND = "CarVerdict"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
+BRAND = "MotorJury"
 MAX_MODEL_PAGES = 3400          # keeps total site files under the 20k asset cap
 
 

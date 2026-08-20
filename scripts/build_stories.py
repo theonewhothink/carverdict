@@ -18,8 +18,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 DB = ROOT / "data" / "cars.sqlite"
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
-BRAND = "CarVerdict"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
+BRAND = "MotorJury"
 
 RIVALS = [
     ("Toyota", "Camry", "Honda", "Accord"),

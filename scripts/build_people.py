@@ -18,9 +18,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 CACHE = ROOT / "data" / "people.json"
 import os
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
-BRAND = "CarVerdict"
-UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
+BRAND = "MotorJury"
+UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
 
 # ---------------------------------------------------------------- the list
 GROUPS = [

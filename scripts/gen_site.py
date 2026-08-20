@@ -133,8 +133,8 @@ def hero_art(make, model, is_ev, year=None):
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 DBP = ROOT / "data" / "cars.sqlite"
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
-BRAND = "CarVerdict"
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
+BRAND = "MotorJury"
 TODAY = date.today().isoformat()
 
 def _geo_country_count():
@@ -468,7 +468,7 @@ Last updated: {TODAY}.</p></div>"""
 <nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/cars/{r['kslug']}/">{esc(make)}</a> › <a href="/cars/{r['kslug']}/{r['mslug']}/">{esc(model)}</a> › {year}</nav>
 <h1>{name}: True Cost, Problems &amp; Verdict</h1>
 <p class="sub">{(r['complaint_count'] or 0):,} NHTSA owner complaints · {(r['recall_count'] if r['recall_count'] is not None else '—')} recalls · data-computed verdict. No opinions — public data only.</p>
-<div class="triad"><b>Reviewed by</b> the CarVerdict data desk · <a href="/methodology/">2 sources</a> · <b>Last updated</b> {TODAY}</div>
+<div class="triad"><b>Reviewed by</b> the MotorJury data desk · <a href="/methodology/">2 sources</a> · <b>Last updated</b> {TODAY}</div>
 </div>
 {hero_art(make, model, bool(r['is_ev']), year)}
 </div></div>"""

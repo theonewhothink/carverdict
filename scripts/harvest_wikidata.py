@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LIB = ROOT / "data" / "car_library.json"
 ENDPOINT = "https://query.wikidata.org/sparql"
-UA = "CarVerdict/1.0 (https://carsite.adir-073.workers.dev) python-urllib"
+UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
 
 # Classes that hold real road/racing cars. Deliberately excludes bus model (Q23039057),
 # truck model (Q21546143), locomotive class (Q19832486), motorcycle model (Q23866334)

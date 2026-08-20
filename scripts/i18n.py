@@ -1,4 +1,4 @@
-"""i18n.py — string tables for CarVerdict. en is source of truth; others are full UI translations.
+"""i18n.py — string tables for MotorJury. en is source of truth; others are full UI translations.
 he is RTL. Used by gen_site (header/footer/home) and localize.py (post-pass on generated EN pages).
 """
 

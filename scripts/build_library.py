@@ -17,7 +17,7 @@ from i18n import LANGS, RTL, t, S, LANG_NAMES
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carsite.adir-073.workers.dev").rstrip("/")
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 DATA = json.load(open(ROOT / "data" / "car_library.json"))
 
 
@@ -267,7 +267,7 @@ def main():
 <p class="lib-note">Photos: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>, hotlinked with per-file credit links. Catalog: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0).</p></div>"""
         out = SITE / "library" / bs / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(shell("en", f"{b} — Complete Model Library | CarVerdict",
+        out.write_text(shell("en", f"{b} — Complete Model Library | MotorJury",
                              f"All {len(models)} {b} models ever catalogued, with photos.",
                              f"{ORIGIN}/library/{bs}/", body))
 
@@ -291,7 +291,7 @@ def main():
 <p class="lib-note"><a href="/library/">{t("en", "nav_library")}</a></p></div>"""
         out = SITE / "library" / obs / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(shell("en", f"{label} — Model Library | CarVerdict",
+        out.write_text(shell("en", f"{label} — Model Library | MotorJury",
                              f"{label}: {len(entries)} models catalogued.",
                              f"{ORIGIN}/library/{obs}/", obody))
         orphans += 1
@@ -330,7 +330,7 @@ def main():
 </div>"""
     (SITE / "library").mkdir(parents=True, exist_ok=True)
     (SITE / "library" / "index.html").write_text(
-        shell("en", "The Car Library — Every Car Model Ever Made | CarVerdict",
+        shell("en", "The Car Library — Every Car Model Ever Made | MotorJury",
               f"{n_models:,} car models from {len(brands):,} brands, with photography. The complete automotive catalog.",
               f"{ORIGIN}/library/", body))
 
@@ -348,7 +348,7 @@ def main():
 </div></div><script src="/assets/library-app.js" defer></script>"""
         out = SITE / lang / "library" / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(shell(lang, t(lang, "lib_title") + " | CarVerdict",
+        out.write_text(shell(lang, t(lang, "lib_title") + " | MotorJury",
                              f"{n_models:,} — {len(brands):,}.",
                              f"{ORIGIN}/{lang}/library/", body))
 
