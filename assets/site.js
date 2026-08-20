@@ -1,4 +1,4 @@
-/* CarVerdict site.js — universal car search.
+/* MotorJury site.js — universal car search.
    Results are ranked: exact brand > brand prefix > model prefix > model contains.
    BRAND rows link to that brand's library page; MODEL rows link to the page that actually
    contains that model (its own brand), so a result can never land on an unrelated brand. */
