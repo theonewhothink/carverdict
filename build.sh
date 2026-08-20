@@ -116,25 +116,33 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
-# Google AdSense: one auto-ads loader in every page head, plus ads.txt at the root.
-# The loader is inert until the site is added and approved in the AdSense account
-# (which requires the real domain); embedding now means ads go live the moment
-# approval lands, with no further deploy.
+# Google AdSense + Google Analytics 4: one auto-ads loader and one gtag.js snippet in
+# every page head, plus ads.txt at the root. The AdSense loader is inert until approval
+# lands; overlay formats (anchor, vignette) are disabled account-side so mobile screens
+# are never covered. GA4 property: MotorJury (account GENIUSES.CLUB), stream 15473007218.
 export ADS_CLIENT="${ADS_CLIENT:-ca-pub-6675837012921030}"
+export GA4_ID="${GA4_ID:-G-SD0YYNQ19N}"
 "$PY" - <<'PY_EOF'
 import glob, os
-tag = ('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
+ads = ('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
        '?client=%s" crossorigin="anonymous"></script>' % os.environ["ADS_CLIENT"])
+ga = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script>'
+      '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}'
+      "gtag('js',new Date());gtag('config','%s');</script>"
+      % (os.environ["GA4_ID"], os.environ["GA4_ID"]))
 n = 0
 for p in glob.glob('site/**/*.html', recursive=True):
     s = open(p).read()
-    if 'adsbygoogle.js' in s or '<head>' not in s:
+    if '<head>' not in s:
+        continue
+    tag = ('' if 'adsbygoogle.js' in s else ads) + ('' if 'googletagmanager.com/gtag' in s else ga)
+    if not tag:
         continue
     open(p, 'w').write(s.replace('<head>', '<head>' + tag, 1))
     n += 1
 open('site/ads.txt', 'w').write('google.com, %s, DIRECT, f08c47fec0942fa0\n'
                                 % os.environ["ADS_CLIENT"].replace('ca-pub-', 'pub-'))
-print(f"ADSENSE OK: loader injected into {n} pages + ads.txt")
+print(f"ADSENSE+GA4 OK: tags injected into {n} pages + ads.txt")
 PY_EOF
 
 # Gate: a dead internal link must never reach production.
