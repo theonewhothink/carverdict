@@ -254,15 +254,12 @@ def main():
     # brand pages (EN, static — SEO spearhead market)
     for b, models in brands.items():
         bs = slug(b)
-        FIRST = 48
+        # Every model renders as a card. The old 48-card cap with a "show all"
+        # button read as missing data — a marque page that says "every model ever
+        # made" must actually show every model without a click.
         cards = "".join(card(m, brand_slug=bs, lazy=(ci >= 10))
-                        for ci, m in enumerate(models[:FIRST]))
-        rest = [[m["n"], m["p"], m["y"], (MODEL_INDEX.get(bs, {}) or {}).get(m["n"], "")]
-                for m in models[FIRST:]]
-        if rest:
-            REST_DATA[bs] = rest
-        more = (f'<button class="btn ghost more-btn" data-brand="{bs}">'
-                f'Show all {len(models)} {esc(b)} models</button>') if rest else ""
+                        for ci, m in enumerate(models))
+        more = ""
         with_photos = sum(1 for m in models if m["p"])
         body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <nav class="crumbs"><a href="/library/">{t("en", "nav_library")}</a> › {esc(b)}</nav>

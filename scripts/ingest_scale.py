@@ -449,5 +449,16 @@ CREATE TABLE IF NOT EXISTS ev_extras(my_id INT PRIMARY KEY, battery_warranty TEX
   battery_replacement_low INT, battery_replacement_high INT, source TEXT);
 """
 
+def _deep_harvest():
+    """Nightly wide-net catalogue sweep. Never fails the ingest run."""
+    try:
+        import deep_harvest
+        deep_harvest.main()
+    except Exception as e:
+        print(f"WARNING: deep harvest unavailable ({e})")
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    code = main()
+    _deep_harvest()
+    sys.exit(code)
