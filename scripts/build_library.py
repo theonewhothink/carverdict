@@ -174,7 +174,7 @@ def header(lang="en", origin_prefix=""):
         f'<a href="{"" if l == "en" else "/" + l}/{"library/" if True else ""}" '
         f'{"class=cur" if l == lang else ""}>{l.upper()}</a>' for l in LANGS)
     return f"""<header class="hdr"><div class="wrap hdr-in">
-<a class="logo" href="{pre or "/"}">Car<em>Verdict</em></a>
+<a class="logo" href="{pre or "/"}">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="{esc(t(lang, "search_ph"))}" autocomplete="off"
  aria-label="search"><div id="q-out" hidden></div></div>
 <nav class="nav"><a href="/cars/">{t(lang, "nav_browse")}</a><a href="{pre}/library/" class="cur">{t(lang, "nav_library")}</a><a href="/events/">Events</a><a href="/calculators/">{t(lang, "nav_calculators")}</a><a href="/recalls/">{t(lang, "nav_recalls")}</a></nav>

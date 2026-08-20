@@ -151,7 +151,7 @@ def shell(title, desc, canon, body):
 <meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}">
 <link rel="stylesheet" href="/assets/site.css"></head><body>
 <header class="hdr"><div class="wrap hdr-in">
-<a class="logo" href="/">Car<em>Verdict</em></a>
+<a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
 <nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
 </div></header>

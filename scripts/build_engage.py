@@ -59,7 +59,7 @@ def shell(lang, title, desc, path, body, extra_js=""):
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/assets/site.css">{hre}</head><body>
 <header class="hdr"><div class="wrap hdr-in">
-<a class="logo" href="{pre or '/'}">Car<em>Verdict</em></a>
+<a class="logo" href="{pre or '/'}">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="{esc(t(lang,'search_ph'))}" autocomplete="off" aria-label="search" data-none="{esc(t(lang,'search_none'))}"><div id="q-out" hidden></div></div>
 <nav class="nav"><a href="/cars/">{t(lang,'nav_browse')}</a><a href="/library/">{t(lang,'nav_library')}</a><a href="/events/">Events</a><a href="/play/" class="cur">Play</a><a href="/calculators/">{t(lang,'nav_calculators')}</a></nav>
 <details class="langs"><summary>{lang.upper()}</summary><div>{''.join(f'<a{" class=cur" if l==lang else ""} href="{"/" if l=="en" else "/"+l+"/"}">{l.upper()}</a>' for l in LANGS)}</div></details>

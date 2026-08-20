@@ -257,7 +257,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head=""):
 </head>
 <body>
 <header class="hdr"><div class="wrap hdr-in">
-<a class="logo" href="/">Car<em>Verdict</em></a>
+<a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
 <nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
