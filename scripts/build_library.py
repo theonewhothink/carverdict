@@ -8,7 +8,7 @@ Generates:
 Photo policy: hotlink Wikimedia Commons via Special:FilePath (redirects to upload.wikimedia.org),
 credit + link to the Commons file page on every card. No files copied -> no licensing risk.
 """
-import json, os, re, sys, html
+import json, os, re, sys, html, urllib.parse
 from pathlib import Path
 from collections import defaultdict, Counter
 
@@ -49,7 +49,10 @@ def esc(s):
 
 
 def commons_thumb(fname, w=480):
-    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{fname.replace(' ', '_')}?width={w}"
+    # URL-encode the filename: Commons names carry quotes, hashes and non-ASCII,
+    # any of which silently kills the raw src on part of the catalogue.
+    return ("https://commons.wikimedia.org/wiki/Special:FilePath/"
+            + urllib.parse.quote(fname.replace(" ", "_")) + f"?width={w}")
 
 
 def commons_page(fname):
@@ -211,8 +214,10 @@ def card(m, lang="en", lazy=True, brand_slug=""):
     url = f'/library/{brand_slug}/{slug(m["n"])}/' if has_page else f'/library/{brand_slug}/'
     if m["p"]:
         img = (f'<span class="ph"><img src="{commons_thumb(m["p"])}" alt="{esc(m["n"])}"'
-               f'{" loading=lazy" if lazy else ""} '
-               f'onerror="this.closest(\'.ph\').classList.add(\'noimg\')"></span>')
+               f'{" loading=lazy" if lazy else ""} referrerpolicy="no-referrer" '
+               'onerror="var e=this;if(!e.dataset.r){e.dataset.r=1;'
+               'setTimeout(function(){var s=e.src;e.src=\'\';e.src=s},1200)}'
+               'else{e.closest(\'.ph\').classList.add(\'noimg\')}"></span>')
     else:
         img = ('<span class="ph noimg"><svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" '
                'fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="22" r="4" fill="currentColor"/>'
@@ -250,7 +255,8 @@ def main():
     for b, models in brands.items():
         bs = slug(b)
         FIRST = 48
-        cards = "".join(card(m, brand_slug=bs) for m in models[:FIRST])
+        cards = "".join(card(m, brand_slug=bs, lazy=(ci >= 10))
+                        for ci, m in enumerate(models[:FIRST]))
         rest = [[m["n"], m["p"], m["y"], (MODEL_INDEX.get(bs, {}) or {}).get(m["n"], "")]
                 for m in models[FIRST:]]
         if rest:

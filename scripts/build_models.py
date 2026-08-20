@@ -14,6 +14,7 @@ from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
+from bio_text import build_bio
 from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
                            is_qid, resolve_qid_brands, brand_of, real_engine)
 
@@ -342,6 +343,7 @@ def main():
                 break
         return out
 
+    WORDS_UNDER_FLOOR = []
     # ---- pass 2: render ----
     for b, m, bs, ms in selected:
         url = f"/library/{bs}/{ms}/"
@@ -370,7 +372,7 @@ def main():
             # Attribution (photographer + licence) is rendered once, per image, in the
             # credits block under the gallery — which is what the CC licences actually ask for.
             shot = (f'<figure class="model-shot"><a href="#" data-lb data-credit="Wikimedia Commons &middot; CC">'
-                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high"></a></figure>')
+                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high" referrerpolicy="no-referrer"></a></figure>')
         else:
             shot = ('<figure class="model-shot noimg"><div class="ph noimg">'
                     '<svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" fill="none" '
@@ -515,6 +517,11 @@ def main():
                             f'<div class="gal-grid" data-gal></div>'
                             f'<p class="lib-note" data-gal-credits></p></div>')
 
+        bio_html, bio_words = build_bio(
+            b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")))
+        if bio_words < 500:
+            WORDS_UNDER_FLOOR.append(bio_words)
+
         body = f"""<div class="model-hero"><div class="wrap">
 <nav class="crumbs"><a href="/library/">Library</a> › <a href="/library/{bs}/">{esc(b)}</a> › {esc(m["n"])}</nav>
 <div class="model-grid">
@@ -528,6 +535,7 @@ def main():
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
 {about_card}
+{bio_html}
 {specs_card}
 {rate_card}
 {gallery_card}
@@ -565,6 +573,9 @@ re-priced for your country. Verdicts are published per model year as the data is
 
     (SITE / "assets" / "model-index.json").write_text(
         json.dumps(index, separators=(",", ":"), ensure_ascii=False))
+    if WORDS_UNDER_FLOOR:
+        print(f"  WARNING: {len(WORDS_UNDER_FLOOR)} biographies under the 500-word floor "
+              f"(min {min(WORDS_UNDER_FLOOR)})")
     print(f"MODELS OK: {made} model pages, index covers {len(index)} brands")
 
 

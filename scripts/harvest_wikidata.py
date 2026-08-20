@@ -35,6 +35,16 @@ CLASSES = {
     "Q673687":   "racing automobile",
     "Q10429667": "sports car",
     "Q3882470":  "one-off vehicle",
+    # widened 2026-08: classes verified against live Wikidata labels before adding —
+    # each holds real cars filed nowhere else (a Countach is P31 supercar, kei-market
+    # cars are P31 kei car, and so on). The allow-list discipline stands.
+    "Q815679":   "supercar",
+    "Q744620":   "grand tourer",
+    "Q1059437":  "kei car",
+    "Q1072763":  "muscle car",
+    "Q360369":   "microcar",
+    "Q1463541":  "pony car",
+    "Q1780758":  "hot hatch",
 }
 
 QUERY = """SELECT ?i ?iLabel ?mLabel ?inc ?img WHERE {

@@ -179,7 +179,9 @@ def social_queue():
     for i in range(7):
         day = date.today() + timedelta(days=i)
         car = rnd.choice(photos)
-        img = "https://commons.wikimedia.org/wiki/Special:FilePath/" + car["p"].replace(" ", "_") + "?width=1200"
+        import urllib.parse as _u3
+        img = ("https://commons.wikimedia.org/wiki/Special:FilePath/"
+               + _u3.quote(car["p"].replace(" ", "_")) + "?width=1200")
         out.append({
             "date": day.isoformat(),
             "slot": "09:00",

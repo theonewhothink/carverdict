@@ -125,7 +125,7 @@ def hero_art(make, model, is_ev, year=None):
         if href == "/library/":
             href = model_url(model)
         return (f'<figure class="hero-art"><a class="photo" href="{href}">'
-                f'<img src="https://commons.wikimedia.org/wiki/Special:FilePath/{fn}?width=900" '
+                f'<img src="https://commons.wikimedia.org/wiki/Special:FilePath/{_uq(fn)}?width=900" referrerpolicy="no-referrer" '
                 f'alt="{esc(make)} {esc(model)}" fetchpriority="high"></a>'
                 f'<figcaption>Photo: Wikimedia Commons &middot; open the model page</figcaption></figure>')
     return f'<figure class="hero-art">{car_svg(model, is_ev)}<figcaption>Illustration</figcaption></figure>'
@@ -136,6 +136,10 @@ DBP = ROOT / "data" / "cars.sqlite"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 BRAND = "MotorJury"
 TODAY = date.today().isoformat()
+
+def _uq(fn):
+    import urllib.parse
+    return urllib.parse.quote(fn)
 
 def _geo_country_count():
     try:
@@ -734,7 +738,9 @@ car — founders, engineers, designers, champions and industrialists.</p>
     def murl(display):
         return model_url(display)
     def cimg(ph, w):
-        return f"https://commons.wikimedia.org/wiki/Special:FilePath/{ph.replace(' ', '_')}?width={w}"
+        import urllib.parse as _u
+        return ("https://commons.wikimedia.org/wiki/Special:FilePath/"
+                + _u.quote(ph.replace(" ", "_")) + f"?width={w}")
     mosaic = "".join(
         f'<a class="mo-cell" data-lb data-credit="Photo: Wikimedia Commons · CC" href="#">'
         f'<img src="{cimg(ph, 640)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
