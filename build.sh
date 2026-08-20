@@ -167,5 +167,27 @@ if dead:
     sys.exit(1)
 PY_EOF
 
+# IndexNow: instant URL submission to Bing, Yandex, Seznam and Naver (DuckDuckGo serves
+# from Bing's index). The key file must be served from the site root for the engines to
+# verify ownership; it goes live with this same deploy, and every nightly build re-pings,
+# so the first ping after any key change self-heals. Google ignores IndexNow — Search
+# Console already carries the sitemap there. Never fails the build.
+export INDEXNOW_KEY="${INDEXNOW_KEY:-b7e4f2c8a91d4e6f8c3b5a2d7f9e1c04}"
+printf '%s' "$INDEXNOW_KEY" > "site/$INDEXNOW_KEY.txt"
+"$PY" - <<'PY_EOF' || echo "WARNING: IndexNow ping skipped"
+import json, os, re, urllib.request
+urls = re.findall(r"<loc>([^<]+)</loc>", open("site/sitemap-0.xml").read())[:10000]
+body = json.dumps({"host": "motorjury.com", "key": os.environ["INDEXNOW_KEY"],
+                   "keyLocation": "https://motorjury.com/%s.txt" % os.environ["INDEXNOW_KEY"],
+                   "urlList": urls}).encode()
+req = urllib.request.Request("https://api.indexnow.org/indexnow", data=body,
+                             headers={"Content-Type": "application/json; charset=utf-8"})
+try:
+    with urllib.request.urlopen(req, timeout=30) as r:
+        print(f"INDEXNOW OK: {len(urls)} urls submitted (HTTP {r.status})")
+except Exception as e:
+    print(f"WARNING: IndexNow ping failed ({e}); key file still deployed")
+PY_EOF
+
 node --test workers/calc.test.mjs
 echo "build complete"
