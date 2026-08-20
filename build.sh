@@ -45,8 +45,8 @@ echo "origin: $SITE_ORIGIN"
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 11000", p.read_text()))
-print("MAX_MODEL_PAGES set to 11000")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 8000", p.read_text()))
+print("MAX_MODEL_PAGES set to 8000")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
