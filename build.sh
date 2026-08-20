@@ -112,6 +112,27 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
+# Google AdSense: one auto-ads loader in every page head, plus ads.txt at the root.
+# The loader is inert until the site is added and approved in the AdSense account
+# (which requires the real domain); embedding now means ads go live the moment
+# approval lands, with no further deploy.
+export ADS_CLIENT="${ADS_CLIENT:-ca-pub-6675837012921030}"
+"$PY" - <<'PY_EOF'
+import glob, os
+tag = ('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
+       '?client=%s" crossorigin="anonymous"></script>' % os.environ["ADS_CLIENT"])
+n = 0
+for p in glob.glob('site/**/*.html', recursive=True):
+    s = open(p).read()
+    if 'adsbygoogle.js' in s or '<head>' not in s:
+        continue
+    open(p, 'w').write(s.replace('<head>', '<head>' + tag, 1))
+    n += 1
+open('site/ads.txt', 'w').write('google.com, %s, DIRECT, f08c47fec0942fa0\n'
+                                % os.environ["ADS_CLIENT"].replace('ca-pub-', 'pub-'))
+print(f"ADSENSE OK: loader injected into {n} pages + ads.txt")
+PY_EOF
+
 # Gate: a dead internal link must never reach production.
 "$PY" - <<'PY_EOF'
 import re, os, glob, sys
