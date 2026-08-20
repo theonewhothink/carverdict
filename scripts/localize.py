@@ -56,7 +56,11 @@ def localize_html(html, lang, urls):
     for pat, rep in P[lang]:
         html = re.sub(pat, rep, html)
     # keep language when navigating localized sections
-    html = re.sub(r'href="/(cars|calculators|recalls)/', f'href="/{lang}/\\1/', html)
+    html = re.sub(r'href="/(calculators|recalls)/', f'href="/{lang}/\\1/', html)
+    # /cars/ localizes only the section index and brand hubs; deeper model-year
+    # pages exist in English alone, so only hub links keep the language prefix.
+    html = re.sub(r'href="/cars/(?=")', f'href="/{lang}/cars/', html)
+    html = re.sub(r'href="/cars/([a-z0-9-]+)/(?=")', f'href="/{lang}/cars/\\1/', html)
     html = html.replace('href="/library/"', f'href="/{lang}/library/"')
     return html
 
