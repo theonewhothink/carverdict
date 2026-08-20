@@ -75,6 +75,10 @@ else
   echo "WARNING: published dataset unreachable; building on the committed database"
 fi
 
+# The nightly deep harvest embeds its full Wikidata catalogue inside the dataset;
+# adopt it when it is bigger than the committed car_library.json.
+"$PY" scripts/extract_library.py || echo "WARNING: catalogue extraction skipped"
+
 # Refresh the catalogue from Wikidata. The committed car_library.json is the floor; this
 # adds the classes the first harvest missed (automobile model series, racing automobile
 # model - i.e. Cayenne, Boxster, 911, 917, 962). Never fails the build: on a Wikidata
