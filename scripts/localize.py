@@ -62,7 +62,17 @@ def localize_html(html, lang, urls):
 
 
 def main():
-    pages = [p for d in LOCALIZE_DIRS for p in (SITE / d).rglob("index.html")]
+    pages = []
+    for d in LOCALIZE_DIRS:
+        for p in (SITE / d).rglob("index.html"):
+            rel = p.relative_to(SITE / d).parts
+            # /cars/ localizes only the section index and brand hubs. Model and
+            # model-year pages are English data records; duplicating thousands of
+            # them per language would blow the 20,000 static-asset budget as the
+            # nightly dataset compounds.
+            if d == "cars" and len(rel) > 2:
+                continue
+            pages.append(p)
     pages.append(SITE / "index.html")
     made = 0
     for p in pages:
