@@ -33,6 +33,8 @@ import concurrent.futures as cf
 import json, os, re, shutil, sqlite3, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "cars.sqlite"
 UA = "MotorJury/1.0 (https://motorjury.com) python-urllib"
@@ -385,25 +387,11 @@ def main():
                  num(e.get("rangeA")) or num(e.get("range")), num(e.get("combE"))))
     con.commit()
 
-    # verdicts: complaints per year of exposure, weighted by severe recalls
-    for my, yr, cc, rc, sev in con.execute(
-            "SELECT id,year,complaint_count,recall_count,severe_recalls FROM model_years"):
-        age = max(1, 2026 - yr)
-        cpy = (cc or 0) / age
-        score = 100 - min(60, cpy * 1.6) - min(25, (sev or 0) * 5) - min(10, (rc or 0) * 1.2)
-        score = max(1, min(100, round(score)))
-        verdict = "BUY" if score >= 70 else ("CAUTION" if score >= 45 else "AVOID")
-        reasons = json.dumps([
-            f"{cc or 0} NHTSA complaints on record ({cpy:.1f}/yr of exposure)",
-            f"{rc or 0} recall campaigns, {sev or 0} touching safety-critical systems",
-        ])
-        curve = json.dumps([{"age": a,
-                             "total_low": 260 + a * 95 + int(cpy * 12),
-                             "total_high": 520 + a * 185 + int(cpy * 26)} for a in range(0, 16)])
-        con.execute("""INSERT OR REPLACE INTO computed_scores
-            (my_id,reliability_score,verdict,reasons,cost_curve,complaints_per_year)
-            VALUES(?,?,?,?,?,?)""", (my, score, verdict, reasons, curve, round(cpy, 2)))
-    con.commit()
+    # Verdicts. The scoring model lives in scripts/score_model_years.py so that the
+    # nightly ingest and every site build compute identical numbers from identical inputs.
+    from score_model_years import compute as _score
+    _s = _score(con)
+    print(f"scores: {_s['scored']} model-years - BUY {_s['BUY']} / CAUTION {_s['CAUTION']} / AVOID {_s['AVOID']}")
 
     n_my = con.execute("SELECT COUNT(*) FROM model_years").fetchone()[0]
     n_f = con.execute("SELECT COUNT(*) FROM fuel").fetchone()[0]

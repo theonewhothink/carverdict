@@ -119,7 +119,7 @@ top issue: <b>{esc(top)}</b> · verdict <span class="tag v-{verdict if verdict i
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <div class="card"><h2>What breaks, by owner reports</h2><div class="pb">{bars or '<p>No categorised component data.</p>'}</div></div>
 {f'<div class="card"><h2>In the owners&rsquo; words</h2>{quote_html}</div>' if quote_html else ''}
-{f'<div class="card"><h2>Recall campaigns</h2><table><thead><tr><th>Reported</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_html}</tbody></table></div>' if rec_html else ''}
+{f'<div class="card"><h2>Recall campaigns</h2><div class="table-wrap"><table class="cost-table"><thead><tr><th>Reported</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_html}</tbody></table></div></div>' if rec_html else ''}
 <div class="card"><h2>Questions owners ask</h2>{faq_html}</div>
 <div class="card"><h2>Share this verdict</h2>
 <p>The {esc(name)} scored {r['score'] or '?'}/100 on the federal record.</p>
@@ -131,7 +131,7 @@ top issue: <b>{esc(top)}</b> · verdict <span class="tag v-{verdict if verdict i
     d = SITE / "problems" / r["kslug"] / r["mslug"] / str(r["year"])
     d.mkdir(parents=True, exist_ok=True)
     (d / "index.html").write_text(shell(
-        f"{name} Problems: Top Issues, Complaints & Recalls | {BRAND}",
+        f"{name} Problems &amp; Complaints | {BRAND}",
         f"{name} problems from {r['cc'] or 0:,} NHTSA owner complaints: top issue {top}, "
         f"{r['rc'] or 0} recalls. Verdict: {verdict} {r['score'] or '?'}/100.", ORIGIN + url, body))
     return url
@@ -161,8 +161,8 @@ The cleanest record is the <b>{best['year']}</b> ({best['score']}/100). Judged o
 and recall data only.</p></div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <div class="card"><h2>Every year on record</h2>
-<table><thead><tr><th>Year</th><th>Score</th><th>Verdict</th><th>Complaints</th><th>Recalls</th></tr></thead>
-<tbody>{rows}</tbody></table></div>
+<div class="table-wrap"><table class="cost-table"><thead><tr><th>Year</th><th>Score</th><th>Verdict</th><th>Complaints</th><th>Recalls</th></tr></thead>
+<tbody>{rows}</tbody></table></div></div>
 <div class="card"><h2>Share it</h2>{share_row(ORIGIN + url, f"Worst {make} {model} year: {worst['year']} ({worst['score']}/100, {worst['cc'] or 0:,} federal complaints). Best: {best['year']}.")}</div>
 <div class="rel-grid">{hub_link}<a href="/problems/">All problem rankings<small>the hall of shame</small></a></div></div>"""
     d = SITE / "problems" / kslug / mslug

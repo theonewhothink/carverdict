@@ -11,21 +11,53 @@
     return (g.sym || '$') + s;
   }
 
+  // A figure that mixes energy and parts has to be split before it is re-priced: fuel
+  // follows the country's pump price, everything else follows its parts-and-labour index.
+  function mixed(usd, fuelShare, g) {
+    var rest = Math.max(0, usd - fuelShare);
+    return fuelShare * (g.fuel_usd_l / 0.91) + rest * (g.maint_idx || 1);
+  }
+
   function recalc(g) {
     document.querySelectorAll('[data-usd]').forEach(function (el) {
       var usd = parseFloat(el.getAttribute('data-usd'));
+      if (!isFinite(usd)) return;
       var kind = el.getAttribute('data-kind') || '';
+      if (kind === 'mix') {
+        el.textContent = money(mixed(usd, parseFloat(el.getAttribute('data-fuel-usd') || '0'), g), g);
+        return;
+      }
       var idx = kind === 'ins' ? (g.ins_idx || 1) : kind === 'maint' ? (g.maint_idx || 1) : 1;
       var fuelAdj = kind === 'fuel' ? (g.fuel_usd_l / 0.91) : 1;
       el.textContent = money(usd * idx * fuelAdj, g);
     });
     var t = document.getElementById('geo-total');
     if (t) {
-      var base = parseFloat(t.getAttribute('data-usd') || '0');
-      var fuelShare = parseFloat(t.getAttribute('data-fuel-usd') || '0');
-      var rest = base - fuelShare;
-      t.textContent = money(fuelShare * (g.fuel_usd_l / 0.91) + rest * (g.maint_idx || 1), g);
+      t.textContent = money(mixed(parseFloat(t.getAttribute('data-usd') || '0'),
+                                  parseFloat(t.getAttribute('data-fuel-usd') || '0'), g), g);
     }
+    // Charts and captions are drawn in USD at build time; say so honestly once the page
+    // has been re-priced into another currency.
+    document.querySelectorAll('[data-geo-currency-note]').forEach(function (el) {
+      el.textContent = (g.cur && g.cur !== 'USD')
+        ? ('US dollars — the figures above are shown in ' + g.cur)
+        : 'US dollars';
+    });
+    // Distance and economy units follow the country, not the data source.
+    document.querySelectorAll('[data-mpg]').forEach(function (el) {
+      var mpg = parseFloat(el.getAttribute('data-mpg'));
+      if (!isFinite(mpg) || !mpg) return;
+      el.textContent = (g.units === 'metric')
+        ? (235.215 / mpg).toFixed(1) + ' L/100km'
+        : mpg.toFixed(0) + ' ' + (el.getAttribute('data-mpg-unit') || 'MPG');
+    });
+    document.querySelectorAll('[data-mi]').forEach(function (el) {
+      var mi = parseFloat(el.getAttribute('data-mi'));
+      if (!isFinite(mi)) return;
+      el.textContent = (g.units === 'metric')
+        ? Math.round(mi * 1.60934).toLocaleString() + ' km'
+        : Math.round(mi).toLocaleString() + ' mi';
+    });
   }
 
   function chip(g) {

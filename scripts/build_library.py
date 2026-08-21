@@ -185,11 +185,14 @@ def header(lang="en", origin_prefix=""):
 </div></header>"""
 
 
-def shell(lang, title, desc, canon, body, extra_head=""):
+def shell(lang, title, desc, canon, body, extra_head="", hreflang_on=False):
     d = ' dir="rtl"' if lang in RTL else ""
-    hreflang = "".join(
+    # Only the section index has translations. Emitting the same /library/ alternates on
+    # every marque page told search engines a thousand different pages were translations
+    # of one another.
+    hreflang = ("".join(
         f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{"" if l == "en" else "/" + l}/library/">'
-        for l in LANGS) + f'<link rel="alternate" hreflang="x-default" href="{ORIGIN}/library/">'
+        for l in LANGS) + f'<link rel="alternate" hreflang="x-default" href="{ORIGIN}/library/">') if hreflang_on else ""
     return f"""<!doctype html><html lang="{lang}"{d}><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
@@ -213,7 +216,11 @@ def card(m, lang="en", lazy=True, brand_slug=""):
     has_page = m["n"] in MODEL_INDEX.get(brand_slug, {})
     url = f'/library/{brand_slug}/{slug(m["n"])}/' if has_page else f'/library/{brand_slug}/'
     if m["p"]:
-        img = (f'<span class="ph"><img src="{commons_thumb(m["p"])}" alt="{esc(m["n"])}"'
+        _b = commons_thumb(m["p"])
+        _srcset = ", ".join(f"{_b.split('?')[0]}?width={w} {w}w" for w in (320, 480, 640))
+        img = (f'<span class="ph"><img src="{_b}" srcset="{_srcset}" '
+               f'sizes="(max-width: 520px) 45vw, 220px" width="320" height="180" decoding="async" '
+               f'alt="{esc(m["n"])}"'
                f'{" loading=lazy" if lazy else ""} referrerpolicy="no-referrer" '
                'onerror="var e=this;if(!e.dataset.r){e.dataset.r=1;'
                'setTimeout(function(){var s=e.src;e.src=\'\';e.src=s},1200)}'
@@ -270,9 +277,18 @@ def main():
 <p class="lib-note">Photos: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>, hotlinked with per-file credit links. Catalog: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0).</p></div>"""
         out = SITE / "library" / bs / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(shell("en", f"{b} — Complete Model Library | MotorJury",
-                             f"All {len(models)} {b} models ever catalogued, with photos.",
-                             f"{ORIGIN}/library/{bs}/", body))
+        # A marque page carrying one or two models and no photography is a thin page, and
+        # 1,000 of them is a thin-content signal across the whole section. Keep them — they
+        # are useful and they carry links — but tell search engines not to index them.
+        thin = len(models) < 3 and with_photos == 0
+        head_extra = '<meta name="robots" content="noindex,follow">' if thin else ""
+        title = (f"{b} models | MotorJury" if len(b) > 26
+                 else f"{b} — Complete Model Library | MotorJury")
+        out.write_text(shell("en", title,
+                             f"All {len(models)} {b} models ever catalogued"
+                             + (f", {with_photos} with period photography." if with_photos
+                                else ", from the Wikidata automotive catalogue."),
+                             f"{ORIGIN}/library/{bs}/", body, extra_head=head_extra))
 
     # Model pages (build_models.py) link /library/{brand}/ for every brand slug in
     # model_index.json. Label recovery can rename a marque between the two builders,
@@ -335,7 +351,7 @@ def main():
     (SITE / "library" / "index.html").write_text(
         shell("en", "The Car Library — Every Car Model Ever Made | MotorJury",
               f"{n_models:,} car models from {len(brands):,} brands, with photography. The complete automotive catalog.",
-              f"{ORIGIN}/library/", body))
+              f"{ORIGIN}/library/", body, hreflang_on=True))
 
     # localized dynamic library (renders client-side from shared JSON)
     for lang in LANGS:
@@ -352,8 +368,8 @@ def main():
         out = SITE / lang / "library" / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(shell(lang, t(lang, "lib_title") + " | MotorJury",
-                             f"{n_models:,} — {len(brands):,}.",
-                             f"{ORIGIN}/{lang}/library/", body))
+                             f"{n_models:,} models from {len(brands):,} brands.",
+                             f"{ORIGIN}/{lang}/library/", body, hreflang_on=True))
 
     (SITE / "assets" / "brand-rest.json").write_text(
         json.dumps(REST_DATA, separators=(",", ":"), ensure_ascii=False))

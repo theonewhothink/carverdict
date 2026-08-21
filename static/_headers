@@ -1,0 +1,28 @@
+# Cloudflare headers. Security on every response; long-lived caching only where the
+# filename or the content cannot change under a client.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
+/assets/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/og/*
+  Cache-Control: public, max-age=2592000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=2592000
+/favicon.svg
+  Cache-Control: public, max-age=2592000
+/apple-touch-icon.png
+  Cache-Control: public, max-age=2592000
+/icon-192.png
+  Cache-Control: public, max-age=2592000
+/icon-512.png
+  Cache-Control: public, max-age=2592000
+/site.webmanifest
+  Cache-Control: public, max-age=604800

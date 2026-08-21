@@ -744,3 +744,98 @@ table,td{font-size:15px}
 .bio-fig[hidden]{display:none}
 .about-card p,.bio-card p{line-height:1.75;margin:0 0 12px}
 .bio-card h2{margin-bottom:10px}
+
+/* ==========================================================================
+   v8 — QA remediation (2026-08-21)
+   Mobile overflow, tap targets, contrast, and the new price/repair blocks.
+   Appended last so it wins on equal specificity.
+   ========================================================================== */
+
+/* --- contrast -------------------------------------------------------------
+   Measured against the published tokens: --faint was 3.12:1 on white and
+   2.93:1 on the card wash, --gold 4.02:1, --muted 4.40:1 on the wash. WCAG AA
+   wants 4.5:1 for body text, and --faint carries the data-source attributions —
+   the one class of text that has to be readable for the site's whole claim. */
+:root{
+  --muted:#59626E;      /* 5.9:1 on white, 5.5:1 on the card wash */
+  --faint:#6B7481;      /* 4.9:1 on white, 4.6:1 on the card wash */
+  --gold-ink:#7C550F;   /* 6.1:1 — gold as TEXT */
+  --gold:#A8751A;       /* unchanged: borders, fills, rules, never body text */
+}
+.src-note,.geo-note,.fine,.crumbs,.triad,figcaption{color:var(--faint)}
+.logo em{color:var(--gold-ink)}
+
+/* --- horizontal overflow ---------------------------------------------------
+   Verified bug: at 390px the model-year page rendered a 450px document, the
+   model page 439px and /recalls/ 525px. Cause: the recalls table has a 413px
+   min-content width and grid items default to min-width:auto, so the column
+   could not shrink and dragged .card and the reserved .ad slot off-screen. */
+html,body{overflow-x:clip}
+.grid>*,.hero-flex>*,.card,.wrap,main{min-width:0}
+.table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain}
+.table-wrap table{min-width:520px}
+.card>table{display:block;max-width:100%;overflow-x:auto}
+.chart{max-width:100%}
+.chart svg{width:100%;height:auto;display:block}
+
+/* --- accessibility --------------------------------------------------------- */
+.skip{position:absolute;left:-9999px;top:0;z-index:300;background:var(--brand);color:#fff;
+  padding:12px 18px;border-radius:0 0 8px 0;font-size:15px;text-decoration:none}
+.skip:focus{left:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:767px){
+  /* WCAG 2.5.8 / Apple HIG minimum. Measured 47 sub-44px targets on a car page. */
+  .nav a,.hdr-in a,.langs a,.langs summary,.crumbs a,.years-strip a,.rel-grid a,
+  footer .cols a,.geo-chip select{min-height:44px;display:inline-flex;align-items:center}
+  .nav a{padding:10px 8px}
+  input,select,textarea{font-size:16px}      /* 16px stops iOS zooming on focus */
+  .geo-chip select{min-height:44px;font-size:16px}
+  .src-note,.geo-note,.crumbs,.triad{font-size:13.5px}
+}
+
+/* --- images: reserve the box so the hero cannot shift the page -------------- */
+.hero-art .photo img,.model-shot img{aspect-ratio:16/10;width:100%;height:auto;object-fit:cover}
+
+/* --- price + repair blocks -------------------------------------------------- */
+.cost-table{width:100%;border-collapse:collapse;font-size:15px}
+.cost-table th,.cost-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+.cost-table th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
+  font-weight:600;white-space:nowrap}
+.cost-table td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cost-table tbody tr:hover{background:var(--bg2)}
+
+.repair-list{list-style:none;padding:0;margin:14px 0 0}
+.repair-list li{display:flex;justify-content:space-between;gap:18px;align-items:baseline;
+  padding:12px 0;border-bottom:1px solid var(--line)}
+.repair-list li:last-child{border-bottom:0}
+.repair-list .job{flex:1;min-width:0}
+.repair-list .job b{display:block;font-size:15px}
+.repair-list .freq{display:block;color:var(--faint);font-size:13px;margin-top:2px}
+.repair-list .amt{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600;font-size:15px}
+@media(max-width:520px){
+  .repair-list li{flex-direction:column;gap:4px}
+  .repair-list .amt{font-size:16px}
+}
+
+/* verdict card: the money and the strength of the evidence behind the score */
+.vc-money{display:grid;gap:2px;margin:12px 0 4px;padding:12px 14px;background:var(--gold-wash,#FDF6E6);
+  border:1px solid #EFE2C4;border-radius:10px}
+.vc-money .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-ink)}
+.vc-money .val{font-family:var(--serif);font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
+.vc-money .est{font-size:11px;color:var(--faint)}
+.conf{font-size:12.5px;margin:8px 0 0}
+.conf-high{color:var(--good)}
+.conf-medium{color:var(--gold-ink)}
+.conf-low{color:var(--faint)}
+
+.geo-cost-row.range b,.geo-cost-row.five b{font-variant-numeric:tabular-nums}
+.geo-cost-row.range{font-size:14px;color:var(--muted)}
+.geo-cost-row.five{border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+
+/* A-Z index letters were 30x30 tap targets */
+@media(max-width:767px){
+  .az a{min-height:44px;display:inline-flex;align-items:center}
+  .bt-az a,.az-jump a{min-width:44px;min-height:44px;justify-content:center}
+}
+.lib-card .ph img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/9}

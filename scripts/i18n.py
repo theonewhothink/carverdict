@@ -195,3 +195,88 @@ P = {
  (r"Browse by brand", "עיון לפי מותג"),
 ],
 }
+
+
+# ---- localized <title> and meta description -------------------------------------------
+# The body of a translated page was translated; its title and description were not, so a
+# Portuguese or Spanish result carried an English headline and snippet — the two fields
+# that decide the click. {brand} is substituted for brand hubs.
+META = {
+ "home": {
+  "en": ("MotorJury — True Car Ownership Costs from Public Data",
+         "Per-model-year car verdicts computed from NHTSA complaints, recalls and EPA fuel economy."),
+  "pt": ("MotorJury — O custo real de ter um carro, a partir de dados públicos",
+         "Veredictos por ano-modelo calculados a partir de reclamações e recalls da NHTSA e do consumo EPA."),
+  "es": ("MotorJury — El coste real de tener coche, con datos públicos",
+         "Veredictos por año-modelo calculados con reclamaciones y llamadas a revisión de NHTSA y consumo EPA."),
+  "fr": ("MotorJury — Le vrai coût d'une voiture, à partir de données publiques",
+         "Verdicts par année-modèle calculés à partir des plaintes et rappels NHTSA et de la consommation EPA."),
+  "de": ("MotorJury — Was ein Auto wirklich kostet, aus öffentlichen Daten",
+         "Urteile pro Modelljahr, berechnet aus NHTSA-Beschwerden, Rückrufen und EPA-Verbrauchsdaten."),
+  "he": ("MotorJury — כמה באמת עולה להחזיק רכב, לפי נתונים ציבוריים",
+         "פסיקות לפי שנת דגם המחושבות מתלונות וריקולים של NHTSA ומנתוני צריכת דלק של EPA."),
+ },
+ "cars": {
+  "en": ("All Car Brands A-Z | MotorJury",
+         "Every car marque ever made, A-Z, plus deep NHTSA ownership data by brand."),
+  "pt": ("Todas as marcas de automóveis A-Z | MotorJury",
+         "Todas as marcas de automóveis alguma vez feitas, A-Z, com dados de posse da NHTSA por marca."),
+  "es": ("Todas las marcas de coches A-Z | MotorJury",
+         "Todas las marcas de coches de la historia, A-Z, con datos de propiedad de NHTSA por marca."),
+  "fr": ("Toutes les marques automobiles A-Z | MotorJury",
+         "Toutes les marques automobiles de l'histoire, A-Z, avec les données NHTSA par marque."),
+  "de": ("Alle Automarken A-Z | MotorJury",
+         "Jede je gebaute Automarke, A-Z, mit NHTSA-Daten zu Unterhalt und Problemen je Marke."),
+  "he": ("כל מותגי הרכב א-ת | MotorJury",
+         "כל מותגי הרכב שיוצרו אי פעם, א-ת, עם נתוני NHTSA על עלויות ותקלות לכל מותג."),
+ },
+ "brand": {
+  "en": ("{brand} Reliability by Model & Year | MotorJury",
+         "Every {brand} model ranked by NHTSA complaints and recalls — best and worst years."),
+  "pt": ("Fiabilidade {brand} por modelo e ano | MotorJury",
+         "Todos os modelos {brand} classificados por reclamações e recalls da NHTSA — melhores e piores anos."),
+  "es": ("Fiabilidad {brand} por modelo y año | MotorJury",
+         "Todos los modelos {brand} clasificados por reclamaciones y llamadas a revisión de NHTSA."),
+  "fr": ("Fiabilité {brand} par modèle et année | MotorJury",
+         "Tous les modèles {brand} classés par plaintes et rappels NHTSA — meilleures et pires années."),
+  "de": ("{brand} Zuverlässigkeit nach Modell und Jahr | MotorJury",
+         "Alle {brand}-Modelle nach NHTSA-Beschwerden und Rückrufen — beste und schlechteste Jahrgänge."),
+  "he": ("אמינות {brand} לפי דגם ושנה | MotorJury",
+         "כל דגמי {brand} מדורגים לפי תלונות וריקולים של NHTSA — השנים הטובות והגרועות."),
+ },
+ "calculators": {
+  "en": ("True Car Cost Calculator | MotorJury",
+         "Estimate what any car really costs to run per year, priced for your country."),
+  "pt": ("Calculadora do custo real do carro | MotorJury",
+         "Calcule quanto custa realmente manter qualquer carro por ano, com preços do seu país."),
+  "es": ("Calculadora del coste real del coche | MotorJury",
+         "Calcula lo que cuesta de verdad mantener cualquier coche al año, con precios de tu país."),
+  "fr": ("Calculateur du coût réel d'une voiture | MotorJury",
+         "Estimez ce que coûte vraiment une voiture par an, aux prix de votre pays."),
+  "de": ("Rechner für die echten Autokosten | MotorJury",
+         "Schätzen Sie, was ein Auto pro Jahr wirklich kostet — zu den Preisen Ihres Landes."),
+  "he": ("מחשבון העלות האמיתית של רכב | MotorJury",
+         "חשבו כמה באמת עולה להחזיק כל רכב בשנה, במחירי המדינה שלכם."),
+ },
+ "recalls": {
+  "en": ("Car Recall Index | MotorJury",
+         "The latest NHTSA recall campaigns across every indexed vehicle."),
+  "pt": ("Índice de recalls automóveis | MotorJury",
+         "As campanhas de recall mais recentes da NHTSA em todos os veículos indexados."),
+  "es": ("Índice de llamadas a revisión | MotorJury",
+         "Las campañas de revisión más recientes de NHTSA en todos los vehículos indexados."),
+  "fr": ("Index des rappels automobiles | MotorJury",
+         "Les campagnes de rappel NHTSA les plus récentes sur tous les véhicules indexés."),
+  "de": ("Rückruf-Index | MotorJury",
+         "Die neuesten NHTSA-Rückrufaktionen über alle erfassten Fahrzeuge."),
+  "he": ("מדד הריקולים | MotorJury",
+         "קמפייני הריקול האחרונים של NHTSA על כל כלי הרכב באינדקס."),
+ },
+}
+
+
+def meta(kind, lang, brand=""):
+    e = META.get(kind, {}).get(lang) or META.get(kind, {}).get("en")
+    if not e:
+        return None
+    return (e[0].replace("{brand}", brand), e[1].replace("{brand}", brand))

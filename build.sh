@@ -75,6 +75,16 @@ else
   echo "WARNING: published dataset unreachable; building on the committed database"
 fi
 
+# vPIC ships one "model" per drivetrain, body and trim combination, which fragments a
+# nameplate across half a dozen URLs and targets phrases nobody searches. Fold them onto the
+# marketing model name before anything is generated, and record the 301s.
+"$PY" scripts/canonicalize_models.py
+
+# Verdicts are recomputed from the raw complaint and recall records on every build, so a
+# change to the scoring model reaches production with the next deploy instead of waiting for
+# the dataset release to be rebuilt. The model itself lives in scripts/score_model_years.py.
+"$PY" scripts/score_model_years.py
+
 # The nightly deep harvest embeds its full Wikidata catalogue inside the dataset;
 # adopt it when it is bigger than the committed car_library.json.
 "$PY" scripts/extract_library.py || echo "WARNING: catalogue extraction skipped"
@@ -116,6 +126,11 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 "$PY" scripts/localize.py
 
+# One normalising pass over every page: icons, the correct theme-colour pair, social
+# cards, de-duplicated hreflang, and the <main>/skip-link landmarks. Nine generators each
+# have their own HTML shell, so this is the only place that can cover all of them.
+"$PY" scripts/polish.py
+
 # Google AdSense + Google Analytics 4: one auto-ads loader and one gtag.js snippet in
 # every page head, plus ads.txt at the root. The AdSense loader is inert until approval
 # lands; overlay formats (anchor, vignette) are disabled account-side so mobile screens
@@ -126,16 +141,27 @@ export GA4_ID="${GA4_ID:-G-SD0YYNQ19N}"
 import glob, os
 ads = ('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
        '?client=%s" crossorigin="anonymous"></script>' % os.environ["ADS_CLIENT"])
+# Google Consent Mode v2. Everything starts DENIED, and the certified consent message
+# (AdSense -> Privacy & messaging) is what grants it. Without this block the tags fire on
+# European visitors before anyone has agreed to anything - a GDPR exposure, and the reason
+# Google restricts EEA ad serving for publishers with no working CMP.
+consent = ("<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}"
+           "gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',"
+           "ad_personalization:'denied',analytics_storage:'denied',"
+           "functionality_storage:'granted',security_storage:'granted',wait_for_update:2000});"
+           "gtag('set','ads_data_redaction',true);gtag('set','url_passthrough',true);</script>")
 ga = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script>'
       '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}'
-      "gtag('js',new Date());gtag('config','%s');</script>"
+      "gtag('js',new Date());gtag('config','%s',{anonymize_ip:true});</script>"
       % (os.environ["GA4_ID"], os.environ["GA4_ID"]))
 n = 0
 for p in glob.glob('site/**/*.html', recursive=True):
     s = open(p).read()
     if '<head>' not in s:
         continue
-    tag = ('' if 'adsbygoogle.js' in s else ads) + ('' if 'googletagmanager.com/gtag' in s else ga)
+    tag = ('' if "gtag('consent'" in s else consent) \
+        + ('' if 'adsbygoogle.js' in s else ads) \
+        + ('' if 'googletagmanager.com/gtag' in s else ga)
     if not tag:
         continue
     open(p, 'w').write(s.replace('<head>', '<head>' + tag, 1))
@@ -150,10 +176,16 @@ PY_EOF
 import re, os, glob, sys
 pages = glob.glob('site/**/*.html', recursive=True)
 hrefs = set()
+# Quote-agnostic. The old pattern matched double quotes only, so it was blind to every
+# link the model-page generator writes with single quotes - which is where all of the
+# 404s that reached production came from.
+PAT = re.compile(r"""href=(?:"(/[^"#?]*)"|'(/[^'#?]*)')""")
 for p in pages:
-    hrefs.update(re.findall(r'href="(/[^"#?]*)"', open(p).read()))
-skip = ('/api', '/assets', '/cdn-cgi')
-allow = {'/sitemap.xml', '/llms.txt', '/robots.txt', '/ads.txt'}
+    for a, b in PAT.findall(open(p).read()):
+        hrefs.add(a or b)
+skip = ('/api', '/assets', '/cdn-cgi', '/og/')
+allow = {'/sitemap.xml', '/llms.txt', '/robots.txt', '/ads.txt', '/favicon.ico',
+         '/favicon.svg', '/site.webmanifest', '/mask-icon.svg', '/apple-touch-icon.png'}
 dead = [u for u in hrefs
         if not (os.path.exists('site' + u) or os.path.exists(('site' + u).rstrip('/') + '/index.html'))
         and not u.startswith(skip) and u not in allow]

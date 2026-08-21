@@ -54,12 +54,14 @@ jobs:
         env:
           SITE_ORIGIN: ${{ vars.SITE_ORIGIN || 'https://carverdict.example' }}
         run: |
+          python scripts/score_model_years.py
           python scripts/build_models.py --plan
           python scripts/gen_site.py
           python scripts/build_models.py
           python scripts/build_library.py
           python scripts/build_engage.py
           python scripts/localize.py
+          python scripts/polish.py
 
       - name: QA gate — no dead internal links
         run: |
@@ -67,10 +69,13 @@ jobs:
           import re, os, glob, sys
           pages = glob.glob('site/**/*.html', recursive=True)
           hrefs = set()
+          PAT = re.compile(r"""href=(?:"(/[^"#?]*)"|'(/[^'#?]*)')""")
           for p in pages:
-              hrefs.update(re.findall(r'href="(/[^"#?]*)"', open(p).read()))
-          skip = ('/api', '/assets', '/cdn-cgi')
-          allow = {'/sitemap.xml', '/llms.txt', '/robots.txt', '/ads.txt'}
+              for a, b in PAT.findall(open(p).read()):
+                  hrefs.add(a or b)
+          skip = ('/api', '/assets', '/cdn-cgi', '/og/')
+          allow = {'/sitemap.xml', '/llms.txt', '/robots.txt', '/ads.txt', '/favicon.ico',
+                   '/favicon.svg', '/site.webmanifest', '/mask-icon.svg', '/apple-touch-icon.png'}
           dead = [u for u in hrefs
                   if not (os.path.exists('site' + u) or os.path.exists(('site' + u).rstrip('/') + '/index.html'))
                   and not u.startswith(skip) and u not in allow]
