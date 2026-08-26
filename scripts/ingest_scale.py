@@ -30,7 +30,8 @@ Budget is explicit: MODEL_YEAR_BUDGET caps the run so a deploy cannot hang. Rais
 build minutes allow; the selection is ordered so the most-searched cars are always covered.
 """
 import concurrent.futures as cf
-import json, os, re, shutil, sqlite3, sys, time, urllib.parse, urllib.request
+import json
+import os, os, re, shutil, sqlite3, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -446,7 +447,28 @@ def _deep_harvest():
         print(f"WARNING: deep harvest unavailable ({e})")
 
 
+def _trigger_site_rebuild():
+    """The dataset is only visible once the site rebuilds, and Cloudflare Workers Builds
+    only builds on a push — so a nightly harvest that never pushes never reaches readers.
+    An empty commit from the Action (checkout persists a repo-scoped credential) is the
+    push. Guarded to CI so a local run of this script cannot touch the repository."""
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return
+    import subprocess
+    try:
+        subprocess.run(["git", "-c", "user.name=Ownership data",
+                        "-c", "user.email=actions@github.com",
+                        "commit", "--allow-empty", "-q", "-m",
+                        "nightly: rebuild the site with tonight's dataset [skip ci]"],
+                       check=True, timeout=60)
+        subprocess.run(["git", "push", "origin", "HEAD:main"], check=True, timeout=120)
+        print("NIGHTLY REBUILD: empty commit pushed; Cloudflare will rebuild and deploy")
+    except Exception as e:
+        print(f"WARNING: could not trigger the site rebuild ({e})")
+
+
 if __name__ == "__main__":
     code = main()
     _deep_harvest()
+    _trigger_site_rebuild()
     sys.exit(code)
