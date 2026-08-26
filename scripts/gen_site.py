@@ -454,6 +454,12 @@ Not a quote, not a valuation of one specific car — condition, mileage and opti
 </div>"""
 
 
+VARIANTS = {}
+try:
+    VARIANTS = json.loads((Path(__file__).resolve().parent.parent / "data" / "model_variants.json").read_text())
+except Exception:
+    VARIANTS = {}
+
 REPAIR = {}
 try:
     REPAIR = json.loads((Path(__file__).resolve().parent.parent / "data" / "repair_costs.json").read_text())
@@ -902,6 +908,59 @@ def gen_model(con, model_rows, all_rows):
                        f"sit in the {_c[0].title()} group — more than any other component."))
     faq_html = ('<div class="card"><h2>FAQ</h2>' + "".join(
         f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in m_faqs) + "</div>") if m_faqs else ""
+    # ---- sub-models and the wider family ------------------------------------------
+    # Two kinds of relatives, both previously invisible. (1) Variants the canonicaliser
+    # folded INTO this page (trim and body strings from the federal record) — their
+    # complaint and recall data is inside this page's numbers, and readers deserve to see
+    # the list. (2) Sibling nameplates that stayed separate because powertrain and family
+    # position are never merged (Sport, Evoque, PHEV, LWB…) — each links to its own page.
+    folded = {v for v in VARIANTS.get(url, []) if v.lower() != (model or "").lower()}
+    fam_prefix = (model or "").lower() + " "
+    fam_pages = {}
+    for x in all_rows:
+        if x["kslug"] != r0["kslug"] or x["model_id"] == r0["model_id"]:
+            continue
+        n2 = (x["model"] or "").lower()
+        if n2.startswith(fam_prefix) or fam_prefix.rstrip().startswith(n2 + " "):
+            if gate(x):
+                cur = fam_pages.get(x["model_id"])
+                if not cur or (x["score"] or 0) > (cur["score"] or 0):
+                    fam_pages[x["model_id"]] = x
+            else:
+                # a real sub-model in the federal record that has no page of its own yet
+                # (thin data) — shown as a chip, so it is at least visible
+                folded.add(x["model"])
+    fam_html = ""
+    if folded or fam_pages:
+        # A variant belongs on the nearest page: "Range Rover Sport SVR" is the Sport
+        # page's chip, not this one's. Anything starting with a linked sibling's name is
+        # dropped here — it will appear there.
+        linked_names = [x["model"].lower() for x in fam_pages.values()]
+        folded = {v for v in folded
+                  if not any(v.lower() == ln or v.lower().startswith(ln + " ")
+                             for ln in linked_names)}
+        chips = "".join(f'<span class="chip">{esc(v)}</span>' for v in sorted(folded))
+        links = "".join(
+            f'<a href="/cars/{x["kslug"]}/{x["mslug"]}/">{esc(x["model"])}'
+            f'<small>{("score " + str(x["score"]) + "/100") if x["score"] is not None else "data indexed"}</small></a>'
+            for x in sorted(fam_pages.values(), key=lambda x: x["model"]))
+        fam_html = (
+            f'<div class="card"><h2>{esc(model)} sub-models &amp; family</h2>'
+            + (f'<div class="rel-grid">{links}</div>' if links else "")
+            + (f'<h3 style="margin-top:{"14px" if links else "0"}">Variants &amp; trims on record</h3>'
+               f'<p class="src-note">Body, powertrain and trim variants of the {esc(model)} on the '
+               f'federal record. Variants folded into this nameplate are counted in this page\'s data; '
+               f'the rest have too thin a record for a page of their own yet.</p>'
+               f'<div class="chip-row">{chips}</div>' if chips else "")
+            + '</div>')
+    gallery_link = ""
+    _lib = model_url(f"{make} {model}")
+    if _lib == "/library/":
+        _lib = model_url(model)
+    if _lib != "/library/":
+        gallery_link = (f'<p style="margin-top:8px"><a href="{_lib}">Photographs and every '
+                        f'generation of the {esc(model)}, through the years →</a></p>')
+
     body = f"""<div class="hero"><div class="wrap hero-inner hero-flex">
 <div class="hero-copy">
 <nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/cars/{r0['kslug']}/">{esc(make)}</a> › {esc(model)}</nav>
@@ -917,7 +976,8 @@ complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, w
 <th>Running cost / yr</th><th>NHTSA complaints</th><th>Recalls</th></tr></thead>
 <tbody>{rows}</tbody></table></div>
 <p class="src-note">Running cost is fuel or energy plus the maintenance band midpoint for that car at its
-age today, re-priced to your country. Purchase price, insurance and depreciation are not included.</p></div>
+age today, re-priced to your country. Purchase price, insurance and depreciation are not included.</p>{gallery_link}</div>
+{fam_html}
 {problem_html}
 {faq_html}
 {AD.format(slot='mid')}

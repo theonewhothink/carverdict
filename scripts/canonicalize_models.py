@@ -36,6 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "cars.sqlite"
 MAP_OUT = ROOT / "data" / "model_redirects.json"
+VARIANTS_OUT = ROOT / "data" / "model_variants.json"
 
 # Tokens that describe how a car is driven or bodied, not which car it is.
 DRIVETRAIN = r"(?:xdrive|sdrive|quattro|4matic|4motion|awd|fwd|rwd|4wd|2wd|4x4|4x2)"
@@ -180,6 +181,18 @@ def run(dry=False):
         if cslug != m["slug"]:
             changed += 1
             redirects[f"/cars/{m['kslug']}/{m['slug']}/"] = f"/cars/{m['kslug']}/{cslug}/"
+
+    # Persist what was folded, not just where it went. Merging "Range Rover P360 LWB MHEV"
+    # into "Range Rover" is right for URLs and scoring, but readers deserve to SEE which
+    # sub-models the federal record actually covers — the fold used to make them invisible.
+    variants = {}
+    for (mkid, cslug), members in groups.items():
+        names = sorted({m["name"] for m, _ in members})
+        if len(names) > 1 or (names and names[0] != members[0][1]):
+            kslug = members[0][0]["kslug"]
+            variants[f"/cars/{kslug}/{cslug}/"] = names
+    if not dry:
+        VARIANTS_OUT.write_text(json.dumps(variants, indent=0, sort_keys=True, ensure_ascii=False))
 
     merges = {k: v for k, v in groups.items() if len(v) > 1}
     print(f"models={len(models)} renamed={changed} groups_merged={len(merges)} "

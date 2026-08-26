@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 BRAND = "MotorJury"
-MAX_MODEL_PAGES = 3400          # keeps total site files under the 20k asset cap
+MAX_MODEL_PAGES = 11000
 
 
 def _load_specs():
@@ -344,9 +344,51 @@ def main():
         return out
 
     WORDS_UNDER_FLOOR = []
+
+    # ---- the family through the years ----
+    # "Range Rover" is not one car: it is a Classic, a P38A, four more generations and a
+    # Sport, an Evoque and a Velar. Wikidata catalogues those as separate entries — so a
+    # nameplate's page can show them as a photographed timeline, which is the closest an
+    # honest dataset gets to "how it looked in different years".
+    def family_of(b, m, bs):
+        base = re.sub(r"\s*\([^)]*\)$", "", m["n"]).strip().lower()
+        if len(base) < 4:
+            return []
+        fam = []
+        for s2 in brands[b]:
+            if s2["n"] == m["n"]:
+                continue
+            n2 = s2["n"].lower()
+            b2 = re.sub(r"\s*\([^)]*\)$", "", s2["n"]).strip().lower()
+            related = (n2.startswith(base + " ") or n2.startswith(base + " (")
+                       or base.startswith(b2 + " ") or b2 == base)
+            if related and s2["n"] in index.get(bs, {}):
+                ym = re.search(r"(18|19|20)\d\d", str(s2["y"] or ""))
+                fam.append((int(ym.group(0)) if ym else 9999, s2))
+        fam.sort(key=lambda t: (t[0], t[1]["n"]))
+        return fam[:14]
+
     # ---- pass 2: render ----
     for b, m, bs, ms in selected:
         url = f"/library/{bs}/{ms}/"
+        fam = family_of(b, m, bs)
+        family_card = ""
+        if len(fam) >= 2:
+            cells = "".join(
+                f'<a class="fam-cell" href="/library/{bs}/{index[bs][s2["n"]]}/">'
+                + (f'<img src="{commons_thumb(s2["p"], 520)}" alt="{esc(s2["n"])}" loading="lazy" '
+                   f'referrerpolicy="no-referrer">' if s2["p"] else
+                   '<span class="ph noimg"><svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" '
+                   'fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="22" r="4" fill="currentColor"/>'
+                   '<circle cx="46" cy="22" r="4" fill="currentColor"/></svg></span>')
+                + f'<b>{esc(s2["n"])}</b>'
+                + (f'<small>{y or ""}</small>' if (y := (s2["y"] or "")) else "<small>&nbsp;</small>")
+                + "</a>"
+                for _, s2 in fam)
+            family_card = ('<div class="card"><h2>The family, through the years</h2>'
+                           f'<div class="fam-grid">{cells}</div>'
+                           '<p class="lib-note">Every generation and sibling of this nameplate in the '
+                           'catalogue, oldest first. Photos: Wikimedia Commons.</p></div>')
         sib = [s for s in brands[b]
                if s["n"] != m["n"] and s["n"] in index.get(bs, {})][:8]
         sib_html = "".join(
@@ -545,6 +587,7 @@ re-priced for your country. Verdicts are published per model year as the data is
 <a href="/cars/">browse them live</a>, or open the
 <a href="/calculators/">true-cost calculator</a> to price any year yourself.</p></div>
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
+{family_card}
 {rivals_card}
 </div>"""
 
