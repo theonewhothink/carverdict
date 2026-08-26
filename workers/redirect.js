@@ -24,6 +24,24 @@
  */
 export { HubDO } from "./hub.js";
 
+// The model-canonicalisation 301 map. It used to be emitted into Cloudflare's _redirects
+// file as splat rules, and its nightly growth crossed the platform's 100-dynamic-rule cap —
+// which rejected every deploy and silently froze production. In code there is no cap: the
+// same JSON the generator writes is bundled here and prefix-matched per request.
+import MODEL_REDIRECTS from "../data/model_redirects.json";
+
+const REDIRECT_MAP = new Map(Object.entries(MODEL_REDIRECTS).filter(([a, b]) => a !== b));
+
+/** /cars/{make}/{old-model}/anything -> /cars/{make}/{new-model}/anything, 301. */
+function modelRedirect(url) {
+  const m = /^(\/cars\/[^/]+\/[^/]+\/)/.exec(url.pathname);
+  if (!m) return null;
+  const target = REDIRECT_MAP.get(m[1]);
+  if (!target) return null;
+  const rest = url.pathname.slice(m[1].length);
+  return url.origin + target + rest + url.search;
+}
+
 const SEC = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
@@ -287,6 +305,9 @@ export default {
       url.protocol = "https:";
       return Response.redirect(url.toString(), 301);
     }
+
+    const moved = modelRedirect(url);
+    if (moved) return Response.redirect(moved, 301);
 
     if (url.pathname.startsWith("/api/")) {
       try {
