@@ -11,3 +11,4 @@ package.json
 package-lock.json
 .wrangler/
 data/wiki_specs.json
+data/model_variants.json
