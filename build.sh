@@ -32,7 +32,6 @@ fi
 mkdir -p /tmp/dbgsite
 tail -c 400000 "$LOG" > /tmp/dbgsite/build-error.txt
 printf '<!doctype html><meta charset="utf-8"><title>carsite build diagnostics</title><pre>log: <a href="/build-error.txt">/build-error.txt</a></pre>' > /tmp/dbgsite/index.html
-printf 'User-agent: *\nDisallow: /\n' > /tmp/dbgsite/robots.txt
 cat > /tmp/wrangler.debug.toml <<'TOML'
 name = "carsite-debug"
 compatibility_date = "2026-07-19"
