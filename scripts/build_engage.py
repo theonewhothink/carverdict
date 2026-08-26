@@ -170,7 +170,14 @@ document.getElementById('wipe').onclick=function(){localStorage.clear();location
 
 
 def social_queue():
-    """Generate ready-to-post packages for the auto-poster (7 days x 3 platforms)."""
+    """Retired. The social queue now lives in scripts/build_social.py, which builds every
+    package from a real record — cost per mile, five-year depreciation, the trap year —
+    instead of a generic "Car of the Day" caption with a model count hard-coded two
+    catalogue rebuilds ago. Two generators writing the same file is how a stale one wins."""
+    return 0
+
+
+def _social_queue_retired():
     q = ROOT / "SOCIAL_QUEUE"
     q.mkdir(exist_ok=True)
     photos = [x for x in LIB if x.get("p")]

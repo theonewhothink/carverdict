@@ -36,6 +36,26 @@ RE_DESC = re.compile(r'<meta name="description" content="(.*?)"', re.S)
 RE_CANON = re.compile(r'<link rel="canonical" href="([^"]+)"')
 RE_HREFLANG = re.compile(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">')
 
+ACCT_CHIP = '<div class="acct-host" data-account-chip></div>'
+
+SOCIAL = [
+    ("Instagram", "https://www.instagram.com/motorjury/",
+     "M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 5.3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 7.4a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm5.7-7.6a1 1 0 1 1-2.1 0 1 1 0 0 1 2.1 0z"),
+    ("TikTok", "https://www.tiktok.com/@motorjury",
+     "M16.6 5.8c-1-.7-1.6-1.8-1.8-3h-2.9v11.6a2.4 2.4 0 1 1-1.7-2.3V9.1a5.3 5.3 0 1 0 4.6 5.3V9.1c1 .7 2.3 1.1 3.6 1.1V7.3c-.6 0-1.2-.2-1.8-.5z"),
+    ("Facebook", "https://www.facebook.com/motorjury",
+     "M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.3H7.5V13h2.8v8h3.2z"),
+    ("YouTube", "https://www.youtube.com/@motorjury",
+     "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15.1V8.9l5.2 3.1-5.2 3.1z"),
+]
+SOCIAL_ROW = (
+    '<div class="wrap"><div class="social-row"><span class="social-lbl">Follow MotorJury</span>'
+    + "".join(
+        '<a class="soc soc-%s" href="%s" rel="noopener me" target="_blank" aria-label="%s" '
+        'title="%s"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" '
+        'd="%s"/></svg></a>' % (n.lower(), u, n, n, d) for n, u, d in SOCIAL)
+    + '<span class="social-share" data-share></span></div></div>')
+
 
 def polish(path):
     s = open(path, encoding="utf-8").read()
@@ -96,7 +116,25 @@ def polish(path):
         body_part, foot = rest.rsplit("<footer", 1)
         s = head_part + "</header>" + '<main id="content">' + body_part + "</main>" + "<footer" + foot
 
-    # 5. structured data floor. Several generators emit none at all, which leaves a third of
+    # 5. the account chip, the follow/share row and the scripts behind them. Nine
+    #    generators write nine different shells; the header on eight of them had no way to
+    #    sign in and no footer had a way to follow or share the page. Injecting here is the
+    #    only place that reaches all of them at once, and it is server-rendered rather than
+    #    built by script, so nothing shifts as the page settles.
+    if "data-account-chip" not in s and "</header>" in s:
+        s = s.replace("</div></header>", ACCT_CHIP + "</div></header>", 1) \
+            if "</div></header>" in s else s.replace("</header>", ACCT_CHIP + "</header>", 1)
+    if "social-row" not in s and "</footer>" in s:
+        # inside the footer's own wrapper where there is one, so it inherits the padding
+        if "</div></footer>" in s:
+            s = s.replace("</div></footer>", SOCIAL_ROW + "</div></footer>", 1)
+        else:
+            s = s.replace("</footer>", SOCIAL_ROW + "</footer>", 1)
+    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js"):
+        if src not in s and "</body>" in s:
+            s = s.replace("</body>", f'<script src="{src}" defer></script></body>', 1)
+
+    # 6. structured data floor. Several generators emit none at all, which leaves a third of
     #    the site invisible to rich results and to the AI engines that read JSON-LD first.
     if "application/ld+json" not in s:
         import json as _json
@@ -134,7 +172,8 @@ def polish(path):
 def main():
     pages = glob.glob("site/**/*.html", recursive=True)
     n = sum(1 for p in pages if polish(p))
-    print(f"POLISH OK: {n}/{len(pages)} pages normalised (icons, theme-colour, social cards, landmarks)")
+    print(f"POLISH OK: {n}/{len(pages)} pages normalised "
+          f"(icons, theme-colour, social cards, landmarks, account chip, follow row)")
     return 0
 
 

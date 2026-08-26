@@ -108,6 +108,16 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 # request, so the whole catalogue costs ~700 calls rather than 17,000.
 "$PY" scripts/harvest_wiki_specs.py || echo "WARNING: infobox specification refresh skipped"
 
+# The ownership-price layer: what the car cost new, what it is worth now, what it will be
+# worth in five years and what it costs to insure. Runs after the wiki harvest so a
+# published MSRP can anchor the estimate, and before every generator, because the price
+# card, the verdict card and the calculator all read the same table.
+"$PY" scripts/price_model.py
+
+# The mark and the whole icon set, drawn from one definition so the favicon, the app icons
+# and the default social card can never drift apart again.
+"$PY" scripts/make_icons.py || echo "WARNING: icon generation skipped"
+
 # Resolve the Legends roster before gen_site runs, so the home page knows whether the
 # /legends/ section can be linked. The pages themselves are written after gen_site, which
 # wipes site/ on every run.
@@ -124,6 +134,12 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 "$PY" scripts/build_stories.py || echo "WARNING: data stories skipped"
 "$PY" scripts/build_problems.py || echo "WARNING: problems pages skipped"
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
+
+# The social factory: seven days of data-backed packages, the /studio/ page they are posted
+# from, and the /follow/ link-in-bio page the profiles point at. Runs before the localiser
+# so /follow/ enters the sitemap and /studio/, being noindex, does not.
+"$PY" scripts/build_social.py || echo "WARNING: social factory skipped"
+
 "$PY" scripts/localize.py
 
 # One normalising pass over every page: icons, the correct theme-colour pair, social
@@ -169,6 +185,46 @@ for p in glob.glob('site/**/*.html', recursive=True):
 open('site/ads.txt', 'w').write('google.com, %s, DIRECT, f08c47fec0942fa0\n'
                                 % os.environ["ADS_CLIENT"].replace('ca-pub-', 'pub-'))
 print(f"ADSENSE+GA4 OK: tags injected into {n} pages + ads.txt")
+PY_EOF
+
+# Gate: the links the BROWSER builds must resolve too.
+# The static gate below only ever saw href="" in the HTML. Half of this site's navigation is
+# built client-side from JSON — the search box, the daily picks, the marque grids — and that
+# half was linking a model URL for every model in the catalogue while only half the models
+# had a page. That is where the site's 404s came from: 7,992 of 16,235 search results.
+"$PY" - <<'PY_EOF'
+import json, os, re, sys
+
+def mslug(s):
+    s = re.sub(r"[^\w\s-]", "", s.lower()).strip()
+    return re.sub(r"[\s_]+", "-", s)[:60] or "x"
+
+def exists(u):
+    return os.path.exists("site" + u) or os.path.exists(("site" + u).rstrip("/") + "/index.html")
+
+bad = 0
+checked = 0
+lib = json.load(open("site/assets/library-data.json"))
+for brand, v in lib.items():
+    if not exists("/library/%s/" % v["s"]):
+        print("DEAD marque page:", v["s"]); bad += 1
+    for m in v["m"]:
+        checked += 1
+        # m[3] is the has-page flag; a model without one is linked to its marque page
+        if len(m) > 3 and m[3] and not exists("/library/%s/%s/" % (v["s"], mslug(m[0]))):
+            if bad < 10:
+                print("DEAD search target:", v["s"], m[0])
+            bad += 1
+pool = json.load(open("site/assets/daily-pool.json"))
+for r in pool:
+    checked += 1
+    if not exists("/library/%s/%s/" % (r[2], mslug(r[0]))):
+        if bad < 10:
+            print("DEAD daily pick:", r[0])
+        bad += 1
+print(f"client-side link targets checked={checked} dead={bad}")
+if bad:
+    sys.exit(1)
 PY_EOF
 
 # Gate: a dead internal link must never reach production.
@@ -222,4 +278,5 @@ except Exception as e:
 PY_EOF
 
 node --test workers/calc.test.mjs
+node --test workers/hub.test.mjs
 echo "build complete"

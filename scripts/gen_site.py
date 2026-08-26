@@ -270,6 +270,29 @@ def _org_ld():
     return ORG_LD
 
 
+# Follow and share. The site had no way for a reader to take a page anywhere, and no way
+# to find the channels the content is published on — which is a strange thing for a site
+# whose growth plan runs through social video. One row, in every footer, on every page.
+SOCIAL = [
+    ("Instagram", "https://www.instagram.com/motorjury/",
+     "M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 5.3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 7.4a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm5.7-7.6a1 1 0 1 1-2.1 0 1 1 0 0 1 2.1 0z"),
+    ("TikTok", "https://www.tiktok.com/@motorjury",
+     "M16.6 5.8c-1-.7-1.6-1.8-1.8-3h-2.9v11.6a2.4 2.4 0 1 1-1.7-2.3V9.1a5.3 5.3 0 1 0 4.6 5.3V9.1c1 .7 2.3 1.1 3.6 1.1V7.3c-.6 0-1.2-.2-1.8-.5z"),
+    ("Facebook", "https://www.facebook.com/motorjury",
+     "M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.3H7.5V13h2.8v8h3.2z"),
+    ("YouTube", "https://www.youtube.com/@motorjury",
+     "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15.1V8.9l5.2 3.1-5.2 3.1z"),
+]
+SOCIAL_ROW = (
+    '<div class="social-row"><span class="social-lbl">Follow MotorJury</span>'
+    + "".join(
+        f'<a class="soc soc-{n.lower()}" href="{u}" rel="noopener me" target="_blank" '
+        f'aria-label="{n}" title="{n}"><svg viewBox="0 0 24 24" aria-hidden="true">'
+        f'<path fill="currentColor" d="{d}"/></svg></a>'
+        for n, u, d in SOCIAL)
+    + '<span class="social-share" data-share></span></div>')
+
+
 def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"):
     blocks = list(jsonld or []) + [_org_ld()]
     ld = "".join(f'<script type="application/ld+json">{json.dumps(x, separators=(",", ":"))}</script>' for x in blocks)
@@ -299,7 +322,8 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<div class="acct-host" data-account-chip></div>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
 </div></header>
 <div class="geo-bar wrap" data-geo-chip></div>
@@ -309,14 +333,17 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
 <div><a href="/methodology/">Methodology</a><br><a href="/about/">About</a><br><a href="/calculators/">Calculators</a></div>
-<div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a></div>
+<div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/follow/">Follow</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
-</div><p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
+</div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
 <script src="/assets/site.js" defer></script>
 <script src="/assets/lightbox.js" defer></script>
 <script src="/assets/geo.js" defer></script>
 <script src="/assets/engage.js" defer></script>
 <script src="/assets/legends.js" defer></script>
+<script src="/assets/account.js" defer></script>
+<script src="/assets/tco.js" defer></script>
+<script src="/assets/share.js" defer></script>
 </body></html>"""
 
 def write(path, html):
@@ -335,13 +362,86 @@ def rows_all(con):
       cs.reliability_score score, cs.verdict, cs.reasons, cs.cost_curve, cs.complaints_per_year,
       cs.confidence,
       f.fuel_type, f.mpg_comb, f.annual_fuel_cost, f.ev_range,
-      e.battery_warranty, e.battery_replacement_low, e.battery_replacement_high, e.source ev_source
+      e.battery_warranty, e.battery_replacement_low, e.battery_replacement_high, e.source ev_source,
+      pe.segment, pe.anchor price_anchor, pe.price_new, pe.price_new_low, pe.price_new_high,
+      pe.price_today, pe.price_today_low, pe.price_today_high,
+      pe.price_in5, pe.depreciation_5y, pe.depreciation_per_year,
+      pe.insurance_low, pe.insurance_high
       FROM model_years my
       JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
       LEFT JOIN computed_scores cs ON cs.my_id=my.id
       LEFT JOIN fuel f ON f.my_id=my.id
       LEFT JOIN ev_extras e ON e.my_id=my.id
+      LEFT JOIN price_estimates pe ON pe.my_id=my.id
       ORDER BY mk.name, mo.name, my.year""").fetchall()
+
+SEGMENT_LABEL = {
+    "economy": "city car", "compact": "compact car", "midsize": "mid-size car",
+    "fullsize": "full-size car", "compact_suv": "compact SUV", "midsize_suv": "mid-size SUV",
+    "fullsize_suv": "full-size SUV", "pickup": "pickup", "minivan": "minivan",
+    "sports": "sports car", "sports_luxury": "performance car",
+    "luxury_compact": "compact premium car", "luxury_midsize": "mid-size premium car",
+    "luxury_large": "large premium car", "exotic": "exotic",
+}
+
+
+def money_span(usd, kind="", cls=""):
+    """A figure that the geo layer can re-price into the visitor's currency."""
+    k = f' data-kind="{kind}"' if kind else ""
+    c = f' class="{cls}"' if cls else ""
+    return f'<span{c} data-usd="{int(usd)}"{k}>${int(usd):,}</span>'
+
+
+def price_block(r, five_run_usd, fuel_usd):
+    """The money question the site used to refuse to answer: what does this car cost, what
+    will it be worth, and what does five years of owning it actually take out of you.
+
+    Depreciation is normally the largest single line on a five-year hold, so it leads. The
+    whole block is a class-level estimate — the formula is on /methodology/ — and the reader
+    can type the price they are actually being asked to pay, which is the only number that
+    makes this personal."""
+    if not r["price_today"]:
+        return ""
+    seg = SEGMENT_LABEL.get(r["segment"], "car")
+    lo, hi = r["price_today_low"], r["price_today_high"]
+    dep5, dep_yr = r["depreciation_5y"], r["depreciation_per_year"]
+    ins_lo, ins_hi = r["insurance_low"], r["insurance_high"]
+    ins_mid = (ins_lo + ins_hi) / 2
+    run5 = five_run_usd or 0
+    tco5 = int(dep5 + run5 + ins_mid * 5)
+    per_mile = tco5 / (5 * 12000)
+    anchor_note = ("anchored on the published list price for this model"
+                   if r["price_anchor"] == "wikipedia"
+                   else f"priced as a {seg} of its model year")
+    return f"""<div class="card price-card" id="price">
+<h2>What it costs to buy — and what owning it really takes</h2>
+<p class="src-note">Class-level estimates, {anchor_note}, re-priced to your country.
+Not a quote, not a valuation of one specific car — condition, mileage and options move it.
+<a href="/methodology/#prices">How these are computed</a>.</p>
+<div class="price-head">
+<div class="price-big"><span class="lbl">Typical price today</span>
+<b>{money_span(lo, "car")}–{money_span(hi, "car")}</b>
+<span class="est">used market, {CURRENT_YEAR}</span></div>
+<div class="price-big alt"><span class="lbl">You lose to depreciation</span>
+<b>{money_span(dep_yr, "car")}<small>/year</small></b>
+<span class="est">{money_span(dep5, "car")} over five years</span></div>
+</div>
+<div class="tco" data-tco
+     data-dep5="{dep5}" data-run5="{int(run5)}" data-ins="{int(ins_mid)}"
+     data-price="{r['price_today']}" data-fuel="{int(fuel_usd or 0)}">
+<div class="tco-row"><span>Price when new ({r['year']})</span><b>{money_span(r['price_new'], "car")}</b></div>
+<div class="tco-row"><span>Worth in five years</span><b data-tco-resale>{money_span(r['price_in5'], "car")}</b></div>
+<div class="tco-row"><span>Depreciation, five years</span><b data-tco-dep>{money_span(dep5, "car")}</b></div>
+<div class="tco-row"><span>Insurance, five years</span><b>{money_span(ins_lo * 5, "ins")}–{money_span(ins_hi * 5, "ins")}</b></div>
+<div class="tco-row"><span>Fuel and maintenance, five years</span><b data-usd="{int(run5)}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${int(run5):,}</b></div>
+<div class="tco-row grand"><span>Five-year cost of owning it</span><b data-tco-total data-usd="{tco5}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${tco5:,}</b></div>
+<div class="tco-row per"><span>Per mile driven, at 12,000 miles a year</span><b data-tco-mile>${per_mile:.2f}</b></div>
+</div>
+<label class="price-input"><span>Being quoted a different price? Put it in and the numbers follow.</span>
+<input type="number" inputmode="numeric" data-price-input min="200" max="3000000" step="100"
+       placeholder="{r['price_today']}" aria-label="Purchase price"></label>
+</div>"""
+
 
 REPAIR = {}
 try:
@@ -414,6 +514,12 @@ def gen_model_year(con, r, all_rows):
         conf_html = (f'<p class="conf conf-{_conf}">{_cl} — '
                      f'{(r["complaint_count"] or 0):,} complaints, {(r["recall_count"] or 0)} recalls '
                      f'on record</p>')
+    price_lead = ""
+    if r["price_today"]:
+        price_lead = (f'<div class="vc-money vc-price"><span class="lbl">Typical price today</span>'
+                      f'<span class="val">{money_span(r["price_today_low"], "car")}–'
+                      f'{money_span(r["price_today_high"], "car")}</span>'
+                      f'<span class="est">used market estimate · <a href="#price">the full money picture</a></span></div>')
     money_html = ""
     if five_run:
         money_html = (f'<div class="vc-money"><span class="lbl">Running cost, next 5 years</span>'
@@ -424,6 +530,7 @@ def gen_model_year(con, r, all_rows):
 <div class="chart" style="max-width:150px;margin:0 auto">{svg_gauge(r['score'])}</div>
 <span class="badge v-{r['verdict'] if r['verdict'] in ('BUY','CAUTION','AVOID') else 'DATA'}">{esc(r['verdict'] or 'PENDING')}</span>
 {conf_html}
+{price_lead}
 {money_html}
 <ul>{''.join(f'<li>{esc(x)}</li>' for x in reasons)}</ul>
 <p style="margin-top:12px;font-size:12px"><a href="/methodology/">How this score is computed →</a></p>
@@ -537,7 +644,16 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
             'that this car will need it. <a href="/methodology/">Formula</a>.</p>'
             f'<ul class="repair-list">{"".join(repair_rows)}</ul></div>')
 
-    cost_html = f"""<div class="card"><h2>True cost of ownership</h2>{fuel_line}
+    price_html = price_block(r, five_run, _fuel)
+
+    # Owner satisfaction. NHTSA tells us what broke; only owners can tell us whether they
+    # would do it again. The block renders from the API, so it is empty markup at build
+    # time and never a stale number baked into a page.
+    survey_html = (f'<div class="card survey-card" data-survey="my:{r["my_id"]}" '
+                   f'data-survey-name="{esc(name)}"><h2>Owner satisfaction</h2>'
+                   f'<p class="src-note">Loading owner responses…</p></div>')
+
+    cost_html = f"""<div class="card"><h2>What it costs to run</h2>{fuel_line}
 {geo_block}
 <div class="chart">{svg_costcurve(curve)}</div>
 <div class="legend"><span><i style="background:#0E7C86"></i>fuel/energy + maintenance band, annual — <span data-geo-currency-note>US dollars</span>, estimate</span></div>
@@ -613,6 +729,7 @@ Last updated: {TODAY}.</p></div>"""
 <h1>{name}: True Cost, Problems &amp; Verdict</h1>
 <p class="sub">{(r['complaint_count'] or 0):,} NHTSA owner complaints · {(r['recall_count'] if r['recall_count'] is not None else '—')} recalls · data-computed verdict. No opinions — public data only.</p>
 <div class="triad"><b>Reviewed by</b> the MotorJury data desk · <a href="/methodology/">2 sources</a> · <b>Last updated</b> {TODAY}</div>
+<div class="love-host" data-love="my:{r['my_id']}" data-love-name="{esc(name)}"></div>
 </div>
 {hero_art(make, model, bool(r['is_ev']), year)}
 </div></div>"""
@@ -623,7 +740,9 @@ Last updated: {TODAY}.</p></div>"""
 {AD.format(slot='top')}
 {comp_html}
 {rec_html}
+{price_html}
 {cost_html}
+{survey_html}
 {repair_html}
 {strip_html}
 {faq_html}
@@ -970,8 +1089,30 @@ A-Z of every marque ever catalogued below.</p></div></div>
 def gen_home(con, all_rows):
     gated = [r for r in all_rows if gate(r)]
     n_complaints = sum(r["complaint_count"] or 0 for r in all_rows)
-    evs = [r for r in gated if r["is_ev"]][:4]
-    avoid = sorted([r for r in gated if r["verdict"] == "AVOID"], key=lambda r: r["score"] or 0)[:4]
+    # The home page shows cars worth wanting. "Years to avoid" was the second data block on
+    # it, which meant the first impression of the site was four Chrysler Pacificas scoring
+    # 5/100 — true, useful, and the wrong front door. The trap years still have their pages,
+    # their model tables and the whole /problems/ section; they are one click away, not the
+    # welcome mat.
+    def _amazing(rows, n):
+        """Best evidence first: a BUY on a thin record is not an endorsement, so only
+        strong and moderate confidence qualify, and newer years break the tie."""
+        ok = [r for r in rows
+              if r["verdict"] == "BUY" and (r["score"] or 0) >= 78
+              and (r["confidence"] or "") in ("high", "medium")]
+        ok.sort(key=lambda r: (-(r["score"] or 0), -(r["year"] or 0)))
+        seen, out = set(), []
+        for r in ok:                      # one year per nameplate, so it reads as variety
+            if r["model_id"] in seen:
+                continue
+            seen.add(r["model_id"])
+            out.append(r)
+            if len(out) >= n:
+                break
+        return out
+
+    evs = _amazing([r for r in gated if r["is_ev"]], 4) or [r for r in gated if r["is_ev"]][:4]
+    best = _amazing(gated, 8)
     def cardlist(rows):
         return '<div class="rel-grid">' + "".join(
             f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>score {x["score"]}/100 · {esc(x["verdict"])}</small></a>'
@@ -1067,18 +1208,27 @@ recall campaigns and EPA data. Not opinions.</p>
 <section class="photo-strip">{strip_cells}</section>
 <div class="wrap" style="display:grid;gap:22px;padding:30px 0 20px">
 <div class="daily-grid" data-daily></div>
-<div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
+<div class="card"><h2>Cars the data actually likes</h2><p style="margin-bottom:12px">The highest-scoring
+model years in the index, each one computed from a deep complaint and recall record — not a shortlist
+anyone was paid for.</p>{cardlist(best)}
+<p style="margin-top:12px;font-size:13px"><a href="/cars/">Every brand, every verdict →</a></p></div>
+<section class="card loved-home"><h2>Most loved right now</h2>
+<p style="margin-bottom:12px">Chosen by readers, one vote per account. Tap the heart on any car.</p>
+<div id="loved-app" class="loved-grid"><p class="muted">Loading…</p></div>
+<p style="margin-top:12px;font-size:13px"><a href="/loved/">The full leaderboard →</a></p></section>
 {AD.format(slot='home')}
-<div class="card"><h2>Years to avoid</h2><p style="margin-bottom:12px">Lowest data-scores in our index right now.</p>{cardlist(avoid)}</div>
+<div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
 {legends_section}
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/events/">The motoring calendar<small>races · concours · auctions worldwide</small></a>
 <a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
 <a href="/calculators/">True-cost calculator<small>priced for your country</small></a>
-<a href="/garage/">My Garage<small>your saved cars</small></a></div>
+<a href="/garage/">My Garage<small>your saved cars</small></a>
+<a href="/loved/">Most loved<small>voted by readers</small></a></div>
 <div class="cta-band"><h2>True-cost calculator</h2><p style="color:var(--muted);margin:8px 0 14px">Fuel + maintenance + battery risk, by model year.</p><a class="btn" href="/calculators/">Calculate</a></div>
-</div>"""
+</div>
+<script src="/assets/loved.js" defer></script>"""
     jsonld = [{"@context": "https://schema.org", "@type": "WebSite", "name": BRAND, "url": ORIGIN,
                "potentialAction": {"@type": "SearchAction", "target": f"{ORIGIN}/cars/?q={{search_term_string}}",
                                    "query-input": "required name=search_term_string"}}]
@@ -1095,28 +1245,56 @@ def gen_calculators(con, all_rows):
         packs.append({"n": f"{r['year']} {r['make']} {r['model']}", "y": r["year"],
                       "ev": r["is_ev"], "fc": r["annual_fuel_cost"],
                       "c": [[p["total_low"], p["total_high"]] for p in curve],
-                      "bl": r["battery_replacement_low"], "bh": r["battery_replacement_high"]})
+                      "bl": r["battery_replacement_low"], "bh": r["battery_replacement_high"],
+                      # the money the running-cost calculator used to leave out entirely
+                      "pt": r["price_today"], "d5": r["depreciation_5y"],
+                      "ins": int(((r["insurance_low"] or 0) + (r["insurance_high"] or 0)) / 2) or None})
     data = json.dumps(packs, separators=(",", ":"))
     body = f"""<div class="hero"><div class="wrap hero-inner"><h1>True-cost calculator</h1>
 <p class="sub">Annual running cost from EPA fuel data + age-indexed maintenance bands. Estimates, sources on the <a href="/methodology/">methodology page</a>.</p></div></div>
 <div class="wrap grid"><div style="display:grid;gap:20px">
-<div class="card calc"><h2>Estimate annual cost</h2>
+<div class="card calc"><h2>What will it cost me?</h2>
 <label for="cv">Vehicle</label><select id="cv"></select>
 <label for="cy">Years you plan to keep it</label><input id="cy" type="number" value="5" min="1" max="10">
+<label for="cp">Price you would pay (leave as-is for our estimate)</label><input id="cp" type="number" min="200" step="100">
 <div class="calc-out" id="cout">—</div>
+<div class="calc-break" id="cbreak"></div>
 <p id="cnote" style="font-size:13px"></p></div>
-<div class="card"><h2>How it works</h2><p>Cost = EPA annual fuel/energy cost + the age-indexed maintenance band for each year of ownership. EV packs add a labeled battery-replacement risk note outside warranty. Full formula on the <a href="/methodology/">methodology page</a>. Browse verdicts in <a href="/cars/">the data index</a>.</p></div>
+<div class="card"><h2>How it works</h2><p>Total cost of ownership = depreciation (what the car loses while
+you own it) + fuel or energy + the age-indexed maintenance band + insurance. Depreciation is normally the
+biggest line of the four, which is why most "running cost" calculators — including the earlier version of
+this one — flatter every car by leaving it out. EV packs add a labeled out-of-warranty battery-replacement
+risk. Price, depreciation and insurance are class-level estimates; the
+<a href="/methodology/#prices">formula and constants are published</a>. Browse verdicts in
+<a href="/cars/">the data index</a>.</p></div>
 </div><div class="col-side">{AD.format(slot='calc')}</div></div>
 <script>
 const P={data};
 const sel=document.getElementById('cv'),out=document.getElementById('cout'),note=document.getElementById('cnote');
 P.forEach((p,i)=>{{const o=document.createElement('option');o.value=i;o.textContent=p.n;sel.appendChild(o)}});
+const price=document.getElementById('cp'),brk=document.getElementById('cbreak');
+const M=n=>'$'+Math.round(n).toLocaleString();
+let lastIdx=-1;
 function calc(){{const p=P[sel.value];const keep=Math.min(10,Math.max(1,+document.getElementById('cy').value||5));
+if(+sel.value!==lastIdx){{lastIdx=+sel.value;price.value=p.pt||'';price.placeholder=p.pt?String(p.pt):'purchase price';}}
 const age0=Math.max(0,{CURRENT_YEAR}-p.y);let lo=0,hi=0;
 for(let k=0;k<keep;k++){{const a=Math.min(p.c.length-1,age0+k);lo+=p.c[a][0];hi+=p.c[a][1];}}
-out.textContent='$'+Math.round(lo/keep).toLocaleString()+'–$'+Math.round(hi/keep).toLocaleString()+' / year (USD)';
-note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included in the annual figure).':'')+' Total over '+keep+' yr: $'+lo.toLocaleString()+'–$'+hi.toLocaleString()+' USD. Local fuel and electricity prices from the country bar feed the per-country figures on each car page.';}}
-sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);calc();
+const run=(lo+hi)/2;
+// depreciation scales with the price actually paid: the retained-value ratio is the same curve
+const paid=Math.max(200,+price.value||p.pt||0);
+const dep=p.d5&&p.pt?p.d5*(paid/p.pt)*(keep/5):0;
+const ins=(p.ins||0)*keep;
+const total=run+dep+ins;
+out.textContent=M(total/keep)+' / year — '+M(total)+' over '+keep+' year'+(keep>1?'s':'')+' (USD)';
+brk.innerHTML=(dep?'<div><span>Depreciation</span><b>'+M(dep)+'</b></div>':'')+
+'<div><span>Fuel and maintenance</span><b>'+M(run)+'</b></div>'+
+(ins?'<div><span>Insurance</span><b>'+M(ins)+'</b></div>':'')+
+'<div class="tot"><span>Total cost of ownership</span><b>'+M(total)+'</b></div>'+
+'<div class="per"><span>Per mile at 12,000 miles a year</span><b>$'+(total/(keep*12000)).toFixed(2)+'</b></div>';
+note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included above). ':'')+
+'Running cost band over '+keep+' yr: '+M(lo)+'–'+M(hi)+'. Price, depreciation and insurance are class-level estimates — see the methodology. Local fuel, electricity and parts prices from the country bar feed the per-country figures on each car page.';}}
+sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);
+price.addEventListener('input',calc);calc();
 </script>"""
     return write("calculators/index.html", page(f"True Car Cost Calculator | {BRAND}",
                  "Annual ownership cost calculator built on EPA fuel data and industry maintenance bands.",
@@ -1233,6 +1411,46 @@ estimate of what that <em>class</em> of failure costs — never a quote for a sp
 prediction that the repair will be needed. The jobs shown on a page are ranked by the components that
 owners of that exact model year actually complain about.</p>
 
+<h2 id="prices">Purchase price, depreciation and insurance</h2>
+<p>NHTSA carries safety and EPA carries fuel economy. Neither carries money, and there is no free,
+complete, per-model-year price dataset, so this site does not pretend to know what one specific car is
+worth. What it publishes is a <em>class-level band</em>, computed the same way for every car and shown
+with the band around it. The constants are published at
+<a href="/assets/price-model.json">/assets/price-model.json</a>.</p>
+<ol>
+<li><b>Segment.</b> Each model-year is placed in one of fifteen segments by its own record: an explicit
+nameplate keyword first (an F-150 is a pickup), otherwise EPA combined economy as a size proxy, then the
+brand tier re-reads the segment upward for a premium or exotic marque.</li>
+<li><b>The equivalent new car today.</b> segment_share × the current US average new-vehicle transaction
+price (Cox Automotive / Kelley Blue Book). A mid-size car is 0.62 of that average, which is where a new
+mid-size sedan actually lists. Working in today's money is what stops a 2015 car being priced in 2015
+dollars against a 2026 used market.</li>
+<li><b>Value today.</b> equivalent_new × retained_value(age) × segment_retention × used_market_index. The
+retained-value curve is the consensus of the published depreciation studies (iSeeCars, Edmunds, NADA);
+the segment multiplier reflects their spread — pickups and sports cars hold value, large luxury sedans and
+used EVs do not; the used-market index (currently 1.08) carries the Manheim index's standing gap above its
+pre-2021 trend, and comes out when that gap does. A running car never falls below a floor.</li>
+<li><b>Price when new</b> is the same figure walked back to the model year with the transaction-price
+series. Where Wikipedia's infobox carries a published list price for the nameplate, that real figure
+anchors the calculation instead, and the page says so.</li>
+<li><b>Depreciation</b> is the difference between the value today and the value five years from now — on a
+five-year hold this is normally the largest single line, larger than fuel, maintenance and insurance
+together, which is why it is shown before them.</li>
+<li><b>Insurance</b> is the national average annual full-coverage premium for the segment (NAIC / industry
+averages), relieved by vehicle age because full coverage tracks the value at risk, then re-priced by your
+country's insurance index.</li>
+</ol>
+<p>The published band is ±18% around the central estimate, roughly the interquartile spread of real
+listings for one model-year in one market. It is not a valuation, a dealer price, a trade-in offer or an
+insurance quote — condition, mileage, options and location move a real car materially. Every price panel
+takes the price you are actually being quoted and recomputes the whole picture from it.</p>
+
+<h2>Owner satisfaction</h2>
+<p>Complaint records tell you what broke. They cannot tell you whether the owner would buy the car again,
+so we ask owners directly, one response per account per car. Averages are published only once five owners
+have answered — below that a mean is noise wearing a number's clothes. Responses are never edited, never
+weighted, and never traded.</p>
+
 <h2>International prices</h2>
 <p>Every money figure is generated in US dollars and re-priced in your browser from your country's retail
 fuel and electricity prices and a parts-and-labour index, with the currency and units following the same
@@ -1279,9 +1497,61 @@ year without enough data does not get a page.</p>
 <h2>Independence</h2>
 <p>{BRAND} is not affiliated with any manufacturer, dealer, insurer or parts retailer. The site is funded by
 advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p>"""))
+    gen.append(write("login/index.html", page(
+        "Sign in to MotorJury",
+        "Sign in to keep the cars you love, your garage and your settings on every device.",
+        ORIGIN + "/login/",
+        """<div class="wrap auth-wrap">
+<div class="auth-card">
+<h1>Sign in</h1>
+<p class="auth-sub">Keep the cars you love, your garage and your country setting — on every device you
+use. No tracking, nothing sold.</p>
+<div id="login-app"><noscript>JavaScript is required to sign in.</noscript></div>
+</div>
+<aside class="auth-side">
+<h2>What an account gets you</h2>
+<ul class="auth-list">
+<li><b>The cars you love</b> — one tap on any car, kept in one list.</li>
+<li><b>Your garage</b> — the cars you own or are shopping, with their costs and recalls.</li>
+<li><b>Your settings follow you</b> — country, currency and units, on every device.</li>
+<li><b>Rate the car you own</b> — the owner-satisfaction data on this site comes from owners.</li>
+</ul>
+<p class="auth-fine">We store your email address, your lists and your preferences. That is the whole list.
+Read the <a href="/privacy/">privacy policy</a>.</p>
+</aside></div>""",
+        extra_head='<meta name="robots" content="noindex,follow">')))
+
+    gen.append(write("account/index.html", page(
+        "Your account", "Your cars, your garage and your settings.", ORIGIN + "/account/",
+        """<div class="wrap acct-wrap"><div id="account-app">
+<noscript>JavaScript is required for your account page.</noscript></div></div>""",
+        extra_head='<meta name="robots" content="noindex,follow">')))
+
+    gen.append(write("loved/index.html", page(
+        "The most-loved cars on MotorJury",
+        "Which cars readers actually love — ranked by the love button, counted live.",
+        ORIGIN + "/loved/",
+        """<div class="hero"><div class="wrap hero-inner">
+<h1>The most-loved cars</h1>
+<p class="sub">Ranked by the love button on every car page. Counted live, one vote per account —
+no editors, no sponsorship, no algorithm.</p></div></div>
+<div class="wrap"><div id="loved-app" class="loved-grid">
+<p class="muted">Loading…</p></div>
+<p class="lib-note" style="margin-top:18px">Signed in? Every heart you tap lands in
+<a href="/account/">your account</a>.</p></div>
+<script src="/assets/loved.js" defer></script>""")))
+
     gen.append(prose_page("privacy/index.html", "Privacy Policy", f"""
 <p>Effective {TODAY}.</p>
-<p>We collect no personal data beyond what you submit (e.g. newsletter email) and standard analytics (Google Analytics 4, Cloudflare Web Analytics). Emails are used solely for the newsletter, double-opt-in, one-click unsubscribe, never sold.</p>
+<p><b>If you do not have an account</b> we collect no personal data beyond what you submit (e.g. a newsletter
+email) and standard analytics (Google Analytics 4, Cloudflare Web Analytics). Emails are used solely for the
+newsletter, double-opt-in, one-click unsubscribe, never sold.</p>
+<p><b>If you create an account</b> we store your email address, a display name, the cars you love, your
+garage, your site preferences and any owner-survey answers you submit. Passwords are stored only as a
+PBKDF2-SHA256 hash — we cannot read yours. Session tokens are stored hashed, so a copy of our database
+cannot be replayed as a login. If you sign in with Google or Apple we receive your email address and name
+from them and nothing else. We do not sell, rent or share account data, and we do not use it to target
+advertising. Write to privacy@ this domain to export or delete your account and we will action it.</p>
 <p>Advertising is served by third parties (e.g. Google AdSense) which may use cookies subject to your consent choices in the consent banner. See Google's <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">partner policy</a>.</p>
 <p>Requests: privacy@ this domain.</p>"""))
     gen.append(prose_page("terms/index.html", "Terms of Use", f"""
@@ -1295,6 +1565,11 @@ advertising and by affiliate links that are disclosed on the <a href="/disclosur
 
 def gen_assets():
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
+    # The price formula's constants are published, the way the geo table is: a reader who
+    # wants to check a number should be able to read the same file the generator read.
+    _pm = ROOT / "data" / "price_model.json"
+    if _pm.exists():
+        shutil.copy(_pm, SITE / "assets" / "price-model.json")
     for f in (ROOT / "assets").iterdir():
         if f.is_file() and " 2." not in f.name:
             shutil.copy(f, SITE / "assets" / f.name)

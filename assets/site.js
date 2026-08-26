@@ -11,7 +11,7 @@
       MODELS = []; BRANDS = [];
       Object.keys(j).forEach(function (b) {
         BRANDS.push({ n: b, s: j[b].s, c: j[b].m.length });
-        j[b].m.forEach(function (m) { MODELS.push({ n: m[0], b: b, s: j[b].s, y: m[2] }); });
+        j[b].m.forEach(function (m) { MODELS.push({ n: m[0], b: b, s: j[b].s, y: m[2], h: m[3] }); });
       });
       cb();
     });
@@ -68,7 +68,13 @@
           '<span class="q-n"><i>Brand</i> ' + h.n + '</span>' +
           '<span class="q-b">' + h.c + ' models</span></a>';
       }
-      return '<a href="/library/' + h.s + '/' + mslug(h.n) + '/">' +
+      /* h.h is the has-page flag from library-data.json. Only about half the
+         catalogue has a page of its own; the rest live on their marque page, so
+         those hits deep-link to the marque page anchored on the exact model.
+         Linking a model URL blindly is what produced the site's 404 wave. */
+      var url = h.h ? '/library/' + h.s + '/' + mslug(h.n) + '/'
+                    : '/library/' + h.s + '/#m-' + mslug(h.n);
+      return '<a href="' + url + '">' +
         '<span class="q-n">' + h.n + '</span>' +
         '<span class="q-b">' + h.b + (h.y ? ' · ' + h.y : '') + '</span></a>';
     }).join('');
@@ -118,6 +124,9 @@
     grid.insertAdjacentHTML('beforeend', rest.map(function (r) {
       var name = r[0], photo = r[1], year = r[2], slug = r[3];
       var href = slug ? '/library/' + bs + '/' + slug + '/' : '/library/' + bs + '/';
+      /* brand-rest.json is empty in every current build (every model already renders
+         on the marque page), so this path is dormant; kept correct in case the cap
+         returns. */
       var img = photo
         ? '<span class="ph"><img loading="lazy" alt="' + name + '" src="https://commons.wikimedia.org/wiki/Special:FilePath/' +
           encodeURIComponent(photo.replace(/ /g, '_')) + '?width=480"></span>'

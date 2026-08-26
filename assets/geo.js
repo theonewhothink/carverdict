@@ -27,7 +27,12 @@
         el.textContent = money(mixed(usd, parseFloat(el.getAttribute('data-fuel-usd') || '0'), g), g);
         return;
       }
-      var idx = kind === 'ins' ? (g.ins_idx || 1) : kind === 'maint' ? (g.maint_idx || 1) : 1;
+      /* 'car' is the vehicle-price index. Few countries have a published one, so the
+         parts-and-labour index stands in — both track the same import duties, taxes and
+         distribution costs that make a car dearer in Brazil than in Texas. */
+      var idx = kind === 'ins' ? (g.ins_idx || 1)
+              : kind === 'maint' ? (g.maint_idx || 1)
+              : kind === 'car' ? (g.car_idx || g.maint_idx || 1) : 1;
       var fuelAdj = kind === 'fuel' ? (g.fuel_usd_l / 0.91) : 1;
       el.textContent = money(usd * idx * fuelAdj, g);
     });
@@ -66,8 +71,9 @@
         return '<option value="' + cc + '"' + (cc === g.cc ? ' selected' : '') + '>' + TABLE[cc].flag + ' ' + TABLE[cc].name + '</option>';
       }).join('');
       h.innerHTML =
+        // The flag already leads every option label, so a separate flag span printed it
+        // twice — "🇺🇸 🇺🇸 United States" on every page of the site.
         '<div class="geo-chip" title="Regional cost reference — estimates, refreshed nightly. See methodology.">' +
-        '<span class="geo-flag">' + g.flag + '</span>' +
         '<select id="geo-sel" aria-label="Country">' + opts + '</select>' +
         '<span class="geo-facts">' + g.cur + ' · fuel ' + (g.sym || '$') + (g.fuel_usd_l * (g.fx || 1)).toFixed(2) +
         '/L · ' + (g.sym || '$') + (g.kwh_usd * (g.fx || 1)).toFixed(2) + '/kWh</span></div>';

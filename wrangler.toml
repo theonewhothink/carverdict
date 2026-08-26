@@ -9,3 +9,15 @@ directory = "./site"
 not_found_handling = "404-page"
 binding = "ASSETS"
 run_worker_first = true
+
+# Accounts, likes and owner surveys live in a Durable Object with the SQLite storage
+# backend. This is the one database Cloudflare provisions from the deploy itself — no
+# console visit, no API token, no database id to paste in — which is why the login works
+# on the first push instead of waiting on an account signup.
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "HubDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["HubDO"]

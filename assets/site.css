@@ -792,6 +792,11 @@ html,body{overflow-x:clip}
   input,select,textarea{font-size:16px}      /* 16px stops iOS zooming on focus */
   .geo-chip select{min-height:44px;font-size:16px}
   .src-note,.geo-note,.crumbs,.triad{font-size:13.5px}
+  /* the country chip was stacking into two lines and eating 90px above the headline */
+  .geo-bar{padding:6px 0}
+  .geo-chip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;padding:2px 10px}
+  .geo-chip::-webkit-scrollbar{display:none}
+  .geo-facts{white-space:nowrap;font-size:12px}
 }
 
 /* --- images: reserve the box so the hero cannot shift the page -------------- */
@@ -839,3 +844,245 @@ html,body{overflow-x:clip}
   .bt-az a,.az-jump a{min-width:44px;min-height:44px;justify-content:center}
 }
 .lib-card .ph img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/9}
+
+/* ============================================================================
+   ACCOUNTS, MONEY, LOVE, SOCIAL  —  added 2026-08-25
+   Everything below is mobile-first: the phone layout is the rule, and the wider
+   screens are the exception written into a min-width query. The site's traffic
+   is majority phone and the money panels are the densest thing on it, so they
+   are designed at 360 and allowed to spread, never designed wide and squeezed.
+   ============================================================================ */
+
+/* ---- header account chip ---- */
+.acct-host{display:flex;align-items:center}
+.acct-chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;
+  border:1px solid var(--line);border-radius:999px;font-size:14px;font-weight:600;
+  color:var(--text);background:var(--card);white-space:nowrap}
+.acct-chip:hover{text-decoration:none;border-color:var(--brand);color:var(--brand)}
+.acct-av{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:12px;font-weight:800}
+.acct-av.big{width:56px;height:56px;font-size:24px}
+.acct-chip.in .acct-nm{max-width:9ch;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.acct-chip .acct-nm{display:none}.acct-chip{padding:0 10px}}
+
+/* ---- the money panel ---- */
+.price-card .src-note{font-size:13px;color:var(--faint);margin-bottom:16px}
+.price-head{display:grid;gap:12px;margin-bottom:16px}
+@media(min-width:560px){.price-head{grid-template-columns:1fr 1fr}}
+.price-big{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.price-big .lbl{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--faint);font-weight:700}
+.price-big b{display:block;font-size:clamp(22px,6vw,30px);font-weight:800;letter-spacing:-.02em;
+  line-height:1.2;margin:2px 0 2px;font-variant-numeric:tabular-nums}
+.price-big b small{font-size:15px;font-weight:600;color:var(--muted)}
+.price-big .est{font-size:12px;color:var(--faint)}
+.price-big.alt b{color:var(--bad)}
+.tco{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tco-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:11px 14px;font-size:14px;border-top:1px solid var(--line)}
+.tco-row:first-child{border-top:0}
+.tco-row span{color:var(--muted);min-width:0}
+.tco-row b{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tco-row.grand{background:var(--card2);font-size:15px}
+.tco-row.grand span{color:var(--text);font-weight:600}
+.tco-row.grand b{font-size:19px;color:var(--brand)}
+.tco-row.per b{color:var(--muted);font-weight:600}
+.tco.edited{outline:2px solid var(--brand);outline-offset:2px}
+.price-input{display:block;margin-top:14px}
+.price-input span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.price-input input{width:100%;min-height:46px;padding:0 14px;font-size:16px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+.price-input input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.vc-price .val{font-size:17px;font-weight:800;display:block;font-variant-numeric:tabular-nums}
+.vc-price .est{display:block;font-size:12px;color:var(--faint)}
+.calc-break{display:grid;margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.calc-break div{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;
+  font-size:14px;border-top:1px solid var(--line)}
+.calc-break div:first-child{border-top:0}
+.calc-break span{color:var(--muted)}
+.calc-break b{font-variant-numeric:tabular-nums}
+.calc-break .tot{background:var(--card2);font-weight:600}
+.calc-break .tot b{color:var(--brand);font-size:17px}
+
+/* ---- love button ---- */
+.love-host{margin-top:14px}
+.love{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;
+  border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.love svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+.love:hover{border-color:var(--bad);color:var(--bad)}
+.love.on{background:rgba(196,43,43,.08);border-color:var(--bad);color:var(--bad)}
+.love.on svg{fill:currentColor;stroke:currentColor}
+.love-n{font-weight:800;font-variant-numeric:tabular-nums}
+.love[disabled]{opacity:.5}
+@media(prefers-reduced-motion:no-preference){
+  .love.on svg{animation:lovepop .32s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes lovepop{0%{transform:scale(.7)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+}
+.loved-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+.loved-card{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;color:var(--text);min-height:52px}
+.loved-card:hover{border-color:var(--brand);text-decoration:none}
+.loved-card b{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loved-rank{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  background:var(--card2);font-size:12px;font-weight:800;color:var(--muted);flex:none}
+.loved-n{display:inline-flex;align-items:center;gap:4px;color:var(--bad);font-weight:800;
+  font-size:13px;flex:none}
+.loved-n svg{width:14px;height:14px}
+
+/* ---- owner survey ---- */
+.survey-card .sv-n{font-size:13px;color:var(--faint);margin:10px 0}
+.sv-scores{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+.sv-score{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sv-score b{display:block;font-size:24px;font-weight:800;line-height:1.1}
+.sv-score b small{font-size:13px;color:var(--faint);font-weight:600}
+.sv-score span{font-size:12px;color:var(--muted)}
+.sv-bar{display:block;height:5px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.sv-bar u{display:block;height:100%;background:var(--accent-ev)}
+.sv-comments{margin-top:18px;display:grid;gap:10px}
+.sv-comments h4{font-size:14px}
+.sv-comments blockquote{background:var(--card2);border-left:3px solid var(--accent-ev);
+  border-radius:0 10px 10px 0;padding:12px 14px;font-size:14px;color:var(--text)}
+.sv-comments cite{display:block;margin-top:6px;font-size:12px;color:var(--faint);font-style:normal}
+.sv-form{margin-top:18px;display:grid;gap:12px}
+.sv-form p{font-size:14px}
+.sv-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+.sv-form label{display:grid;gap:5px;font-size:13px;color:var(--muted)}
+.sv-form select,.sv-form input[type=number],.sv-form textarea{min-height:44px;padding:9px 12px;
+  font:inherit;font-size:16px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--text);width:100%}
+.sv-form textarea{min-height:88px;resize:vertical}
+/* specificity: ".sv-form label" (0,1,1) beat a bare ".sv-check" (0,1,0), so the checkbox
+   row kept the grid layout and stacked the box above its own label */
+.sv-form .sv-check{display:flex;flex-direction:row;align-items:center;gap:10px;font-size:14px;
+  min-height:44px;grid-column:1/-1;color:var(--text)}
+.sv-form .sv-check input{width:22px;height:22px;flex:none;margin:0}
+.sv-msg{font-size:13px;color:var(--muted)}
+.sv-cta{margin-top:16px;display:grid;gap:8px;justify-items:start}
+.sv-cta small{font-size:12px;color:var(--faint)}
+
+/* ---- sign-in and account ---- */
+.auth-wrap{display:grid;gap:22px;padding:32px 0 46px}
+@media(min-width:900px){.auth-wrap{grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:38px}}
+.auth-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:24px;box-shadow:var(--shadow);max-width:460px}
+.auth-sub{color:var(--muted);font-size:15px;margin:8px 0 18px}
+.auth-side h2{font-size:17px;margin-bottom:10px}
+.auth-list{list-style:none;display:grid;gap:10px;font-size:14px;color:var(--muted)}
+.auth-list li{padding-left:22px;position:relative}
+.auth-list li::before{content:"✓";position:absolute;left:0;color:var(--good);font-weight:800}
+.auth-list b{color:var(--text)}
+.auth-fine{font-size:12px;color:var(--faint);margin-top:14px}
+.oauth-row{display:grid;gap:10px;margin-bottom:16px}
+.oauth{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;
+  border:1px solid var(--line);border-radius:12px;font-weight:600;font-size:15px;color:var(--text);
+  background:var(--card)}
+.oauth:hover{text-decoration:none;background:var(--card2)}
+.oauth svg{width:20px;height:20px}
+.oauth.a{background:#000;color:#fff;border-color:#000}
+.oauth.a:hover{background:#1a1a1a}
+.or{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:13px;margin:4px 0 16px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+#login-app form{display:grid;gap:12px}
+#login-app label{display:grid;gap:5px;font-size:13px;color:var(--muted)}
+#login-app input{min-height:48px;padding:0 14px;font:inherit;font-size:16px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+#login-app input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.tabs{display:flex;gap:4px;background:var(--card2);border-radius:10px;padding:4px}
+.tabs button{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;
+  font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.btn.wide{width:100%;justify-content:center;text-align:center}
+.login-msg{font-size:13px;color:var(--muted);min-height:18px}
+.login-msg.bad{color:var(--bad)}
+.login-why{background:var(--card2);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.login-err{background:rgba(196,43,43,.08);color:var(--bad);border-radius:10px;padding:10px 12px;
+  font-size:14px;margin-bottom:14px}
+.login-fine{font-size:12px;color:var(--faint)}
+.acct-wrap{padding:32px 0 48px;display:grid;gap:26px}
+.acct-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.acct-head h1{font-size:clamp(22px,5vw,30px)}
+.acct-head p{font-size:13px;color:var(--muted)}
+.acct-head .btn{margin-left:auto}
+.acct-wrap section h2{font-size:18px;margin-bottom:12px}
+.acct-wrap .cnt{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;
+  border-radius:999px;background:var(--card2);font-size:12px;color:var(--muted);vertical-align:2px}
+.acct-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr))}
+.acct-card{display:block;padding:14px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;color:var(--text);font-size:14px;min-height:52px}
+.acct-card:hover{border-color:var(--brand);text-decoration:none}
+.muted{color:var(--muted);font-size:14px}
+
+/* ---- follow and share ---- */
+.social-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px;
+  padding-top:18px;border-top:1px solid var(--line)}
+.social-lbl{font-size:13px;color:var(--faint);font-weight:600;margin-right:2px}
+.soc{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;
+  border:1px solid var(--line);color:var(--muted);background:var(--card)}
+.soc:hover{color:#fff;text-decoration:none;border-color:transparent}
+.soc svg{width:21px;height:21px}
+.soc-instagram:hover{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
+.soc-tiktok:hover{background:#010101}
+.soc-facebook:hover{background:#1877F2}
+.soc-youtube:hover{background:#FF0000}
+.social-share{margin-left:auto}
+.soc-share{width:auto;padding:0 16px;gap:8px;display:inline-flex;align-items:center;
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.soc-share:hover{background:var(--brand);border-color:var(--brand);color:#fff}
+@media(max-width:520px){.social-share{margin-left:0;width:100%}.soc-share{width:100%;justify-content:center}}
+
+/* ============================================================================
+   MOBILE PASS
+   The header ran out of room the moment an account chip joined it, tap targets
+   in a few places were still under the 44px floor, and several data blocks were
+   wide tables pretending to be responsive. Fixed here rather than in nine
+   generators.
+   ============================================================================ */
+@media(max-width:900px){
+  /* Three tight rows, not five loose ones: the header was eating 220px of a 780px screen
+     before a single word of the page appeared. Identity and controls share row one, the
+     search box takes row two because it is the site's main verb, and the sections scroll
+     horizontally on row three instead of wrapping into a block. */
+  .hdr .wrap{height:auto;min-height:52px;padding-top:6px;padding-bottom:2px;gap:8px}
+  .logo{order:1;font-size:17px}
+  .acct-host{order:2;margin-left:auto}
+  .langs{order:3}
+  .searchbox{order:4;flex-basis:100%;max-width:none;margin-bottom:2px}
+  .searchbox input{min-height:44px}
+  .nav{order:5;flex-basis:100%;margin-left:0;gap:16px;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    /* the row is scrollable, so it must fade at the edge rather than stop dead */
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
+  .langs summary{min-height:44px;display:flex;align-items:center;padding:0 12px}
+}
+@media(max-width:767px){
+  /* nothing on a phone may push the page sideways */
+  html,body{overflow-x:hidden}
+  .wrap{padding-left:14px;padding-right:14px}
+  .tco-row{font-size:13.5px;padding:10px 12px}
+  .tco-row.grand b{font-size:17px}
+  .card h2{font-size:17px}
+  /* every interactive target clears the 44px floor */
+  .btn,.oauth,.love,.soc,.tabs button{min-height:44px}
+  .geo-chip select{min-height:44px}
+  .years-strip a{min-height:44px;display:inline-flex;align-items:center}
+  .calc input,.calc select{min-height:44px}
+  /* a link sitting alone under a figure is a control, not prose — give it a real target */
+  .vc-money .est a{display:inline-block;padding:11px 0;min-height:44px}
+}
+@media(max-width:400px){
+  .price-big b{font-size:21px}
+  .sv-scores{grid-template-columns:1fr 1fr}
+  .loved-grid{grid-template-columns:1fr}
+}
+
+/* Table cells on a phone: a year link inside a data table was an 18px target, which is
+   under half the 44px floor, and the year-by-year table is the main navigation of a model
+   page. Padding the cell makes the whole row height do the work. */
+@media(max-width:767px){
+  .cost-table td,.cost-table th{padding-top:8px;padding-bottom:8px}
+  .cost-table td a{display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
+}

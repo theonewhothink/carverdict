@@ -1,18 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="MotorJury">
   <defs>
-    <linearGradient id="mjbg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#16305A"/><stop offset="1" stop-color="#0B1A30"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#122A4E"/><stop offset="1" stop-color="#071426"/>
     </linearGradient>
-    <linearGradient id="mjg" x1="0.1" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#F0C766"/><stop offset="0.6" stop-color="#D2A02C"/><stop offset="1" stop-color="#B4801A"/>
+    <linearGradient id="gold" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFD166"/><stop offset="1" stop-color="#D6961E"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="104" fill="url(#mjbg)"/>
-  <g fill="url(#mjg)">
-    <g transform="rotate(-26 256 214)">
-      <rect x="96" y="126" width="320" height="118" rx="34"/>
-      <rect x="222" y="244" width="68" height="150" rx="30"/>
-    </g>
-    <rect x="72" y="390" width="368" height="66" rx="33"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- the gavel: one heavy head, one heavy handle, struck across the frame -->
+  <g transform="rotate(-30 256 226)">
+    <rect x="88" y="148" width="336" height="130" rx="46" fill="url(#gold)"/>
+    <rect x="210" y="268" width="92" height="144" rx="42" fill="url(#gold)"/>
   </g>
+  <!-- the road it lands on: a bar with a centre line, which is what stops the mark
+       reading as a hammer and nothing else -->
+  <rect x="56" y="396" width="400" height="64" rx="32" fill="#FFB02E"/>
+  <rect x="146" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
+  <rect x="240" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
+  <rect x="334" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
 </svg>
