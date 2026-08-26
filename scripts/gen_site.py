@@ -356,6 +356,17 @@ AD = '<div class="ad" data-slot="{slot}">advertisement</div>'
 
 # ---------------- data helpers ----------------
 def rows_all(con):
+    # The price layer is produced by scripts/price_model.py earlier in the build. If a
+    # caller skipped that step (an out-of-date CI workflow, a partial local run), an empty
+    # table keeps the join valid and the pages simply render without price panels —
+    # a degraded build must never be a broken build.
+    con.execute("""CREATE TABLE IF NOT EXISTS price_estimates(
+        my_id INT PRIMARY KEY, segment TEXT, brand_tier TEXT, anchor TEXT,
+        price_new INT, price_new_low INT, price_new_high INT,
+        price_today INT, price_today_low INT, price_today_high INT,
+        price_in5 INT, price_in5_low INT, price_in5_high INT,
+        depreciation_5y INT, depreciation_per_year INT,
+        insurance_low INT, insurance_high INT)""")
     return con.execute("""SELECT my.id my_id, my.year, my.complaint_count, my.complaint_sample,
       my.recall_count, my.severe_recalls, my.is_ev, my.data_gap,
       mo.id model_id, mo.name model, mo.slug mslug, mk.name make, mk.slug kslug,
