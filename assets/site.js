@@ -100,6 +100,9 @@
         }
         hits.sort(function (a, b) { return a.sc - b.sc || a.n.length - b.n.length; });
         render(hits.slice(0, 9));
+        // the typeahead finds a car by name; the finder filters by year, fuel and price
+        out.insertAdjacentHTML('beforeend',
+          '<a class="q-all" href="/search/?q=' + encodeURIComponent(v) + '">All results with filters →</a>');
       });
     }, 110);
   });

@@ -1086,3 +1086,14 @@ html,body{overflow-x:clip}
   .cost-table td,.cost-table th{padding-top:8px;padding-bottom:8px}
   .cost-table td a{display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
 }
+
+
+/* ---- /search/ filter bar ---- */
+.sf-card{padding:16px}
+.sf-row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.sf-row input,.sf-row select{min-height:46px;padding:0 12px;font:inherit;font-size:15px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);width:100%}
+.sf-row input:focus,.sf-row select:focus{outline:2px solid var(--brand);outline-offset:1px}
+.sf-count{font-size:13px;color:var(--faint);margin-top:10px}
+.q-all{display:block;text-align:center;font-size:13px;font-weight:600;padding:10px;color:var(--brand)}
+@media(max-width:520px){.sf-row{grid-template-columns:1fr 1fr}.sf-row input{grid-column:1/-1}}

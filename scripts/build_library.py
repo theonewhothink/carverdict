@@ -269,6 +269,10 @@ def main():
     # brand pages (EN, static — SEO spearhead market)
     for b, models in brands.items():
         bs = slug(b)
+        # Photographed cars first. A marque page that opens on two rows of grey
+        # placeholders reads as a broken site; the same page opening on photography reads
+        # as a catalogue, and the unphotographed tail is still there for completeness.
+        models = sorted(models, key=lambda m: (0 if m["p"] else 1))
         # Every model renders as a card. The old 48-card cap with a "show all"
         # button read as missing data — a marque page that says "every model ever
         # made" must actually show every model without a click.

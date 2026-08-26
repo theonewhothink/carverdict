@@ -45,8 +45,8 @@ echo "origin: $SITE_ORIGIN"
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 8000", p.read_text()))
-print("MAX_MODEL_PAGES set to 8000")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 11000", p.read_text()))
+print("MAX_MODEL_PAGES set to 11000")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
@@ -256,6 +256,11 @@ if dead:
     print("DEAD:", dead[:20])
 if files > 19800:
     print("ABORT: over the 20,000 static-asset cap"); sys.exit(1)
+if files > 19000:
+    # visible in every published build log: the nightly dataset growth is eating the
+    # remaining headroom, and MAX_MODEL_PAGES needs lowering (or pages need to go dynamic)
+    # BEFORE the abort above starts rejecting deploys.
+    print(f"WARNING: {files} files - within 800 of the static-asset abort; reduce MAX_MODEL_PAGES soon")
 if dead:
     sys.exit(1)
 PY_EOF

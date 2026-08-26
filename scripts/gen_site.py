@@ -322,7 +322,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <div class="acct-host" data-account-chip></div>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
 </div></header>
@@ -1247,6 +1247,124 @@ anyone was paid for.</p>{cardlist(best)}
                  "Per-model-year car verdicts computed from NHTSA complaints, recalls and EPA data. Find the trap years before you buy.",
                  ORIGIN + "/", body, jsonld))
 
+def gen_search(con, all_rows):
+    """/search/ — the finder the header box could never be.
+
+    The typeahead answers "take me to the Corolla". It cannot answer "a reliable electric
+    SUV from the last five years under $30k", which is the question people actually shop
+    with. This page can: every model-year that has a page, filterable by year, fuel,
+    category, verdict and price, all client-side over one compact index — no server, no
+    round-trips, instant on a phone."""
+    fuel_kind_of = {"Electricity": "electric", "Electricity and Hydrogen": "electric",
+                    "Diesel": "diesel", "Hydrogen": "hydrogen", "CNG": "cng"}
+    rows = []
+    for r in all_rows:
+        if not gate(r):
+            continue
+        ft = r["fuel_type"] or ""
+        if r["is_ev"] or fuel_kind_of.get(ft) == "electric":
+            fuel = "electric"
+        elif "Electricity" in ft or "hybrid" in (r["model"] or "").lower():
+            fuel = "hybrid"
+        else:
+            fuel = fuel_kind_of.get(ft, "gasoline")
+        rows.append([f"{r['year']} {r['make']} {r['model']}", url_my(r), r["year"],
+                     r["make"], fuel, r["segment"] or "", r["score"], r["verdict"] or "",
+                     r["price_today"] or 0, r["complaint_count"] or 0])
+    (SITE / "assets").mkdir(parents=True, exist_ok=True)
+    (SITE / "assets" / "search-index.json").write_text(
+        json.dumps(rows, separators=(",", ":"), ensure_ascii=False))
+
+    seg_label = dict(SEGMENT_LABEL)
+    body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Find your car</h1>
+<p class="sub">Every scored model year, filterable by year, fuel, category, price and verdict.
+For the full catalogue of every car ever made, use the <a href="/library/">Library</a>.</p></div></div>
+<div class="wrap" style="padding:22px 0 40px">
+<div class="card sf-card">
+<div class="sf-row">
+<input id="sf-q" type="search" placeholder="Make or model…" aria-label="Search">
+<select id="sf-fuel" aria-label="Fuel"><option value="">Any fuel</option>
+<option value="gasoline">Gasoline</option><option value="hybrid">Hybrid</option>
+<option value="electric">Electric</option><option value="diesel">Diesel</option></select>
+<select id="sf-seg" aria-label="Category"><option value="">Any category</option>
+{''.join(f'<option value="{k}">{v.title()}</option>' for k, v in seg_label.items() if k != 'exotic')}</select>
+<select id="sf-verdict" aria-label="Verdict"><option value="">Any verdict</option>
+<option>BUY</option><option>CAUTION</option><option>AVOID</option></select>
+<select id="sf-ymin" aria-label="From year"></select>
+<select id="sf-ymax" aria-label="To year"></select>
+<select id="sf-price" aria-label="Max price"><option value="">Any price</option>
+<option value="10000">Under $10,000</option><option value="20000">Under $20,000</option>
+<option value="35000">Under $35,000</option><option value="60000">Under $60,000</option></select>
+<select id="sf-sort" aria-label="Sort"><option value="score">Best score first</option>
+<option value="price">Cheapest first</option><option value="year">Newest first</option>
+<option value="data">Most data first</option></select>
+</div>
+<p class="sf-count" id="sf-count"></p></div>
+<div class="rel-grid" id="sf-out"></div>
+<p style="margin-top:10px"><button class="btn ghost" id="sf-more" hidden>Show more</button></p>
+</div>
+<script>
+(function () {{
+  var R = null, LIM = 60, shown = LIM;
+  var els = {{}};
+  ['q','fuel','seg','verdict','ymin','ymax','price','sort'].forEach(function (k) {{
+    els[k] = document.getElementById('sf-' + k);
+  }});
+  var out = document.getElementById('sf-out'), count = document.getElementById('sf-count'),
+      more = document.getElementById('sf-more');
+  var Y0 = 1995, Y1 = {CURRENT_YEAR};
+  for (var y = Y0; y <= Y1; y++) {{
+    els.ymin.add(new Option(y === Y0 ? 'From ' + y : String(y), y));
+    els.ymax.add(new Option(y === Y1 ? 'To ' + y : String(y), y));
+  }}
+  els.ymax.value = Y1;
+  function money(n) {{ return '$' + Math.round(n).toLocaleString(); }}
+  function apply() {{
+    if (!R) return;
+    var q = els.q.value.trim().toLowerCase();
+    var f = els.fuel.value, g = els.seg.value, v = els.verdict.value;
+    var y0 = +els.ymin.value || 0, y1 = +els.ymax.value || 9999, pm = +els.price.value || 0;
+    var hits = R.filter(function (r) {{
+      if (q && r[0].toLowerCase().indexOf(q) < 0) return false;
+      if (f && r[4] !== f) return false;
+      if (g && r[5] !== g) return false;
+      if (v && r[7] !== v) return false;
+      if (r[2] < y0 || r[2] > y1) return false;
+      if (pm && (!r[8] || r[8] > pm)) return false;
+      return true;
+    }});
+    var s = els.sort.value;
+    hits.sort(function (a, b) {{
+      if (s === 'price') return (a[8] || 9e9) - (b[8] || 9e9);
+      if (s === 'year') return b[2] - a[2];
+      if (s === 'data') return b[9] - a[9];
+      return (b[6] || 0) - (a[6] || 0);
+    }});
+    count.textContent = hits.length.toLocaleString() + ' model year' + (hits.length === 1 ? '' : 's') + ' match';
+    out.innerHTML = hits.slice(0, shown).map(function (r) {{
+      return '<a href="' + r[1] + '">' + r[0] +
+        '<small>score ' + (r[6] == null ? '—' : r[6] + '/100') + ' · ' + (r[7] || 'DATA PENDING') +
+        (r[8] ? ' · ' + money(r[8]) + ' typical' : '') + '</small></a>';
+    }}).join('') || '<p class="muted" style="grid-column:1/-1">Nothing matches. Loosen a filter — or browse the <a href="/library/">full library</a>.</p>';
+    more.hidden = hits.length <= shown;
+  }}
+  function go() {{ shown = LIM; apply(); }}
+  Object.keys(els).forEach(function (k) {{
+    els[k].addEventListener(k === 'q' ? 'input' : 'change', go);
+  }});
+  more.addEventListener('click', function () {{ shown += 120; apply(); }});
+  var pre = new URLSearchParams(location.search).get('q');
+  if (pre) els.q.value = pre;
+  fetch('/assets/search-index.json').then(function (r) {{ return r.json(); }})
+    .then(function (j) {{ R = j; apply(); }});
+}})();
+</script>"""
+    return write("search/index.html", page(
+        f"Find Your Car — Filter by Year, Fuel, Price & Verdict | {BRAND}",
+        "Filter every scored model year by year, fuel type, category, price and data verdict.",
+        ORIGIN + "/search/", body))
+
+
 def gen_calculators(con, all_rows):
     packs = []
     for r in all_rows:
@@ -1746,6 +1864,7 @@ def main():
         pages.append(gen_brand(con, k, b["make"], b["models"], all_rows))
     pages.append(gen_cars_index(sorted((k, b["make"], sum(n for _, _, n in b["models"])) for k, b in brands.items())))
     pages.append(gen_home(con, all_rows))
+    pages.append(gen_search(con, all_rows))
     pages.append(gen_calculators(con, all_rows))
     pages.append(gen_recalls_feed(con, all_rows))
     pages += gen_static()
