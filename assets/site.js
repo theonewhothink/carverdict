@@ -3,7 +3,7 @@
    BRAND rows link to that brand's library page; MODEL rows link to the page that actually
    contains that model (its own brand), so a result can never land on an unrelated brand. */
 (function () {
-  var MODELS = null, BRANDS = null;
+  var MODELS = null, BRANDS = null, DEEP = null, DEEP_LOADING = false;
 
   function load(cb) {
     if (MODELS) return cb();
@@ -99,6 +99,24 @@
           if (hits.length > 400) break;
         }
         hits.sort(function (a, b) { return a.sc - b.sc || a.n.length - b.n.length; });
+        /* The primary index carries every car with a photo or a page. When it comes up
+           short, the deep index — the long tail of real but thinly-recorded cars from the
+           widened harvest — is fetched once and searched too; those hits land on the
+           marque page, anchored on the model. */
+        if (hits.length < 3) {
+          if (DEEP) {
+            for (i = 0; i < DEEP.length && hits.length < 9; i++) {
+              if (best(DEEP[i][0], vs) < 4 || best(DEEP[i][1] + ' ' + DEEP[i][0], vs) < 4) {
+                hits.push({ kind: 'model', sc: 5, n: DEEP[i][0], b: DEEP[i][1], s: DEEP[i][2], y: '', h: 0 });
+              }
+            }
+          } else if (!DEEP_LOADING) {
+            DEEP_LOADING = true;
+            fetch('/assets/deep-index.json').then(function (r) { return r.json(); })
+              .then(function (j) { DEEP = j; q.dispatchEvent(new Event('input')); })
+              .catch(function () { DEEP = []; });
+          }
+        }
         render(hits.slice(0, 9));
         // the typeahead finds a car by name; the finder filters by year, fuel and price
         out.insertAdjacentHTML('beforeend',

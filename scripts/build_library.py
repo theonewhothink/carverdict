@@ -246,10 +246,25 @@ def main():
     # has no page of its own — those models live on their marque page — and the search box
     # used to link to a model URL regardless, which is where the 404s came from. The flag
     # lets every client-side link choose the page that actually exists.
-    data_out = {b: {"s": slug(b),
-                    "m": [[m["n"], m["p"] and 1 or 0, m["y"],
-                           1 if m["n"] in MODEL_INDEX.get(slug(b), {}) else 0] for m in v]}
-                for b, v in brands.items()}
+    # The catalogue is heading past 16k entries as the nightly harvest widens (subclass
+    # tree + the US registration roll). Every page loads library-data.json for the search
+    # box, so it must not grow with the long tail: entries with a photo or a page stay in
+    # the primary index; the rest — real cars, thin records — go to deep-index.json, which
+    # the search box fetches only when the primary index comes up short.
+    data_out, deep_out = {}, []
+    for b, v in brands.items():
+        bs = slug(b)
+        prim = []
+        for m in v:
+            has_page = 1 if m["n"] in MODEL_INDEX.get(bs, {}) else 0
+            if m["p"] or has_page:
+                prim.append([m["n"], m["p"] and 1 or 0, m["y"], has_page])
+            else:
+                deep_out.append([m["n"], b, bs])
+        data_out[b] = {"s": bs, "m": prim}
+    (SITE / "assets").mkdir(parents=True, exist_ok=True)
+    (SITE / "assets" / "deep-index.json").write_text(
+        json.dumps(deep_out, separators=(",", ":"), ensure_ascii=False))
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
     (SITE / "assets" / "library-data.json").write_text(json.dumps(data_out, separators=(",", ":"), ensure_ascii=False))
 
