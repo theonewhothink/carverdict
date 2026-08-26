@@ -1552,6 +1552,21 @@ no editors, no sponsorship, no algorithm.</p></div></div>
 <a href="/account/">your account</a>.</p></div>
 <script src="/assets/loved.js" defer></script>""")))
 
+    # Fallback /follow/: the footer of every page links it, so it must exist even when
+    # build_social.py (which writes the full link-in-bio page) does not run. That script
+    # runs later in build.sh and overwrites this stub.
+    gen.append(write("follow/index.html", page(
+        "MotorJury — start here", "Every car ever made, and what it really costs to own.",
+        ORIGIN + "/follow/",
+        """<div class="hero"><div class="wrap hero-inner"><h1>MotorJury</h1>
+<p class="sub">What that car really costs to own — price, depreciation, repairs, insurance and a
+verdict, computed from public data.</p></div></div>
+<div class="wrap" style="padding:24px 0"><div class="rel-grid">
+<a href="/library/">Every car ever made<small>the library</small></a>
+<a href="/calculators/">What will it cost me?<small>the true-cost calculator</small></a>
+<a href="/play/">Today's quiz<small>guess the car</small></a>
+<a href="/loved/">Most loved<small>voted by readers</small></a></div></div>""")))
+
     gen.append(prose_page("privacy/index.html", "Privacy Policy", f"""
 <p>Effective {TODAY}.</p>
 <p><b>If you do not have an account</b> we collect no personal data beyond what you submit (e.g. a newsletter

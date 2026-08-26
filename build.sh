@@ -93,7 +93,7 @@ fi
 # adds the classes the first harvest missed (automobile model series, racing automobile
 # model - i.e. Cayenne, Boxster, 911, 917, 962). Never fails the build: on a Wikidata
 # outage the committed catalogue is used unchanged.
-"$PY" scripts/harvest_wikidata.py || echo "WARNING: catalogue refresh skipped"
+timeout 120 "$PY" scripts/harvest_wikidata.py || echo "WARNING: catalogue refresh skipped or over budget"
 
 # Per-model technical facts (engine, mass, top speed, units built, Commons gallery category).
 # Optional: if this fails the model pages simply render without a specifications table.
@@ -101,12 +101,17 @@ fi
 # against the Commons file record). 90 seconds is the worst case it can add to a build
 # that already lands near 15m30s of the 20-minute build+deploy cap; the pass stops on the
 # clock and keeps whatever it scored, so a slow Commons day cannot cost the deploy.
-IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped"
+# Hard wall-clock bounds on every harvest. The whole build+deploy has a 20-minute cap and
+# the last three production builds died on it: the previous budget spent up to 8.5 minutes
+# on Wikipedia alone, generation grew with the dataset, and the first (cache-cold) build of
+# every push tipped over the cap — which is why even the currently-live commit only
+# deployed on a manual retry. Freshness compounds nightly; a failed deploy compounds nothing.
+IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-30}" timeout 150 "$PY" scripts/harvest_specs.py || echo "WARNING: specification refresh skipped or over budget"
 
 # Real specifications — engine, power output, production years, kerb weight, transmission,
 # layout, assembly — parsed from Wikipedia infoboxes (CC BY-SA). Batched 50 pages per
 # request, so the whole catalogue costs ~700 calls rather than 17,000.
-"$PY" scripts/harvest_wiki_specs.py || echo "WARNING: infobox specification refresh skipped"
+WIKI_SPECS_BUDGET="${WIKI_SPECS_BUDGET:-90}" timeout 150 "$PY" scripts/harvest_wiki_specs.py || echo "WARNING: infobox specification refresh skipped or over budget"
 
 # The ownership-price layer: what the car cost new, what it is worth now, what it will be
 # worth in five years and what it costs to insure. Runs after the wiki harvest so a
@@ -121,7 +126,7 @@ IMG_SCORE_BUDGET="${IMG_SCORE_BUDGET:-90}" "$PY" scripts/harvest_specs.py || ech
 # Resolve the Legends roster before gen_site runs, so the home page knows whether the
 # /legends/ section can be linked. The pages themselves are written after gen_site, which
 # wipes site/ on every run.
-"$PY" scripts/build_people.py --harvest-only || echo "WARNING: legends roster unavailable"
+timeout 90 "$PY" scripts/build_people.py --harvest-only || echo "WARNING: legends roster unavailable"
 
 # Build order matters: gen_site.py clears site/, and the --plan pass decides which
 # models get their own page so sibling links can never point at a missing page.
