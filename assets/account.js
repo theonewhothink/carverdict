@@ -60,6 +60,10 @@
     if (!ME) return;
     var local = {};
     try { local = JSON.parse(localStorage.getItem('cv_prefs') || '{}'); } catch (e) { return; }
+    try {
+      var geo = localStorage.getItem('cv_geo_override');
+      if (geo && !local.geo) local.geo = geo;
+    } catch (e) {}
     if (!Object.keys(local).length) return;
     var server = ME.prefs || {};
     var merged = Object.assign({}, local, server);
@@ -67,7 +71,14 @@
       (local.garage || []).filter(function (g) {
         return !(server.garage || []).some(function (s) { return s.u === g.u; });
       }));
+    merged.recent = (server.recent || []).concat(
+      (local.recent || []).filter(function (r) {
+        return !(server.recent || []).some(function (s) { return s.u === r.u; });
+      })).slice(0, 12);
     merged.ratings = Object.assign({}, local.ratings || {}, server.ratings || {});
+    // Hydrate account surfaces immediately; the API round-trip should not make a saved
+    // garage look empty for a moment after sign-in.
+    ME.prefs = merged;
     api('/api/prefs', { prefs: merged }).then(function (r) {
       ME.prefs = r.prefs;
       try { localStorage.setItem('cv_prefs', JSON.stringify(r.prefs)); } catch (e) {}
@@ -305,6 +316,7 @@
       }
       var likes = (u.likes || []);
       var garage = (u.prefs && u.prefs.garage) || [];
+      var recent = (u.prefs && u.prefs.recent) || [];
       host.innerHTML =
         '<div class="acct-head"><span class="acct-av big">' +
           esc((u.name || u.email).charAt(0).toUpperCase()) + '</span>' +
@@ -321,9 +333,16 @@
         '<section><h2>Your garage <span class="cnt">' + garage.length + '</span></h2>' +
         (garage.length
           ? '<div class="acct-grid">' + garage.map(function (g) {
-              return '<a class="acct-card" href="' + esc(g.u || '/') + '"><b>' + esc(g.n || '') + '</b></a>';
+              return '<a class="acct-card" href="' + esc(g.u || '/') + '"><b>' + esc(g.n || g.t || 'Saved car') + '</b></a>';
             }).join('') + '</div>'
           : '<p class="muted">Add a car from any model page and it follows you to every device.</p>') +
+        '</section>' +
+        '<section><h2>Recently viewed <span class="cnt">' + recent.length + '</span></h2>' +
+        (recent.length
+          ? '<div class="acct-grid">' + recent.slice(0, 12).map(function (r) {
+              return '<a class="acct-card" href="' + esc(r.u || '/') + '"><b>' + esc(r.t || 'Viewed car') + '</b></a>';
+            }).join('') + '</div>'
+          : '<p class="muted">Cars you inspect will appear here and follow you across signed-in devices.</p>') +
         '</section>';
       host.querySelector('[data-signout]').addEventListener('click', function () {
         api('/api/auth/logout', {}).then(function () { location.href = '/'; });

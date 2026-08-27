@@ -322,7 +322,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/vin-check/">VIN check</a><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <div class="acct-host" data-account-chip></div>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
 </div></header>
@@ -421,6 +421,14 @@ def price_block(r, five_run_usd, fuel_usd):
     run5 = five_run_usd or 0
     tco5 = int(dep5 + run5 + ins_mid * 5)
     per_mile = tco5 / (5 * 12000)
+    has_fuel = bool(fuel_usd)
+    run_label = "Fuel and maintenance, five years" if has_fuel else "Maintenance, five years (fuel unavailable)"
+    total_label = "Five-year cost of owning it" if has_fuel else "Five-year cost shown (excludes fuel)"
+    mile_label = ("Per mile driven, at 12,000 miles a year" if has_fuel
+                  else "Per mile shown, excluding fuel")
+    missing_fuel = ("" if has_fuel else
+                    '<p class="data-missing"><b>Fuel cost is not $0.</b> EPA has no matched economy record '
+                    'for this model year, so the totals below exclude fuel rather than inventing a number.</p>')
     anchor_note = ("anchored on the published list price for this model"
                    if r["price_anchor"] == "wikipedia"
                    else f"priced as a {seg} of its model year")
@@ -429,6 +437,7 @@ def price_block(r, five_run_usd, fuel_usd):
 <p class="src-note">Class-level estimates, {anchor_note}, re-priced to your country.
 Not a quote, not a valuation of one specific car — condition, mileage and options move it.
 <a href="/methodology/#prices">How these are computed</a>.</p>
+{missing_fuel}
 <div class="price-head">
 <div class="price-big"><span class="lbl">Typical price today</span>
 <b>{money_span(lo, "car")}–{money_span(hi, "car")}</b>
@@ -444,9 +453,9 @@ Not a quote, not a valuation of one specific car — condition, mileage and opti
 <div class="tco-row"><span>Worth in five years</span><b data-tco-resale>{money_span(r['price_in5'], "car")}</b></div>
 <div class="tco-row"><span>Depreciation, five years</span><b data-tco-dep>{money_span(dep5, "car")}</b></div>
 <div class="tco-row"><span>Insurance, five years</span><b>{money_span(ins_lo * 5, "ins")}–{money_span(ins_hi * 5, "ins")}</b></div>
-<div class="tco-row"><span>Fuel and maintenance, five years</span><b data-usd="{int(run5)}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${int(run5):,}</b></div>
-<div class="tco-row grand"><span>Five-year cost of owning it</span><b data-tco-total data-usd="{tco5}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${tco5:,}</b></div>
-<div class="tco-row per"><span>Per mile driven, at 12,000 miles a year</span><b data-tco-mile>${per_mile:.2f}</b></div>
+<div class="tco-row"><span>{run_label}</span><b data-usd="{int(run5)}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${int(run5):,}</b></div>
+<div class="tco-row grand"><span>{total_label}</span><b data-tco-total data-usd="{tco5}" data-kind="mix" data-fuel-usd="{int((fuel_usd or 0) * 5)}">${tco5:,}</b></div>
+<div class="tco-row per"><span>{mile_label}</span><b data-tco-mile>${per_mile:.2f}</b></div>
 </div>
 <label class="price-input"><span>Being quoted a different price? Put it in and the numbers follow.</span>
 <input type="number" inputmode="numeric" data-price-input min="200" max="3000000" step="100"
@@ -519,7 +528,9 @@ def gen_model_year(con, r, all_rows):
     _age_now = max(0, CURRENT_YEAR - int(year))
     _five = [pt for pt in curve if _age_now <= pt["age"] <= _age_now + 4]
     _fuel = r["annual_fuel_cost"] or 0
-    five_run = int(round(sum((pt["total_low"] + pt["total_high"]) / 2 for pt in _five)
+    if not _five and curve:
+        _five = [min(curve, key=lambda pt: abs(pt["age"] - _age_now))]
+    five_run = int(round(sum((pt["total_low"] + pt["total_high"]) / 2 + _fuel for pt in _five)
                          * (5 / len(_five)))) if _five else 0
     try:
         _conf = r["confidence"]
@@ -539,10 +550,13 @@ def gen_model_year(con, r, all_rows):
                       f'<span class="est">used market estimate · <a href="#price">the full money picture</a></span></div>')
     money_html = ""
     if five_run:
-        money_html = (f'<div class="vc-money"><span class="lbl">Running cost, next 5 years</span>'
+        _run_label = "Running cost, next 5 years" if _fuel else "Maintenance, next 5 years"
+        _run_note = ("fuel/energy + maintenance band midpoint" if _fuel
+                     else "EPA fuel data unavailable · maintenance only")
+        money_html = (f'<div class="vc-money"><span class="lbl">{_run_label}</span>'
                       f'<span class="val" data-usd="{five_run}" data-kind="mix" '
                       f'data-fuel-usd="{_fuel * 5}">${five_run:,}</span>'
-                      f'<span class="est">fuel/energy + maintenance band midpoint · estimate</span></div>')
+                      f'<span class="est">{_run_note} · estimate</span></div>')
     vc = f"""<div class="card verdict sticky">
 <div class="chart" style="max-width:150px;margin:0 auto">{svg_gauge(r['score'])}</div>
 <span class="badge v-{r['verdict'] if r['verdict'] in ('BUY','CAUTION','AVOID') else 'DATA'}">{esc(r['verdict'] or 'PENDING')}</span>
@@ -601,6 +615,10 @@ def gen_model_year(con, r, all_rows):
                      f" · estimated annual {'energy' if r['is_ev'] else 'fuel'} cost "
                      f"<span class='num' data-usd=\"{r['annual_fuel_cost']}\" data-kind=\"fuel\">${r['annual_fuel_cost']:,}</span>"
                      + (f" · EPA range <span class='num' data-mi=\"{r['ev_range']:.0f}\">{r['ev_range']:.0f} mi</span>" if r["ev_range"] else "") + "</p>")
+    else:
+        fuel_line = ("<p class='data-missing'><b>Fuel or energy cost unavailable.</b> "
+                     "EPA has no matched economy record for this model year. MotorJury shows "
+                     "maintenance separately and never turns missing data into $0.</p>")
     ev_block = ""
     if r["is_ev"] and r["battery_warranty"]:
         ev_block = f"""<h3>EV battery reality check</h3>
@@ -616,26 +634,39 @@ def gen_model_year(con, r, all_rows):
     geo_block = ""
     if yr1:
         fuel_usd = r["annual_fuel_cost"] or 0
-        maint_lo = max(0, yr1["total_low"] - fuel_usd)
-        maint_hi = max(0, yr1["total_high"] - fuel_usd)
+        has_fuel = bool(r["annual_fuel_cost"])
+        # score_model_years stores maintenance only. Fuel is added here exactly once so
+        # the page can re-price the two components with different country indices.
+        maint_lo = yr1["total_low"]
+        maint_hi = yr1["total_high"]
         # The headline figure is the MIDPOINT of the band, not its ceiling. Publishing a
         # band and then quietly summing its top overstated every car by roughly a fifth.
-        mid_usd = int(round((yr1["total_low"] + yr1["total_high"]) / 2))
+        mid_usd = int(round((yr1["total_low"] + yr1["total_high"]) / 2 + fuel_usd))
         five = [p for p in curve if age_now <= p["age"] <= age_now + 4] or [yr1]
-        five_usd = int(round(sum((p["total_low"] + p["total_high"]) / 2 for p in five)
+        five_usd = int(round(sum((p["total_low"] + p["total_high"]) / 2 + fuel_usd for p in five)
                              * (5 / len(five))))
+        total_low = yr1["total_low"] + fuel_usd
+        total_high = yr1["total_high"] + fuel_usd
+        fuel_row = (f'<div class="geo-cost-row"><span>{"Energy" if r["is_ev"] else "Fuel"} (your region)</span>'
+                    f'<b data-usd="{fuel_usd}" data-kind="fuel">${fuel_usd:,}</b></div>' if has_fuel else
+                    '<div class="geo-cost-row missing"><span>Fuel or energy</span><b>Not available</b></div>')
+        total_label = (f"Estimated running cost this year (age {age_now})" if has_fuel
+                       else f"Estimated maintenance this year (age {age_now})")
+        five_label = "Next five years, running cost" if has_fuel else "Next five years, maintenance only"
+        geo_note = ("Re-priced automatically from your country's retail fuel, electricity and parts indices"
+                    if has_fuel else
+                    "Maintenance re-priced from your country's parts and workshop-cost index; fuel is excluded")
         geo_block = f"""<div class="geo-cost">
-<div class="geo-cost-row"><span>{'Energy' if r['is_ev'] else 'Fuel'} (your region)</span>
-<b data-usd="{fuel_usd}" data-kind="fuel">${fuel_usd:,}</b></div>
+{fuel_row}
 <div class="geo-cost-row"><span>Maintenance band (your region)</span>
 <b><span data-usd="{maint_lo}" data-kind="maint">${maint_lo:,}</span>–<span data-usd="{maint_hi}" data-kind="maint">${maint_hi:,}</span></b></div>
-<div class="geo-cost-row total"><span>Estimated running cost this year (age {age_now})</span>
+<div class="geo-cost-row total"><span>{total_label}</span>
 <b id="geo-total" data-usd="{mid_usd}" data-fuel-usd="{fuel_usd}">${mid_usd:,}</b></div>
 <div class="geo-cost-row range"><span>Range across the maintenance band</span>
-<b><span data-usd="{yr1['total_low']}" data-kind="mix" data-fuel-usd="{fuel_usd}">${yr1['total_low']:,}</span>–<span data-usd="{yr1['total_high']}" data-kind="mix" data-fuel-usd="{fuel_usd}">${yr1['total_high']:,}</span></b></div>
-<div class="geo-cost-row five"><span>Next five years, running cost</span>
+<b><span data-usd="{total_low}" data-kind="mix" data-fuel-usd="{fuel_usd}">${total_low:,}</span>–<span data-usd="{total_high}" data-kind="mix" data-fuel-usd="{fuel_usd}">${total_high:,}</span></b></div>
+<div class="geo-cost-row five"><span>{five_label}</span>
 <b data-usd="{five_usd}" data-kind="mix" data-fuel-usd="{fuel_usd * 5}">${five_usd:,}</b></div>
-<p class="geo-note">Re-priced automatically from your country's retail fuel, electricity and parts indices —
+<p class="geo-note">{geo_note} —
 change country in the bar at the top. Estimates; see <a href="/methodology/">methodology</a>.</p></div>"""
     # What this car's actual problems cost to fix. The ranking is this model-year's own
     # NHTSA complaint clusters; the money is a published flat-rate calculation, re-priced
@@ -668,12 +699,16 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
     # time and never a stale number baked into a page.
     survey_html = (f'<div class="card survey-card" data-survey="my:{r["my_id"]}" '
                    f'data-survey-name="{esc(name)}"><h2>Owner satisfaction</h2>'
-                   f'<p class="src-note">Loading owner responses…</p></div>')
+                   f'<p class="sv-n">Verified owner averages publish after five responses. '
+                   f'Own this exact model year? Sign in and add the evidence future buyers need.</p></div>')
 
+    running_curve = [{**p, "total_low": p["total_low"] + _fuel,
+                      "total_high": p["total_high"] + _fuel} for p in curve]
+    _legend = ("fuel/energy + maintenance band" if _fuel else "maintenance band only — fuel data unavailable")
     cost_html = f"""<div class="card"><h2>What it costs to run</h2>{fuel_line}
 {geo_block}
-<div class="chart">{svg_costcurve(curve)}</div>
-<div class="legend"><span><i style="background:#0E7C86"></i>fuel/energy + maintenance band, annual — <span data-geo-currency-note>US dollars</span>, estimate</span></div>
+<div class="chart">{svg_costcurve(running_curve)}</div>
+<div class="legend"><span><i style="background:#0E7C86"></i>{_legend}, annual — <span data-geo-currency-note>US dollars</span>, estimate</span></div>
 {ev_block}
 <p style="margin-top:10px"><a href="/calculators/">Run your own numbers in the true-cost calculator →</a></p></div>"""
 
@@ -707,10 +742,13 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
                          f"at a US independent shop and re-priced to your country at the top of the page. "
                          f"It is an estimate of what this class of failure costs, not a quote for this car."))
     if five_run:
+        _faq_cost = (f"About ${int(five_run/5):,} a year in fuel or energy plus the maintenance band"
+                     if _fuel else
+                     f"About ${int(five_run/5):,} a year for the maintenance band; EPA fuel data is unavailable and excluded")
         faqs.append((f"What does a {name} cost to run per year?",
-                     f"About ${int(five_run/5):,} a year in fuel or energy plus the maintenance band — "
+                     f"{_faq_cost} — "
                      f"roughly ${five_run:,} over five years, before purchase price, insurance and "
-                     f"depreciation. Figures come from EPA fuel-economy data and industry maintenance "
+                     f"depreciation. Figures come from available EPA fuel-economy data and industry maintenance "
                      f"averages, and are re-priced to your country."))
     if r["is_ev"] and r["battery_warranty"]:
         faqs.append((f"How much does a {name} battery replacement cost?",
@@ -819,7 +857,8 @@ def gen_model(con, model_rows, all_rows):
             return None, 0
         a = max(0, CURRENT_YEAR - int(s["year"]))
         pt = min(cv, key=lambda x: abs(x["age"] - a))
-        return int(round((pt["total_low"] + pt["total_high"]) / 2)), (s["annual_fuel_cost"] or 0)
+        fuel = s["annual_fuel_cost"] or 0
+        return int(round((pt["total_low"] + pt["total_high"]) / 2 + fuel)), fuel
 
     def _cost_cell(s):
         v, fu = _run_cost(s)
@@ -1269,7 +1308,7 @@ car — founders, engineers, designers, champions and industrialists.</p>
 <p class="hh-sub">Every car ever made, priced for <b>your</b> country — from NHTSA complaints,
 recall campaigns and EPA data. Not opinions.</p>
 <div class="hh-cta"><a class="btn" href="/library/">Explore every car ever made</a>
-<a class="btn ghost" href="/play/">Play today's quiz</a></div>
+<a class="btn ghost" href="/vin-check/">Check a VIN before you buy</a></div>
 <div class="stat-row"><div><b>{n_models:,}</b><span>models in the library</span></div>
 <div><b>{n_complaints:,}</b><span>complaints indexed</span></div>
 <div><b>{N_GEO}</b><span>countries auto-priced</span></div></div>
@@ -1292,6 +1331,7 @@ anyone was paid for.</p>{cardlist(best)}
 {legends_section}
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/events/">The motoring calendar<small>races · concours · auctions worldwide</small></a>
+<a href="/vin-check/">Free VIN & recall check<small>decode the exact car before you buy</small></a>
 <a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
 <a href="/calculators/">True-cost calculator<small>priced for your country</small></a>
@@ -1468,20 +1508,26 @@ function calc(){{const p=P[sel.value];const keep=Math.min(10,Math.max(1,+documen
 if(+sel.value!==lastIdx){{lastIdx=+sel.value;price.value=p.pt||'';price.placeholder=p.pt?String(p.pt):'purchase price';}}
 const age0=Math.max(0,{CURRENT_YEAR}-p.y);let lo=0,hi=0;
 for(let k=0;k<keep;k++){{const a=Math.min(p.c.length-1,age0+k);lo+=p.c[a][0];hi+=p.c[a][1];}}
-const run=(lo+hi)/2;
+const fuel=(p.fc||0)*keep;
+const run=(lo+hi)/2+fuel;
+const runLo=lo+fuel,runHi=hi+fuel;
 // depreciation scales with the price actually paid: the retained-value ratio is the same curve
 const paid=Math.max(200,+price.value||p.pt||0);
 const dep=p.d5&&p.pt?p.d5*(paid/p.pt)*(keep/5):0;
 const ins=(p.ins||0)*keep;
 const total=run+dep+ins;
-out.textContent=M(total/keep)+' / year — '+M(total)+' over '+keep+' year'+(keep>1?'s':'')+' (USD)';
+const hasFuel=!!p.fc;
+out.textContent=M(total/keep)+' / year — '+M(total)+' over '+keep+' year'+(keep>1?'s':'')+
+  ' (USD'+(hasFuel?'':', fuel excluded')+')';
 brk.innerHTML=(dep?'<div><span>Depreciation</span><b>'+M(dep)+'</b></div>':'')+
-'<div><span>Fuel and maintenance</span><b>'+M(run)+'</b></div>'+
+'<div><span>'+(hasFuel?'Fuel and maintenance':'Maintenance — fuel unavailable')+'</span><b>'+M(run)+'</b></div>'+
 (ins?'<div><span>Insurance</span><b>'+M(ins)+'</b></div>':'')+
-'<div class="tot"><span>Total cost of ownership</span><b>'+M(total)+'</b></div>'+
-'<div class="per"><span>Per mile at 12,000 miles a year</span><b>$'+(total/(keep*12000)).toFixed(2)+'</b></div>';
+'<div class="tot"><span>'+(hasFuel?'Total cost of ownership':'Total shown — fuel excluded')+'</span><b>'+M(total)+'</b></div>'+
+'<div class="per"><span>'+(hasFuel?'Per mile at 12,000 miles a year':'Per mile shown — fuel excluded')+'</span><b>$'+(total/(keep*12000)).toFixed(2)+'</b></div>';
 note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included above). ':'')+
-'Running cost band over '+keep+' yr: '+M(lo)+'–'+M(hi)+'. Price, depreciation and insurance are class-level estimates — see the methodology. Local fuel, electricity and parts prices from the country bar feed the per-country figures on each car page.';}}
+(hasFuel?'Running cost':'Maintenance-only')+' band over '+keep+' yr: '+M(runLo)+'–'+M(runHi)+'. '+
+(hasFuel?'':'EPA has no matched fuel or energy record for this selection, so fuel is excluded rather than shown as $0. ')+
+'Price, depreciation and insurance are class-level estimates — see the methodology. Local fuel, electricity and parts prices from the country bar feed the per-country figures on each car page.';}}
 sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);
 price.addEventListener('input',calc);calc();
 </script>"""
@@ -1513,6 +1559,48 @@ def gen_recalls_feed(con, all_rows):
 <div class="card"><div class="table-wrap"><table class="cost-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component</th><th></th></tr></thead><tbody>{rows}</tbody></table></div></div></div>"""
     return write("recalls/index.html", page(f"Car Recall Index | {BRAND}",
                  "NHTSA recall campaigns for indexed vehicles.", ORIGIN + "/recalls/", body))
+
+
+def gen_vin_check():
+    """A high-intent, same-origin VIN decoder and recall report backed by NHTSA."""
+    body = """<div class="hero vin-hero"><div class="wrap hero-inner">
+<span class="hh-kicker">Free · no account · public NHTSA data</span>
+<h1>Check a VIN before you buy the car</h1>
+<p class="sub">Decode the exact vehicle, find its recall campaigns, then open MotorJury's
+costs, repair risks and model-year verdict. We do not store the VIN.</p></div></div>
+<div class="wrap vin-wrap">
+<section class="card vin-entry"><h2>Enter the 17-character VIN</h2>
+<form id="vin-form" class="vin-form">
+<label for="vin">Vehicle identification number</label>
+<div class="vin-input-row"><input id="vin" name="vin" required minlength="17" maxlength="17"
+inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
+placeholder="1HGCM82633A004352" aria-describedby="vin-help"><button class="btn" type="submit">Check this VIN</button></div>
+<p id="vin-help" class="src-note">Usually visible through the windscreen, on the driver's door jamb,
+registration, insurance papers or sales listing. Letters I, O and Q are never used.</p></form></section>
+<div id="vin-result" class="vin-result" aria-live="polite"></div>
+<section class="card"><h2>Your 5-minute used-car decision check</h2>
+<ol class="inspect-list"><li><b>Identity</b><span>Make sure the decoded year, model and body match the listing and documents.</span></li>
+<li><b>Recalls</b><span>Ask for proof that every open campaign was completed; verify on NHTSA.</span></li>
+<li><b>Price</b><span>Open MotorJury's model-year page and replace our estimate with the seller's actual price.</span></li>
+<li><b>Known failures</b><span>Compare the car with the most-complained-about components and typical repair bands.</span></li>
+<li><b>Independent inspection</b><span>Use the data to brief a qualified mechanic before money changes hands.</span></li></ol></section>
+<section class="card"><h2>VIN check questions</h2>
+<details><summary>Does this show whether a recall repair was completed?</summary><p>No. NHTSA's public model recall feed identifies campaigns that may apply. A dealer or NHTSA's own VIN tool must confirm completion for this exact vehicle.</p></details>
+<details><summary>Do you save or sell the VIN?</summary><p>No. MotorJury sends it to NHTSA for this check and does not persist it in an account or database.</p></details>
+<details><summary>Does a clean result mean the car is safe?</summary><p>No. It means the public API returned no matching campaigns. It does not replace service records, a road test or an independent mechanical inspection.</p></details></section>
+</div><script src="/assets/inspector.js" defer></script>"""
+    faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": "Does this show whether a recall repair was completed?",
+         "acceptedAnswer": {"@type": "Answer", "text": "No. The public model recall feed identifies campaigns that may apply. Verify completion for the exact VIN with NHTSA or a dealer."}},
+        {"@type": "Question", "name": "Does MotorJury store the VIN?",
+         "acceptedAnswer": {"@type": "Answer", "text": "No. The VIN is sent to NHTSA for the requested check and is not persisted by MotorJury."}},
+    ]}
+    app = {"@context": "https://schema.org", "@type": "WebApplication", "name": "MotorJury VIN & Recall Check",
+           "url": ORIGIN + "/vin-check/", "applicationCategory": "AutomotiveApplication",
+           "operatingSystem": "Any", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}
+    return write("vin-check/index.html", page("Free VIN Decoder & Recall Check | MotorJury",
+                 "Decode a 17-character VIN and check NHTSA recall campaigns free, then compare ownership costs and known problems before buying.",
+                 ORIGIN + "/vin-check/", body, [app, faq]))
 
 DESCRIPTIONS = {
     "Methodology": "The complete formula behind every MotorJury verdict: how the reliability score is "
@@ -1748,8 +1836,11 @@ verdict, computed from public data.</p></div></div>
     gen.append(prose_page("privacy/index.html", "Privacy Policy", f"""
 <p>Effective {TODAY}.</p>
 <p><b>If you do not have an account</b> we collect no personal data beyond what you submit (e.g. a newsletter
-email) and standard analytics (Google Analytics 4, Cloudflare Web Analytics). Emails are used solely for the
-newsletter, double-opt-in, one-click unsubscribe, never sold.</p>
+email) and standard analytics (Google Analytics 4, Cloudflare Web Analytics). Update-list emails are stored
+only after you submit the form, used solely for MotorJury product and editorial updates, and never sold.
+Write to privacy@ this domain to remove the address before self-service unsubscribe is available.</p>
+<p><b>If you use the VIN checker</b> the VIN is sent to the public NHTSA APIs to decode the vehicle and find
+matching recall campaigns. MotorJury does not persist the VIN in an account or database.</p>
 <p><b>If you create an account</b> we store your email address, a display name, the cars you love, your
 garage, your site preferences and any owner-survey answers you submit. Passwords are stored only as a
 PBKDF2-SHA256 hash — we cannot read yours. Session tokens are stored hashed, so a copy of our database
@@ -1840,6 +1931,7 @@ Canonical citation format: "{BRAND} ({CURRENT_YEAR}), {ORIGIN}<page-url>, based 
 
 ## Key pages
 - {ORIGIN}/cars/ — brand index
+- {ORIGIN}/vin-check/ — free VIN decoder and NHTSA recall check
 - {ORIGIN}/calculators/ — true-cost calculator
 - {ORIGIN}/methodology/ — scoring formula
 """)
@@ -1886,7 +1978,8 @@ def dup_check(pages):
         body = re.sub(r'<div class="legend">.*?</div>', "", body, flags=re.S)
         # Fixed explainer captions are UI chrome too: they say where the data comes from and
         # are meant to read identically everywhere. Duplicating them is the point.
-        body = re.sub(r'<p class="(?:geo-note|src-note)"[^>]*>.*?</p>', "", body, flags=re.S)
+        body = re.sub(r'''<p class=(?:"(?:geo-note|src-note|data-missing|sv-n)"|'(?:geo-note|src-note|data-missing|sv-n)')[^>]*>.*?</p>''',
+                      "", body, flags=re.S)
         for m in re.finditer(r"<p[^>]*>(.*?)</p>", body, re.S):
             t = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()
             if len(t) < 60:
@@ -1927,6 +2020,7 @@ def main():
     pages.append(gen_search(con, all_rows))
     pages.append(gen_calculators(con, all_rows))
     pages.append(gen_recalls_feed(con, all_rows))
+    pages.append(gen_vin_check())
     pages += gen_static()
     urls = ["/" + p.replace("index.html", "") for p in pages]
     gen_meta(urls)

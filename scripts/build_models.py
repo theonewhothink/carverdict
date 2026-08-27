@@ -98,6 +98,139 @@ def _load_fuel():
 FUEL = _load_fuel()
 
 
+def _key(value):
+    return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+
+
+def _make_root(value):
+    words = re.findall(r"[a-z0-9]+", str(value or "").lower())
+    noise = {"ag", "inc", "ltd", "limited", "company", "corporation", "corp", "cars", "motors", "motor"}
+    return next((w for w in words if w not in noise), "")
+
+
+def _load_ownership():
+    """Model-year money rolled up for the broad library pages.
+
+    The exact-year pages remain the source of truth. This rollup makes a library landing
+    page useful to a shopper immediately: price, fuel, maintenance, insurance and the
+    most-reported repair group are visible before they choose a year."""
+    import sqlite3
+    db = ROOT / "data" / "cars.sqlite"
+    out = {}
+    if not db.exists():
+        return out
+    try:
+        con = sqlite3.connect(db)
+        con.row_factory = sqlite3.Row
+        if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='price_estimates'").fetchone():
+            con.close()
+            return out
+        rows = con.execute("""
+            SELECT mk.name make, mk.slug kslug, mo.name model, mo.slug mslug,
+                   my.year, my.is_ev, f.annual_fuel_cost, cs.cost_curve,
+                   pe.price_today_low, pe.price_today_high, pe.depreciation_5y,
+                   pe.insurance_low, pe.insurance_high
+            FROM model_years my
+            JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
+            LEFT JOIN fuel f ON f.my_id=my.id
+            LEFT JOIN computed_scores cs ON cs.my_id=my.id
+            JOIN price_estimates pe ON pe.my_id=my.id
+        """).fetchall()
+        for row in rows:
+            k = (_make_root(row["make"]), _key(row["model"]))
+            out.setdefault(k, {"rows": [], "components": {}})["rows"].append(dict(row))
+        for row in con.execute("""
+            SELECT mk.name make, mo.name model, c.component, SUM(c.count) n
+            FROM complaints c JOIN model_years my ON my.id=c.my_id
+            JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
+            WHERE c.component <> '__quote__'
+            GROUP BY mk.name, mo.name, c.component
+        """):
+            k = (_make_root(row["make"]), _key(row["model"]))
+            if k in out:
+                out[k]["components"][row["component"]] = int(row["n"] or 0)
+        con.close()
+    except Exception:
+        return {}
+    return out
+
+
+OWNERSHIP = _load_ownership()
+
+try:
+    _REPAIR = json.loads((ROOT / "data" / "repair_costs.json").read_text())
+except Exception:
+    _REPAIR = {}
+_REPAIR_RATE = float((_REPAIR.get("_meta") or {}).get("labour_rate_usd_per_hour", 120))
+
+
+def _ownership_match(brand, display_name):
+    root = _make_root(brand)
+    raw = re.sub(r"\s*\([^)]*\)\s*", " ", display_name or "").strip()
+    words = raw.split()
+    if words and _key(words[0]) == root:
+        raw = " ".join(words[1:])
+    wanted = _key(raw)
+    exact = OWNERSHIP.get((root, wanted))
+    if exact:
+        return exact
+    # Generation-labelled catalogue entries ("Camry (XV70)") legitimately map to the
+    # nameplate's ownership rows; pick the longest matching model inside the same marque.
+    matches = [(len(model), data) for (make, model), data in OWNERSHIP.items()
+               if make == root and len(model) >= 3 and (wanted.startswith(model) or model.startswith(wanted))]
+    return max(matches, default=(0, None), key=lambda item: item[0])[1]
+
+
+def _library_ownership_card(brand, model):
+    data = _ownership_match(brand, model)
+    if not data or not data["rows"]:
+        return ""
+    rows = data["rows"]
+    priced = [r for r in rows if r.get("price_today_low") and r.get("price_today_high")]
+    if not priced:
+        return ""
+    price_lo = min(r["price_today_low"] for r in priced)
+    price_hi = max(r["price_today_high"] for r in priced)
+    dep = [r["depreciation_5y"] for r in priced if r.get("depreciation_5y") is not None]
+    insured = [r for r in priced if r.get("insurance_low") is not None and r.get("insurance_high") is not None]
+    fuel = [r["annual_fuel_cost"] for r in rows if r.get("annual_fuel_cost")]
+    maint = []
+    for r in rows:
+        try:
+            curve = json.loads(r.get("cost_curve") or "[]")
+            age = max(0, 2026 - int(r["year"]))
+            point = min(curve, key=lambda p: abs(p["age"] - age))
+            maint.append((point["total_low"], point["total_high"]))
+        except Exception:
+            pass
+    latest = max(rows, key=lambda r: int(r["year"] or 0))
+    model_url = f'/cars/{latest["kslug"]}/{latest["mslug"]}/'
+    money = lambda n, kind: f'<span data-usd="{int(n)}" data-kind="{kind}">${int(n):,}</span>'
+    fuel_row = (f'<div class="fact"><span>Annual fuel / energy</span><b>{money(min(fuel), "fuel")}–{money(max(fuel), "fuel")}</b></div>'
+                if fuel else '<div class="fact"><span>Annual fuel / energy</span><b>EPA match unavailable</b></div>')
+    dep_row = (f'<div class="fact"><span>Five-year depreciation</span><b>{money(min(dep), "car")}–{money(max(dep), "car")}</b></div>'
+               if dep else '')
+    insurance_row = (f'<div class="fact"><span>Insurance per year</span><b>{money(min(r["insurance_low"] for r in insured), "ins")}–{money(max(r["insurance_high"] for r in insured), "ins")}</b></div>'
+                     if insured else '')
+    maint_row = (f'<div class="fact"><span>Annual maintenance band</span><b>{money(min(x[0] for x in maint), "maint")}–{money(max(x[1] for x in maint), "maint")}</b></div>'
+                 if maint else "")
+    repair_row = ""
+    if data["components"]:
+        component = max(data["components"], key=data["components"].get)
+        spec = _REPAIR.get(component.upper()) or _REPAIR.get("UNKNOWN OR OTHER")
+        if spec:
+            labour = float(spec["hours"]) * _REPAIR_RATE
+            repair_lo = int(round(labour + spec["parts_low"]))
+            repair_hi = int(round(labour + spec["parts_high"]))
+            repair_row = (f'<div class="fact"><span>Most-reported repair group</span>'
+                          f'<b>{esc(component.title())} · {money(repair_lo, "maint")}–{money(repair_hi, "maint")}</b></div>')
+    return f'''<div class="card model-money"><h2>Ownership costs across indexed model years</h2>
+<p class="src-note">Model-year estimates from the same NHTSA, EPA and published cost model used on the detailed verdict pages. The wide range reflects different years and trims; choose a year for the precise breakdown.</p>
+<div class="facts"><div class="fact"><span>Typical used-price range</span><b>{money(price_lo, "car")}–{money(price_hi, "car")}</b></div>
+{dep_row}{insurance_row}{fuel_row}{maint_row}{repair_row}</div>
+<p><a class="btn" href="{model_url}">Compare {len(rows)} model years</a></p></div>'''
+
+
 def _length(v):
     """Render Wikidata P2043 with the unit it was actually recorded in.
 
@@ -162,8 +295,7 @@ Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Co
 <a href="/methodology/">Methodology</a></p></div></footer>
 <script src="/assets/site.js" defer></script>
 <script src="/assets/lightbox.js" defer></script>
-<script src="/assets/gallery.js" defer></script>
-<script src="/assets/rate.js" defer></script></body></html>"""
+<script src="/assets/gallery.js" defer></script></body></html>"""
 
 
 def main():
@@ -546,11 +678,14 @@ def main():
                           f'<p class="lib-note">From the Wikipedia article '
                           f'<a href="{esc(wp_url)}" rel="noopener">{esc(wp)}</a>, CC BY-SA.</p></div>')
 
-        rate_card = (f'<div class="card rate-card" data-rate="{esc(m["q"])}" '
-                     f'data-rate-name="{esc(m["n"])}"><h2>Rate your love</h2>'
-                     f'<div class="stars" data-stars role="radiogroup" aria-label="Rate this car"></div>'
-                     f'<p class="lib-note" data-rate-note>Tap a star. Ratings are kept on your device '
-                     f'and feed the most-loved list.</p></div>')
+        love_card = (f'<div class="card"><h2>Love the {esc(m["n"])}?</h2>'
+                     f'<p>One heart per account. Your list follows you to every device and feeds the '
+                     f'public most-loved leaderboard.</p><div class="love-host" data-love="model:{esc(m["q"])}" '
+                     f'data-love-name="{esc(m["n"])}"></div></div>')
+        survey_card = (f'<div class="card survey-card" data-survey="model:{esc(m["q"])}" '
+                       f'data-survey-name="{esc(m["n"])}"><h2>Owner satisfaction</h2>'
+                       f'<p class="sv-n">Verified owner averages publish after five responses. '
+                       f'Own one? Sign in and add the evidence future buyers need.</p></div>')
 
         gallery_card = ""
         if sp.get("commons"):
@@ -563,6 +698,14 @@ def main():
             b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")))
         if bio_words < 500:
             WORDS_UNDER_FLOOR.append(bio_words)
+
+        ownership_card = _library_ownership_card(b, m["n"])
+        if not ownership_card:
+            ownership_card = (f'<div class="card"><h2>What it costs to run</h2>'
+                              f'<p>MotorJury has not yet matched this catalogue entry to an exact US model-year '
+                              f'ownership record. Nothing missing is shown as zero. Browse the live '
+                              f'<a href="/cars/">NHTSA and EPA ownership index</a>, or use the '
+                              f'<a href="/calculators/">true-cost calculator</a> with your own figures.</p></div>')
 
         body = f"""<div class="model-hero"><div class="wrap">
 <nav class="crumbs"><a href="/library/">Library</a> › <a href="/library/{bs}/">{esc(b)}</a> › {esc(m["n"])}</nav>
@@ -578,14 +721,11 @@ def main():
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
 {about_card}
 {bio_html}
+{ownership_card}
 {specs_card}
-{rate_card}
+{love_card}
+{survey_card}
 {gallery_card}
-<div class="card"><h2>What it costs to run</h2>
-<p>Ownership verdicts are computed from NHTSA complaint and recall records plus EPA economy data,
-re-priced for your country. Verdicts are published per model year as the data is ingested —
-<a href="/cars/">browse them live</a>, or open the
-<a href="/calculators/">true-cost calculator</a> to price any year yourself.</p></div>
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
 {family_card}
 {rivals_card}

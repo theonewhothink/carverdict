@@ -477,15 +477,6 @@ a.lib-card .ph.noimg{display:flex;align-items:center;justify-content:center;colo
 a.lib-card .ph.noimg img{display:none}
 a.lib-card .ph.noimg svg{width:56%}
 
-/* Rate your love */
-.rate-card .stars{display:flex;gap:6px;margin:6px 0 4px}
-.star{background:none;border:0;padding:4px;cursor:pointer;line-height:0;color:var(--line);
-  transition:color .15s,transform .12s}
-.star svg{width:34px;height:34px;fill:currentColor}
-.star:hover{transform:translateY(-1px)}
-.star.on{color:#F2B01E}
-.star:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
-
 /* ---------------------------------------------------------------- events */
 .ev-controls{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;margin:18px 0 10px}
 .ev-controls input,.ev-controls select{width:100%;padding:11px 12px;border:1px solid var(--line);
@@ -836,6 +827,7 @@ html,body{overflow-x:clip}
 
 .geo-cost-row.range b,.geo-cost-row.five b{font-variant-numeric:tabular-nums}
 .geo-cost-row.range{font-size:14px;color:var(--muted)}
+.geo-cost-row.missing b{color:var(--gold-ink);font-size:13px}
 .geo-cost-row.five{border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
 
 /* A-Z index letters were 30x30 tap targets */
@@ -867,6 +859,9 @@ html,body{overflow-x:clip}
 
 /* ---- the money panel ---- */
 .price-card .src-note{font-size:13px;color:var(--faint);margin-bottom:16px}
+.data-missing{padding:11px 13px;margin:10px 0 14px;border-radius:10px;background:rgba(180,83,9,.08);
+  border:1px solid rgba(180,83,9,.24);color:var(--muted)!important;font-size:13.5px!important}
+.data-missing b{color:var(--gold-ink)}
 .price-head{display:grid;gap:12px;margin-bottom:16px}
 @media(min-width:560px){.price-head{grid-template-columns:1fr 1fr}}
 .price-big{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
@@ -958,6 +953,13 @@ html,body{overflow-x:clip}
   min-height:44px;grid-column:1/-1;color:var(--text)}
 .sv-form .sv-check input{width:22px;height:22px;flex:none;margin:0}
 .sv-msg{font-size:13px;color:var(--muted)}
+.notify-form{display:grid;gap:10px;max-width:560px;margin-top:12px}
+.notify-form>label:first-child{display:grid;gap:5px;font-size:13px;color:var(--muted)}
+.notify-form input[type=email]{width:100%;min-height:46px;padding:0 13px;font:inherit;font-size:16px;
+  border:1px solid var(--line);border-radius:10px;color:var(--text);background:var(--card)}
+.notify-form .sw{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--muted)}
+.notify-form .sw input{width:20px;height:20px;flex:none;margin-top:1px}
+.notify-form .btn{justify-self:start}
 .sv-cta{margin-top:16px;display:grid;gap:8px;justify-items:start}
 .sv-cta small{font-size:12px;color:var(--faint)}
 
@@ -1072,6 +1074,7 @@ html,body{overflow-x:clip}
   .calc input,.calc select{min-height:44px}
   /* a link sitting alone under a figure is a control, not prose — give it a real target */
   .vc-money .est a{display:inline-block;padding:11px 0;min-height:44px}
+  details>summary{min-height:44px;display:flex;align-items:center}
 }
 @media(max-width:400px){
   .price-big b{font-size:21px}
@@ -1097,6 +1100,35 @@ html,body{overflow-x:clip}
 .sf-count{font-size:13px;color:var(--faint);margin-top:10px}
 .q-all{display:block;text-align:center;font-size:13px;font-weight:600;padding:10px;color:var(--brand)}
 @media(max-width:520px){.sf-row{grid-template-columns:1fr 1fr}.sf-row input{grid-column:1/-1}}
+
+/* ---- /vin-check/ used-car inspector ---- */
+.vin-wrap{display:grid;gap:18px;padding:26px 16px 10px;max-width:900px}
+.vin-entry{border-color:rgba(11,98,214,.28);box-shadow:0 14px 38px rgba(11,98,214,.08)}
+.vin-form{display:grid;gap:7px}.vin-form>label{font-size:13px;font-weight:700;color:var(--muted)}
+.vin-input-row{display:flex;gap:10px}
+.vin-input-row input{flex:1;min-width:0;min-height:50px;border:1px solid var(--line);border-radius:10px;
+  padding:0 14px;font:700 16px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--text)}
+.vin-input-row input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.vin-result{display:grid;gap:18px}.vin-loading,.vin-error{font-size:15px}.vin-error{border-color:rgba(196,43,43,.35)}
+.vin-eyebrow{font-size:11px!important;text-transform:uppercase;letter-spacing:.1em;color:var(--brand)!important;font-weight:800}
+.vin-report h2{font-size:clamp(21px,5vw,30px)}
+.vin-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;
+  margin:16px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.vin-facts div{padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+.vin-facts dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
+.vin-facts dd{font-weight:700;font-size:14px}.vin-status{display:grid;gap:2px;border-radius:12px;padding:13px 14px;margin:14px 0}
+.vin-status.good{background:rgba(15,138,95,.08);border:1px solid rgba(15,138,95,.3)}
+.vin-status.bad{background:rgba(196,43,43,.07);border:1px solid rgba(196,43,43,.28)}
+.vin-status span{font-size:13px;color:var(--muted)}.vin-recalls{display:grid;gap:12px}
+.vin-recall{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card2)}
+.vin-recall.severe{border-left:4px solid var(--bad)}.vin-recall-head{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.vin-recall p{margin-top:7px}.vin-recall details{margin-top:8px}.vin-recall summary{font-size:14px}
+.inspect-list{list-style:none;counter-reset:inspect;display:grid;gap:0}
+.inspect-list li{counter-increment:inspect;display:grid;grid-template-columns:38px minmax(0,1fr);padding:12px 0;border-bottom:1px solid var(--line)}
+.inspect-list li:last-child{border-bottom:0}.inspect-list li::before{content:counter(inspect);grid-row:1/3;display:grid;place-items:center;
+  width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:800}
+.inspect-list b{font-size:15px}.inspect-list span{font-size:13px;color:var(--muted)}
+@media(max-width:600px){.vin-input-row{display:grid}.vin-input-row .btn{width:100%}.vin-recall-head{display:grid}.vin-facts{grid-template-columns:1fr 1fr}}
 
 /* ---- sub-model chips on the model overview ---- */
 .chip-row{display:flex;flex-wrap:wrap;gap:8px}

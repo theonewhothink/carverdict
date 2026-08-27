@@ -29,6 +29,7 @@ export { HubDO } from "./hub.js";
 // which rejected every deploy and silently froze production. In code there is no cap: the
 // same JSON the generator writes is bundled here and prefix-matched per request.
 import MODEL_REDIRECTS from "../data/model_redirects.json";
+import { inspectVin } from "./vin.mjs";
 
 const REDIRECT_MAP = new Map(Object.entries(MODEL_REDIRECTS).filter(([a, b]) => a !== b));
 
@@ -229,6 +230,16 @@ async function api(req, url, env) {
     : {};
 
   if (path === "/api/auth/providers") return json(providers(env));
+
+  if (path === "/api/vin") {
+    if (req.method !== "GET") return json({ error: "method not allowed" }, 405);
+    try {
+      const data = await inspectVin(url.searchParams.get("vin") || "");
+      return json(data, 200, { "Cache-Control": "private, no-store" });
+    } catch (e) {
+      return json({ error: String(e && e.message || e) }, Number(e && e.status) || 502);
+    }
+  }
 
   if (path === "/api/auth/google") return oauthStart("google", url, env);
   if (path === "/api/auth/apple") return oauthStart("apple", url, env);

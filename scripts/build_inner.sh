@@ -287,6 +287,5 @@ except Exception as e:
     print(f"WARNING: IndexNow ping failed ({e}); key file still deployed")
 PY_EOF
 
-node --test workers/calc.test.mjs
-node --test workers/hub.test.mjs
+node --test workers/calc.test.mjs workers/hub.test.mjs workers/vin.test.mjs
 echo "build complete"

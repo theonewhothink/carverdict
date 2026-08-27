@@ -80,6 +80,11 @@
       var sel = h.querySelector('#geo-sel');
       sel.addEventListener('change', function () {
         try { localStorage.setItem(OV, sel.value); } catch (e) {}
+        if (window.CV && window.CV.setPrefs) {
+          var prefs = window.CV.prefs || {};
+          prefs.geo = sel.value;
+          window.CV.setPrefs(prefs);
+        }
         GEO = Object.assign({ cc: sel.value }, TABLE[sel.value]);
         chip(GEO); recalc(GEO);
       });
@@ -95,8 +100,20 @@
     document.dispatchEvent(new CustomEvent('cv:geo', { detail: g }));
   }
 
+  // An account preference wins over edge geolocation on a new device. The event arrives
+  // after account.js has loaded the signed-in user; TABLE may arrive before or after it.
+  var accountGeo = null;
+  document.addEventListener('cv:me', function (event) {
+    accountGeo = event.detail && event.detail.prefs && event.detail.prefs.geo;
+    if (accountGeo && TABLE && TABLE[accountGeo]) {
+      try { localStorage.setItem(OV, accountGeo); } catch (e) {}
+      apply(Object.assign({ cc: accountGeo }, TABLE[accountGeo]));
+    }
+  });
+
   fetch('/assets/geo-prices.json').then(function (r) { return r.json(); }).then(function (tbl) {
     TABLE = tbl;
+    if (accountGeo && TABLE[accountGeo]) return apply(Object.assign({ cc: accountGeo }, TABLE[accountGeo]));
     var ov = null, cached = null;
     try { ov = localStorage.getItem(OV); cached = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     if (ov && TABLE[ov]) return apply(Object.assign({ cc: ov }, TABLE[ov]));
