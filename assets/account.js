@@ -320,7 +320,7 @@
       host.innerHTML =
         '<div class="acct-head"><span class="acct-av big">' +
           esc((u.name || u.email).charAt(0).toUpperCase()) + '</span>' +
-        '<div><h1>' + esc(u.name || u.email) + '</h1>' +
+        '<div><h2>' + esc(u.name || u.email) + '</h2>' +
         '<p>' + esc(u.email) + ' · signed in with ' + esc(u.provider) + '</p></div>' +
         '<button class="btn ghost" data-signout>Sign out</button></div>' +
         '<section><h2>Cars you love <span class="cnt">' + likes.length + '</span></h2>' +

@@ -119,7 +119,7 @@ top issue: <b>{esc(top)}</b> · verdict <span class="tag v-{verdict if verdict i
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <div class="card"><h2>What breaks, by owner reports</h2><div class="pb">{bars or '<p>No categorised component data.</p>'}</div></div>
 {f'<div class="card"><h2>In the owners&rsquo; words</h2>{quote_html}</div>' if quote_html else ''}
-{f'<div class="card"><h2>Recall campaigns</h2><div class="table-wrap"><table class="cost-table"><thead><tr><th>Reported</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_html}</tbody></table></div></div>' if rec_html else ''}
+{f'<div class="card"><h2>Recall campaigns</h2><div class="table-wrap"><table class="cost-table recall-table"><thead><tr><th>Reported</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_html}</tbody></table></div></div>' if rec_html else ''}
 <div class="card"><h2>Questions owners ask</h2>{faq_html}</div>
 <div class="card"><h2>Share this verdict</h2>
 <p>The {esc(name)} scored {r['score'] or '?'}/100 on the federal record.</p>

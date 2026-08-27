@@ -166,8 +166,33 @@ def build_dataset():
             continue  # unlabeled junk
         b = brand_of(name, x["m"], known)
         brands[b].append({"n": name, "p": x["p"], "y": x["y"], "q": x["q"]})
-    for b in brands:
-        brands[b].sort(key=lambda r: (r["y"] or "9999", r["n"]))
+    # Wikidata can return the same model through several class/manufacturer paths.  Those
+    # rows collapse to the same URL slug, so rendering all of them creates duplicate DOM
+    # ids and ambiguous search anchors.  Keep the richest representative for each slug and
+    # merge any missing photo/year back into it.  This also makes the public model count a
+    # count of distinct catalogue entries rather than query-path duplicates.
+    removed = 0
+    for b in list(brands):
+        bs = slug(b)
+        by_slug = {}
+        for row in brands[b]:
+            key = slug(row["n"])
+            score = (int(row["n"] in MODEL_INDEX.get(bs, {})), int(bool(row["p"])),
+                     int(bool(row["y"])), int(bool(row["q"])))
+            if key not in by_slug:
+                by_slug[key] = (score, row)
+                continue
+            removed += 1
+            old_score, old = by_slug[key]
+            keep, other = (row, old) if score > old_score else (old, row)
+            for field in ("p", "y", "q"):
+                if not keep.get(field) and other.get(field):
+                    keep[field] = other[field]
+            by_slug[key] = (max(score, old_score), keep)
+        brands[b] = sorted((row for _score, row in by_slug.values()),
+                           key=lambda r: (r["y"] or "9999", r["n"]))
+    if removed:
+        print(f"  duplicate model slugs merged: {removed}")
     return dict(sorted(brands.items(), key=lambda kv: (-len(kv[1]), kv[0])))
 
 
@@ -279,6 +304,12 @@ def main():
             if m["p"] and len(m["n"]) < 40 and m["n"] in MODEL_INDEX.get(slug(b), {}):
                 pool.append([m["n"], b, slug(b), m["y"], m["p"]])
     pool.sort(key=lambda r: r[0])
+    # A thousand recognisable cars is decades of daily rotation and many more possible
+    # quiz combinations.  Shipping the entire catalogue to every /play/ visit only costs
+    # mobile data without improving the game.
+    if len(pool) > 1000:
+        last = len(pool) - 1
+        pool = [pool[round(i * last / 999)] for i in range(1000)]
     (SITE / "assets" / "daily-pool.json").write_text(json.dumps(pool, separators=(",", ":"), ensure_ascii=False))
 
     # brand pages (EN, static — SEO spearhead market)

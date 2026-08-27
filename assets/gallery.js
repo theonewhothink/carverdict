@@ -124,10 +124,11 @@
 
       function cell(f, w, cls) {
         var name = f.replace(/^File:/, '').replace(/\.[^.]+$/, '');
-        return '<a class="' + cls + '" href="#" data-lb data-credit="' +
+        return '<button type="button" class="' + cls + ' lb-trigger" data-lb aria-label="Enlarge ' +
+          name.replace(/"/g, '&quot;') + '" data-credit="' +
           ((meta[f] || {}).artist || '') + ' · ' + ((meta[f] || {}).licence || '') + '">' +
           '<img loading="lazy" referrerpolicy="no-referrer" src="' + thumb(f, w) + '" alt="' +
-          name.replace(/"/g, '&quot;') + '">' + '</a>';
+          name.replace(/"/g, '&quot;') + '">' + '</button>';
       }
 
       // Weave the strongest shots through the article first: every

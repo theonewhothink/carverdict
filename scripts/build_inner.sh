@@ -192,6 +192,11 @@ open('site/ads.txt', 'w').write('google.com, %s, DIRECT, f08c47fec0942fa0\n'
 print(f"ADSENSE+GA4 OK: tags injected into {n} pages + ads.txt")
 PY_EOF
 
+# Final-output accessibility and structure gate. A template mistake multiplies across
+# thousands of pages, so duplicate ids, missing landmarks/headings, non-semantic lightbox
+# links, missing image text or placeholder zero prices must stop the deploy.
+"$PY" scripts/qa_site.py
+
 # Gate: the links the BROWSER builds must resolve too.
 # The static gate below only ever saw href="" in the HTML. Half of this site's navigation is
 # built client-side from JSON — the search box, the daily picks, the marque grids — and that

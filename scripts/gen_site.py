@@ -352,7 +352,9 @@ def write(path, html):
     p.write_text(html)
     return path
 
-AD = '<div class="ad" data-slot="{slot}">advertisement</div>'
+# Auto Ads places real units when AdSense has inventory.  Static 250–280px placeholders
+# never filled and created two large blank blocks on phones, so manual empty slots are gone.
+AD = ''
 
 # ---------------- data helpers ----------------
 def rows_all(con):
@@ -603,7 +605,7 @@ def gen_model_year(con, r, all_rows):
     gap_rec = r["data_gap"] and "recalls" in (r["data_gap"] or "")
     rec_html = f"""<div class="card"><h2>Recalls: {'data unavailable' if gap_rec else f"{(r['recall_count'] or 0)} campaigns"}{'' if gap_rec or not r['severe_recalls'] else f" ({r['severe_recalls']} severe)"}</h2>
 <div class="chart">{svg_timeline(recalls)}</div>
-{'<p>NHTSA recall feed temporarily unavailable for this vehicle — check <a href="https://www.nhtsa.gov/recalls" rel="noopener">nhtsa.gov/recalls</a>.</p>' if gap_rec else f'<div class="table-wrap"><table class="cost-table"><thead><tr><th>Campaign</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_rows}</tbody></table></div>'}
+{'<p>NHTSA recall feed temporarily unavailable for this vehicle — check <a href="https://www.nhtsa.gov/recalls" rel="noopener">nhtsa.gov/recalls</a>.</p>' if gap_rec else f'<div class="table-wrap"><table class="cost-table recall-table"><thead><tr><th>Campaign</th><th>Component</th><th>Summary</th></tr></thead><tbody>{rec_rows}</tbody></table></div>'}
 </div>"""
 
     # cost block
@@ -1273,8 +1275,9 @@ car — founders, engineers, designers, champions and industrialists.</p>
         return ("https://commons.wikimedia.org/wiki/Special:FilePath/"
                 + _u.quote(ph.replace(" ", "_")) + f"?width={w}")
     mosaic = "".join(
-        f'<a class="mo-cell" data-lb data-credit="Photo: Wikimedia Commons · CC" href="#">'
-        f'<img src="{cimg(ph, 640)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
+        f'<button type="button" class="mo-cell lb-trigger" data-lb aria-label="Enlarge photo of {esc(nm)}" '
+        f'data-credit="Photo: Wikimedia Commons · CC">'
+        f'<img src="{cimg(ph, 640)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></button>'
         for nm, ph in shots[:8])
 
     # ---- single editorial hero shot ----------------------------------------------------
@@ -1478,12 +1481,15 @@ def gen_calculators(con, all_rows):
                       # the money the running-cost calculator used to leave out entirely
                       "pt": r["price_today"], "d5": r["depreciation_5y"],
                       "ins": int(((r["insurance_low"] or 0) + (r["insurance_high"] or 0)) / 2) or None})
-    data = json.dumps(packs, separators=(",", ":"))
+    # Keep the calculator data cacheable and off the document's critical path.  Inlining it
+    # made this otherwise small page the heaviest HTML response on the site.
+    (SITE / "assets" / "calculator-data.json").write_text(
+        json.dumps(packs, separators=(",", ":"), ensure_ascii=False))
     body = f"""<div class="hero"><div class="wrap hero-inner"><h1>True-cost calculator</h1>
 <p class="sub">Annual running cost from EPA fuel data + age-indexed maintenance bands. Estimates, sources on the <a href="/methodology/">methodology page</a>.</p></div></div>
 <div class="wrap grid"><div style="display:grid;gap:20px">
 <div class="card calc"><h2>What will it cost me?</h2>
-<label for="cv">Vehicle</label><select id="cv"></select>
+<label for="cv">Vehicle</label><select id="cv" aria-busy="true"><option>Loading vehicles…</option></select>
 <label for="cy">Years you plan to keep it</label><input id="cy" type="number" value="5" min="1" max="10">
 <label for="cp">Price you would pay (leave as-is for our estimate)</label><input id="cp" type="number" min="200" step="100">
 <div class="calc-out" id="cout">—</div>
@@ -1498,13 +1504,12 @@ risk. Price, depreciation and insurance are class-level estimates; the
 <a href="/cars/">the data index</a>.</p></div>
 </div><div class="col-side">{AD.format(slot='calc')}</div></div>
 <script>
-const P={data};
+let P=[];
 const sel=document.getElementById('cv'),out=document.getElementById('cout'),note=document.getElementById('cnote');
-P.forEach((p,i)=>{{const o=document.createElement('option');o.value=i;o.textContent=p.n;sel.appendChild(o)}});
 const price=document.getElementById('cp'),brk=document.getElementById('cbreak');
 const M=n=>'$'+Math.round(n).toLocaleString();
 let lastIdx=-1;
-function calc(){{const p=P[sel.value];const keep=Math.min(10,Math.max(1,+document.getElementById('cy').value||5));
+function calc(){{const p=P[sel.value];if(!p)return;const keep=Math.min(10,Math.max(1,+document.getElementById('cy').value||5));
 if(+sel.value!==lastIdx){{lastIdx=+sel.value;price.value=p.pt||'';price.placeholder=p.pt?String(p.pt):'purchase price';}}
 const age0=Math.max(0,{CURRENT_YEAR}-p.y);let lo=0,hi=0;
 for(let k=0;k<keep;k++){{const a=Math.min(p.c.length-1,age0+k);lo+=p.c[a][0];hi+=p.c[a][1];}}
@@ -1529,7 +1534,12 @@ note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk 
 (hasFuel?'':'EPA has no matched fuel or energy record for this selection, so fuel is excluded rather than shown as $0. ')+
 'Price, depreciation and insurance are class-level estimates — see the methodology. Local fuel, electricity and parts prices from the country bar feed the per-country figures on each car page.';}}
 sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);
-price.addEventListener('input',calc);calc();
+price.addEventListener('input',calc);
+fetch('/assets/calculator-data.json').then(r=>{{if(!r.ok)throw new Error(r.status);return r.json()}}).then(rows=>{{
+  P=rows;sel.innerHTML='';P.forEach((p,i)=>{{const o=document.createElement('option');o.value=i;o.textContent=p.n;sel.appendChild(o)}});
+  sel.removeAttribute('aria-busy');calc();
+}}).catch(()=>{{sel.innerHTML='<option>Vehicle data unavailable</option>';sel.removeAttribute('aria-busy');
+  out.textContent='The calculator could not load. Please try again.';}});
 </script>"""
     return write("calculators/index.html", page(f"True Car Cost Calculator | {BRAND}",
                  "Annual ownership cost calculator built on EPA fuel data and industry maintenance bands.",
@@ -1556,7 +1566,7 @@ def gen_recalls_feed(con, all_rows):
     body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Recall index</h1>
 <p class="sub">Latest NHTSA recall campaigns across indexed vehicles. Always VIN-check at <a href="https://www.nhtsa.gov/recalls" rel="noopener">nhtsa.gov/recalls</a>.</p></div></div>
 <div class="wrap" style="padding:28px 0;display:grid;gap:20px">
-<div class="card"><div class="table-wrap"><table class="cost-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component</th><th></th></tr></thead><tbody>{rows}</tbody></table></div></div></div>"""
+<div class="card"><div class="table-wrap"><table class="cost-table recall-feed-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table></div></div></div>"""
     return write("recalls/index.html", page(f"Car Recall Index | {BRAND}",
                  "NHTSA recall campaigns for indexed vehicles.", ORIGIN + "/recalls/", body))
 
@@ -1800,7 +1810,7 @@ Read the <a href="/privacy/">privacy policy</a>.</p>
 
     gen.append(write("account/index.html", page(
         "Your account", "Your cars, your garage and your settings.", ORIGIN + "/account/",
-        """<div class="wrap acct-wrap"><div id="account-app">
+        """<div class="wrap acct-wrap"><h1>Your account</h1><div id="account-app">
 <noscript>JavaScript is required for your account page.</noscript></div></div>""",
         extra_head='<meta name="robots" content="noindex,follow">')))
 

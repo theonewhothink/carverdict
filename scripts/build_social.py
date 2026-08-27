@@ -252,8 +252,8 @@ background:var(--card);font:inherit;font-size:13px;font-weight:600;cursor:pointe
 .st-post pre{{margin:0;padding:12px;white-space:pre-wrap;word-break:break-word;
 font:inherit;font-size:14px;color:var(--text)}}
 .st-hint{{font-size:12px;color:var(--faint)}}
-</style></head><body>
-<div class="wrap" style="padding:28px 0 60px;max-width:760px">
+</style></head><body><a class="skip" href="#content">Skip to content</a>
+<main id="content"><div class="wrap" style="padding:28px 0 60px;max-width:760px">
 <h1>Social studio</h1>
 <p class="sub">Seven days of ready packages, rebuilt every night from the live data. Copy,
 post, done. This page is not indexed and not linked from the site.</p>
@@ -267,7 +267,7 @@ post, done. This page is not indexed and not linked from the site.</p>
 <a href="/og/default.png">og/default.png</a></p>
 </div>
 {blocks}
-</div>
+</div></main>
 <script>
 document.addEventListener('click', function (e) {{
   var b = e.target.closest('.st-copy'); if (!b) return;
@@ -319,7 +319,7 @@ border-radius:14px;padding:14px 16px;margin-bottom:10px;color:var(--text);min-he
 .fl-soc{{min-height:44px;display:inline-flex;align-items:center;padding:0 16px;border-radius:999px;
 border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--muted)}}
 .fl-soc:hover{{color:var(--brand);border-color:var(--brand);text-decoration:none}}
-</style></head><body>
+</style></head><body><main id="content">
 <div class="fl">
 <img class="avatar" src="/icon-192.png" alt="MotorJury" width="88" height="88">
 <h1>MotorJury</h1>
@@ -328,7 +328,7 @@ border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--muted)}}
 <div class="fl-socs">{socials}</div>
 <p style="margin-top:22px;font-size:12px;color:var(--faint)">
 <a href="/">motorjury.com</a> · <a href="/methodology/">methodology</a> · <a href="/privacy/">privacy</a></p>
-</div></body></html>"""
+</div></main></body></html>"""
 
 
 def main():

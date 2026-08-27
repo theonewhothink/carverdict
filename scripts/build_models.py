@@ -545,8 +545,10 @@ def main():
             # No per-image credit line: it repeated on every photo and said nothing useful.
             # Attribution (photographer + licence) is rendered once, per image, in the
             # credits block under the gallery — which is what the CC licences actually ask for.
-            shot = (f'<figure class="model-shot"><a href="#" data-lb data-credit="Wikimedia Commons &middot; CC">'
-                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high" referrerpolicy="no-referrer"></a></figure>')
+            shot = (f'<figure class="model-shot"><button type="button" class="lb-trigger" data-lb '
+                    f'aria-label="Enlarge photo of {esc(m["n"])}" data-credit="Wikimedia Commons &middot; CC">'
+                    f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high" '
+                    f'referrerpolicy="no-referrer"></button></figure>')
         else:
             shot = ('<figure class="model-shot noimg"><div class="ph noimg">'
                     '<svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" fill="none" '
@@ -719,9 +721,9 @@ def main():
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
+{ownership_card}
 {about_card}
 {bio_html}
-{ownership_card}
 {specs_card}
 {love_card}
 {survey_card}
