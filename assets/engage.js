@@ -1,19 +1,56 @@
 /* engage.js — retention moat: Car of the Day, Guess the Car (daily, streaks),
-   My Garage (saved cars), preference memory. All client-side, no accounts, no PII.
-   Preferences persist in localStorage and drive curated content + (later) ad context. */
+   My Garage (saved cars), preference memory. It works signed out in localStorage and,
+   once signed in, syncs the same preferences through the account API. */
 (function () {
   var P = 'cv_prefs';
   var prefs = read();
+  var me = null, syncTimer = null;
 
   function read() {
     try { return JSON.parse(localStorage.getItem(P) || '{}'); } catch (e) { return {}; }
   }
   function save() {
     try { localStorage.setItem(P, JSON.stringify(prefs)); } catch (e) {}
+    window.CV = window.CV || {};
+    window.CV.prefs = prefs;
+    if (me) {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(function () {
+        fetch('/api/prefs', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prefs: prefs }),
+        }).catch(function () {});
+      }, 250);
+    }
   }
   window.CV = window.CV || {};
   window.CV.prefs = prefs;
   window.CV.savePrefs = save;
+  window.CV.setPrefs = function (next) { prefs = next || {}; save(); };
+
+  function mergeRows(server, local, key) {
+    var out = (server || []).slice();
+    (local || []).forEach(function (row) {
+      if (!out.some(function (saved) { return saved[key] === row[key]; })) out.push(row);
+    });
+    return out;
+  }
+
+  document.addEventListener('cv:me', function (event) {
+    me = event.detail || null;
+    if (!me) return;
+    var local = prefs;
+    var server = me.prefs || {};
+    prefs = Object.assign({}, local, server);
+    prefs.garage = mergeRows(server.garage, local.garage, 'u');
+    prefs.recent = mergeRows(server.recent, local.recent, 'u').slice(0, 12);
+    prefs.ratings = Object.assign({}, local.ratings || {}, server.ratings || {});
+    save();
+    garageButton();
+    garageList();
+    recentList();
+  });
 
   // ---------- deterministic daily pick (same car for everyone, changes at UTC midnight) ----------
   function dayIndex() {
@@ -162,7 +199,16 @@
     var g = prefs.garage || [];
     host.innerHTML = g.length
       ? '<div class="rel-grid">' + g.map(function (x) { return '<a href="' + x.u + '">' + x.t + '<small>saved</small></a>'; }).join('') + '</div>'
-      : '<p class="muted">Nothing saved yet — hit ☆ Save on any car page and it appears here, on this device.</p>';
+      : '<p class="muted">Nothing saved yet — hit ☆ Save on any car page. Sign in and your garage follows you to every device.</p>';
+  }
+
+  function recentList() {
+    var host = document.getElementById('recent');
+    if (!host) return;
+    var rows = prefs.recent || [];
+    host.innerHTML = rows.length
+      ? rows.map(function (x) { return '<a href="' + x.u + '">' + x.t + '<small>viewed</small></a>'; }).join('')
+      : '<p class="muted">No history yet.</p>';
   }
 
   // ---------- recently viewed → curated strip ----------
@@ -177,6 +223,6 @@
   document.addEventListener('DOMContentLoaded', function () {
     var d = document.querySelector('[data-daily]'); if (d) carOfTheDay(d);
     var g = document.querySelector('[data-game]'); if (g) game(g);
-    garageButton(); garageList(); trackView();
+    garageButton(); garageList(); trackView(); recentList();
   });
 })();

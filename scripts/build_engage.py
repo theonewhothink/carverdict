@@ -87,8 +87,8 @@ def play_page(lang="en"):
 <p class="muted" style="margin:-6px 0 12px">Not part of the game — two cars worth a look.</p>
 <div class="daily-grid" data-daily></div>
 <div class="card"><h2>Keep your streak</h2>
-<p class="muted">Your streak, saved cars and preferences live on this device only — no account, no email required.
-Want a daily nudge? <a href="/notify/">Turn on reminders</a>.</p></div>
+<p class="muted">Your streak works without an account. Sign in and your saved cars, recent views and interests sync across devices.
+Want new tools and data stories? <a href="/notify/">Choose interests and join the update list</a>.</p></div>
 <h2 class="sec">Explore the extremes</h2>
 <div class="rel-grid"><a href="/superlatives/">Most expensive · rarest · era-defining<small>data-backed lists</small></a>
 <a href="/library/">Every model ever made<small>{len(LIB):,} cars</small></a>
@@ -100,11 +100,9 @@ Want a daily nudge? <a href="/notify/">Turn on reminders</a>.</p></div>
 
 def garage_page(lang="en"):
     body = """<div class="hero lib-hero"><div class="wrap hero-inner">
-<h1>My Garage</h1><p class="sub">Saved cars and recent views — stored on this device.</p></div></div>
+<h1>My Garage</h1><p class="sub">Saved cars and recent views. Works on this device while signed out; sign in and it follows you everywhere.</p></div></div>
 <div class="wrap"><div class="card" data-garage-list></div>
-<div class="card"><h2>Recently viewed</h2><div id="recent" class="rel-grid"></div></div></div>
-<script>document.addEventListener('DOMContentLoaded',function(){var p={};try{p=JSON.parse(localStorage.getItem('cv_prefs')||'{}')}catch(e){}
-var r=(p.recent||[]);document.getElementById('recent').innerHTML=r.length?r.map(function(x){return '<a href="'+x.u+'">'+x.t+'<small>viewed</small></a>'}).join(''):'<p class="muted">No history yet.</p>';});</script>"""
+<div class="card"><h2>Recently viewed</h2><div id="recent" class="rel-grid"></div></div></div>"""
     write("garage/index.html", shell(lang, f"My Garage | {BRAND}", "Your saved cars and recent views.", "/garage/", body))
 
 
@@ -137,19 +135,21 @@ Photos: Wikimedia Commons.</p></div>"""
 
 def notify_page(lang="en"):
     body = """<div class="hero lib-hero"><div class="wrap hero-inner">
-<h1>Your preferences</h1><p class="sub">Curated content, reminders and ad relevance — all opt-in, all on this device.</p></div></div>
+<h1>Your preferences</h1><p class="sub">Curated content, MotorJury updates and ad relevance — all opt-in. Sign in to sync interests across devices.</p></div></div>
 <div class="wrap"><div class="card"><h2>Interests</h2>
 <div id="int" class="chips"></div>
-<h2 style="margin-top:22px">Daily reminder</h2>
-<p class="muted">Browser notification when the new Car of the Day and quiz go live.</p>
-<button id="notify" class="btn">Enable reminders</button>
+<h2 style="margin-top:22px">MotorJury updates</h2>
+<p class="muted">Join the update list for new cost tools, recall explainers and the strongest data stories. No spam and no sold addresses.</p>
+<form id="updates" class="notify-form"><label>Email address<input id="updates-email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+<label class="sw"><input id="updates-consent" type="checkbox" required> I want MotorJury product and editorial updates. Use this address only for those updates.</label>
+<button class="btn" type="submit">Join the update list</button><span id="updates-msg" class="sv-msg" aria-live="polite"></span></form>
 <h2 style="margin-top:22px">Ad personalisation</h2>
 <label class="sw"><input type="checkbox" id="ads"> Use my interests to choose more relevant ads (no personal data leaves this device)</label>
 <h2 style="margin-top:22px">Data</h2>
 <button id="wipe" class="btn ghost">Erase everything stored on this device</button></div></div>
 <script>
 (function(){var K='cv_prefs';function P(){try{return JSON.parse(localStorage.getItem(K)||'{}')}catch(e){return{}}}
-function S(p){localStorage.setItem(K,JSON.stringify(p))}
+function S(p){localStorage.setItem(K,JSON.stringify(p));if(window.CV&&window.CV.setPrefs)window.CV.setPrefs(p)}
 var TAGS=['EV','SUV','Trucks','Classics','Japanese','German','Budget','Performance'];
 function draw(){var p=P();p.tags=p.tags||[];document.getElementById('int').innerHTML=TAGS.map(function(t){
 return '<button class="chip'+(p.tags.indexOf(t)>-1?' on':'')+'" data-t="'+t+'">'+t+'</button>'}).join('');
@@ -158,14 +158,18 @@ var i=p.tags.indexOf(b.dataset.t);i>-1?p.tags.splice(i,1):p.tags.push(b.dataset.
 document.getElementById('ads').checked=!!p.adsPersonal;}
 draw();
 document.getElementById('ads').onchange=function(e){var p=P();p.adsPersonal=e.target.checked;S(p)};
-document.getElementById('notify').onclick=function(){if(!('Notification' in window))return alert('Not supported here');
-Notification.requestPermission().then(function(s){var p=P();p.notify=(s==='granted');S(p);
-document.getElementById('notify').textContent=p.notify?'Reminders on ✓':'Blocked by browser'})};
+document.addEventListener('cv:me',function(e){if(e.detail&&e.detail.email)document.getElementById('updates-email').value=e.detail.email});
+document.getElementById('updates').onsubmit=function(e){e.preventDefault();var m=document.getElementById('updates-msg');
+m.textContent='Saving…';fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({email:document.getElementById('updates-email').value,source:'preferences'})})
+.then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Could not save');return j})})
+.then(function(){m.textContent='You are on the list ✓';document.getElementById('updates').querySelector('button').disabled=true})
+.catch(function(x){m.textContent=x.message||'Could not save. Try again.'})};
 document.getElementById('wipe').onclick=function(){localStorage.clear();location.reload()};
 })();
 </script>"""
     write("notify/index.html", shell(lang, f"Preferences & Notifications | {BRAND}",
-          "Choose your interests, enable daily reminders, control ad personalisation. Nothing leaves your device.",
+          "Choose car interests, join MotorJury updates and control personalisation preferences.",
           "/notify/", body))
 
 

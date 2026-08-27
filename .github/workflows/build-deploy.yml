@@ -52,14 +52,23 @@ jobs:
 
       - name: Generate site
         env:
-          SITE_ORIGIN: ${{ vars.SITE_ORIGIN || 'https://carverdict.example' }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN || 'https://motorjury.com' }}
         run: |
+          python scripts/canonicalize_models.py
           python scripts/score_model_years.py
+          python scripts/price_model.py
+          python scripts/make_icons.py
+          python scripts/build_people.py --harvest-only
           python scripts/build_models.py --plan
           python scripts/gen_site.py
           python scripts/build_models.py
           python scripts/build_library.py
           python scripts/build_engage.py
+          python scripts/build_events.py
+          python scripts/build_stories.py
+          python scripts/build_problems.py
+          python scripts/build_people.py --from-cache
+          python scripts/build_social.py
           python scripts/localize.py
           python scripts/polish.py
 
@@ -85,7 +94,7 @@ jobs:
           PY
 
       - name: Calculator unit tests
-        run: node --test workers/calc.test.mjs
+        run: node --test workers/calc.test.mjs workers/hub.test.mjs workers/vin.test.mjs
 
       # Publishing is NOT done here. Cloudflare Workers Builds is connected directly to this
       # repository (Worker "carsite"): on every push to main Cloudflare runs `bash build.sh`

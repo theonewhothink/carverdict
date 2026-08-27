@@ -15,6 +15,7 @@ Live: https://motorjury.com
 | `/cars/**` | Model-year verdict pages (BUY / CAUTION / AVOID) from NHTSA + EPA data |
 | `/library/**` | Every marque, every catalogued model, one page per model |
 | `/play/` | Car of the Day + Car of the Week + daily Guess-the-Car with streaks |
+| `/vin-check/` | Free NHTSA VIN decoder + recall report, with links into MotorJury costs and verdicts |
 | `/superlatives/` | Most expensive, rarest, era-defining — every figure sourced |
 | `/calculators/` | True-cost calculator, priced for your country |
 | `/login/`, `/account/` | Accounts: email and password, plus Google and Apple when configured |
@@ -37,6 +38,10 @@ python scripts/gen_site.py              # data pages + home + assets
 python scripts/build_models.py          # one page per model
 python scripts/build_library.py         # marque pages + search index
 python scripts/build_engage.py          # play / garage / superlatives / notify
+python scripts/build_events.py          # international motoring calendar
+python scripts/build_stories.py         # data stories + indexable comparisons
+python scripts/build_problems.py        # high-intent model-year problem pages
+python scripts/build_people.py --from-cache # legends pages when the roster exists
 python scripts/build_social.py          # social packages + /studio/ + /follow/
 python scripts/localize.py              # 5 languages + sitemap
 python scripts/polish.py                # chrome, icons, cards, landmarks on every page
@@ -82,6 +87,7 @@ Redirect URIs to register: `https://motorjury.com/api/auth/google/callback` and
 | `GET/POST /api/love`, `GET /api/most-loved` | the love button and its leaderboard |
 | `GET/POST /api/survey` | owner satisfaction; averages publish at 5 responses |
 | `POST /api/prefs`, `POST /api/subscribe`, `GET /api/stats` | preferences, email capture, counts |
+| `GET /api/vin?vin=…` | same-origin NHTSA VIN decode + model recall lookup; VIN is not stored |
 
 ## The money layer
 

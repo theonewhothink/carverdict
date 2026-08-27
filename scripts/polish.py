@@ -124,6 +124,12 @@ def polish(path):
     if "data-account-chip" not in s and "</header>" in s:
         s = s.replace("</div></header>", ACCT_CHIP + "</div></header>", 1) \
             if "</div></header>" in s else s.replace("</header>", ACCT_CHIP + "</header>", 1)
+    # The VIN check is the site's highest-intent utility. Put it in every generator's
+    # navigation, not only gen_site's shell, so all 10,000+ library pages pass authority
+    # and real users can reach it without returning home.
+    header = s.split("</header>", 1)[0] if "</header>" in s else ""
+    if 'href="/vin-check/"' not in header and '<nav class="nav">' in s:
+        s = s.replace('<nav class="nav">', '<nav class="nav"><a href="/vin-check/">VIN check</a>', 1)
     if "social-row" not in s and "</footer>" in s:
         # inside the footer's own wrapper where there is one, so it inherits the padding
         if "</div></footer>" in s:
