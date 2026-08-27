@@ -48,7 +48,7 @@
       .then(function (j) {
         return ((j.query || {}).categorymembers || [])
           .map(function (x) { return x.title; })
-          .filter(function (f) { return /\.(jpe?g|png|webp)$/i.test(f); });
+          .filter(function (f) { return /\.(jpe?g|png|webp|webm|ogv|mp4)$/i.test(f); });
       })
       .catch(function () { return []; });
   }
@@ -78,7 +78,7 @@
       // the API ceiling for one imageinfo call, and one call is all the scoring costs.
       files = files.slice(0, 50);
       if (!files.length) throw new Error('empty');
-      return jsonp('action=query&prop=imageinfo&iiprop=extmetadata|url|size&iiurlwidth=640&titles=' +
+      return jsonp('action=query&prop=imageinfo&iiprop=extmetadata|url|size|mime&iiurlwidth=640&titles=' +
                    encodeURIComponent(files.join('|')))
         .then(function (info) { return { files: files, info: info }; });
     })
@@ -92,7 +92,8 @@
           artist: strip((ex.Artist || {}).value) || 'Unknown photographer',
           licence: strip((ex.LicenseShortName || {}).value) || 'see file page',
           page: ii.descriptionurl || ('https://commons.wikimedia.org/wiki/' + encodeURIComponent(p.title)),
-          w: ii.width || 0, h: ii.height || 0, bytes: ii.size || 0
+          w: ii.width || 0, h: ii.height || 0, bytes: ii.size || 0,
+          url: ii.url || '', mime: ii.mime || '', video: /^video\//.test(ii.mime || '') || /\.(webm|ogv|mp4)$/i.test(p.title)
         };
       });
 
@@ -112,7 +113,8 @@
         var sharp = bpp ? 0.8 + Math.min(bpp / 0.5, 1) * 0.2 : 0.85;
         return res * asp * sharp;
       }
-      var ranked = res.files
+      var videos = res.files.filter(function (f) { return meta[f] && meta[f].video; });
+      var ranked = res.files.filter(function (f) { return !(meta[f] && meta[f].video); })
         .map(function (f) { return { f: f, s: score(meta[f]) }; })
         .filter(function (x) { return x.s > 0; })
         .sort(function (a, b) { return b.s - a.s; })
@@ -120,10 +122,18 @@
         .map(function (x) { return x.f; });
       // If Commons returned no usable size metadata, fall back to the old behaviour
       // rather than an empty gallery.
-      res.files = ranked.length ? ranked : res.files.slice(0, MAX);
+      var images = ranked.length ? ranked : res.files.filter(function (f) {
+        return !(meta[f] && meta[f].video);
+      }).slice(0, MAX);
+      res.files = images.concat(videos.slice(0, 3)).slice(0, MAX);
 
       function cell(f, w, cls) {
         var name = f.replace(/^File:/, '').replace(/\.[^.]+$/, '');
+        if ((meta[f] || {}).video) {
+          return '<div class="' + cls + ' media-video"><video controls preload="metadata" playsinline poster="' +
+            thumb(f, w) + '"><source src="' + ((meta[f] || {}).url || thumb(f, w)) + '" type="' +
+            ((meta[f] || {}).mime || 'video/webm') + '">Video: ' + name.replace(/</g, '&lt;') + '</video></div>';
+        }
         return '<button type="button" class="' + cls + ' lb-trigger" data-lb aria-label="Enlarge ' +
           name.replace(/"/g, '&quot;') + '" data-credit="' +
           ((meta[f] || {}).artist || '') + ' · ' + ((meta[f] || {}).licence || '') + '">' +
@@ -134,17 +144,28 @@
       // Weave the strongest shots through the article first: every
       // <figure data-gal-slot> in the biography takes one photograph, the rest
       // fill the grid at the end. One sequence, one lightbox.
+      var hero = document.querySelector('[data-model-hero].noimg');
+      var heroFile = null;
+      if (hero && images.length) {
+        heroFile = images[0];
+        hero.classList.remove('noimg');
+        hero.innerHTML = cell(heroFile, 1100, 'hero-from-gallery');
+      }
+      // Put motion after two stills when Commons has it: a video belongs in the story,
+      // not in a disconnected media bin at the bottom of the page.
+      var sequence = images.filter(function (f) { return f !== heroFile; });
+      videos.slice(0, 3).forEach(function (f, i) { sequence.splice(Math.min(2 + i * 3, sequence.length), 0, f); });
       var slots = document.querySelectorAll('figure[data-gal-slot]');
       var used = 0;
       slots.forEach(function (slot) {
-        if (used >= res.files.length) return;
-        var f = res.files[used++];
+        if (used >= sequence.length) return;
+        var f = sequence[used++];
         slot.innerHTML = cell(f, 900, 'bio-shot') +
           '<figcaption>' + ((meta[f] || {}).artist || 'Wikimedia Commons') +
           ' · ' + ((meta[f] || {}).licence || 'CC') + '</figcaption>';
         slot.removeAttribute('hidden');
       });
-      var rest = res.files.slice(used);
+      var rest = sequence.slice(used);
       if (rest.length) {
         grid.innerHTML = rest.map(function (f) { return cell(f, 520, 'gal-cell'); }).join('');
       } else {

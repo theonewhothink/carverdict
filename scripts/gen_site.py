@@ -31,13 +31,22 @@ def _load_lib_photos():
 LIB_PHOTOS = _load_lib_photos()
 
 
-def _count_lib():
-    """Total catalogue size — the home page quotes this, so it must be measured, not typed."""
-    p = Path(__file__).resolve().parent.parent / "data" / "car_library.json"
-    return json.loads(p.read_text()) if p.exists() else []
+def _catalogue_stats():
+    """Use the same normalized, de-duplicated catalogue as /library/."""
+    try:
+        from build_library import load_model_index, build_dataset
+        load_model_index()
+        brands = build_dataset()
+        return (sum(len(v) for v in brands.values()), len(brands),
+                sum(1 for v in brands.values() for m in v if m.get("p")))
+    except Exception:
+        p = Path(__file__).resolve().parent.parent / "data" / "car_library.json"
+        rows = json.loads(p.read_text()) if p.exists() else []
+        return (len(rows), len({x.get("m") for x in rows if x.get("m")}),
+                sum(bool(x.get("p")) for x in rows))
 
 
-LIB_PHOTOS_ALL = _count_lib()
+CATALOG_MODELS, CATALOG_BRANDS, CATALOG_PHOTOS = _catalogue_stats()
 
 def _load_lib_index():
     """display-name -> (brand_slug, model_slug) so any photo can link to its model page."""
@@ -699,10 +708,11 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
     # Owner satisfaction. NHTSA tells us what broke; only owners can tell us whether they
     # would do it again. The block renders from the API, so it is empty markup at build
     # time and never a stale number baked into a page.
-    survey_html = (f'<div class="card survey-card" data-survey="my:{r["my_id"]}" '
-                   f'data-survey-name="{esc(name)}"><h2>Owner satisfaction</h2>'
-                   f'<p class="sv-n">Verified owner averages publish after five responses. '
-                   f'Own this exact model year? Sign in and add the evidence future buyers need.</p></div>')
+    survey_html = (f'<div class="card engagement-card">'
+                   f'<div class="love-host" data-love="my:{r["my_id"]}" data-love-name="{esc(name)}"></div>'
+                   f'<div class="survey-card" data-survey="my:{r["my_id"]}" data-survey-name="{esc(name)}">'
+                   f'<h2>Owner satisfaction</h2><p class="sv-n"><b>No responses yet.</b> '
+                   f'Own this exact model year? Sign in and leave an account-backed rating.</p></div></div>')
 
     running_curve = [{**p, "total_low": p["total_low"] + _fuel,
                       "total_high": p["total_high"] + _fuel} for p in curve]
@@ -786,7 +796,6 @@ Last updated: {TODAY}.</p></div>"""
 <h1>{name}: True Cost, Problems &amp; Verdict</h1>
 <p class="sub">{(r['complaint_count'] or 0):,} NHTSA owner complaints · {(r['recall_count'] if r['recall_count'] is not None else '—')} recalls · data-computed verdict. No opinions — public data only.</p>
 <div class="triad"><b>Reviewed by</b> the MotorJury data desk · <a href="/methodology/">2 sources</a> · <b>Last updated</b> {TODAY}</div>
-<div class="love-host" data-love="my:{r['my_id']}" data-love-name="{esc(name)}"></div>
 </div>
 {hero_art(make, model, bool(r['is_ev']), year)}
 </div></div>"""
@@ -1225,9 +1234,30 @@ def gen_home(con, all_rows):
 
     evs = _amazing([r for r in gated if r["is_ev"]], 4) or [r for r in gated if r["is_ev"]][:4]
     best = _amazing(gated, 8)
+
+    def card_money(x):
+        bits = []
+        if x["price_today_low"] and x["price_today_high"]:
+            bits.append(f'${x["price_today_low"]:,}–${x["price_today_high"]:,} typical price')
+        try:
+            curve = json.loads(x["cost_curve"] or "[]")
+            age = max(0, CURRENT_YEAR - int(x["year"]))
+            point = min(curve, key=lambda p: abs(p["age"] - age)) if curve else None
+            if point:
+                maint_mid = int(round((point["total_low"] + point["total_high"]) / 2))
+                if x["annual_fuel_cost"]:
+                    bits.append(f'${maint_mid + int(x["annual_fuel_cost"]):,}/yr fuel + maintenance')
+                else:
+                    bits.append(f'${maint_mid:,}/yr maintenance · fuel unavailable')
+        except Exception:
+            pass
+        return " · ".join(bits)
+
     def cardlist(rows):
         return '<div class="rel-grid">' + "".join(
-            f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>score {x["score"]}/100 · {esc(x["verdict"])}</small></a>'
+            f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}'
+            f'<small>score {x["score"]}/100 · {esc(x["verdict"])}'
+            f'{" · " + card_money(x) if card_money(x) else ""}</small></a>'
             for x in rows) + "</div>"
     # The Legends block is only emitted once the roster has actually been harvested,
     # otherwise the home page would link to a /legends/ that does not exist and the
@@ -1244,8 +1274,8 @@ car — founders, engineers, designers, champions and industrialists.</p>
 
     # Counts must come from the data, never from a number typed into the template — the
     # hard-coded 12,747 survived two catalogue rebuilds and shipped a lie on the home page.
-    n_models = len(LIB_PHOTOS_ALL)
-    n_brands = len({b for b, _ in LIB_INDEX.values()}) if LIB_INDEX else 0
+    n_models = CATALOG_MODELS
+    n_brands = CATALOG_BRANDS
 
     # ---- image-led hero: real photography from the library ----
     def photo_of(name):
@@ -1253,13 +1283,17 @@ car — founders, engineers, designers, champions and industrialists.</p>
             if n == name.lower():
                 return ph
         return None
-    HEROES = ["ford mustang", "toyota land cruiser", "jeep wrangler", "mazda mx-5",
-              "mini", "bmw 3 series", "audi quattro", "volkswagen golf",
-              "porsche 911", "range rover", "chevrolet corvette", "citroen ds",
-              "fiat 500", "nissan gt-r", "subaru impreza", "volvo 240",
-              "alfa romeo giulia", "lancia delta", "honda civic", "peugeot 205"]
-    NICE = {"bmw 3 series": "BMW 3 Series", "mazda mx-5": "Mazda MX-5", "nissan gt-r": "Nissan GT-R",
-            "citroen ds": "Citroën DS", "volkswagen golf": "VW Golf", "audi quattro": "Audi quattro"}
+    # An editorial front door, not a random inventory feed: every car below is a genuine
+    # design or engineering landmark and has a high-resolution Commons photograph.
+    HEROES = ["ferrari 250 gto", "ferrari f40", "lamborghini miura", "jaguar e-type",
+              "aston martin db5", "mercedes-benz 300 sl", "mclaren f1",
+              "bugatti type 57 atlantic", "alfa romeo 33 stradale (1969)",
+              "citroën ds 19", "lancia stratos", "ford gt40", "bmw 507",
+              "toyota 2000gt", "chevrolet corvette c2", "mazda rx-7"]
+    NICE = {"ferrari 250 gto": "Ferrari 250 GTO", "mercedes-benz 300 sl": "Mercedes-Benz 300 SL",
+            "mclaren f1": "McLaren F1", "citroën ds 19": "Citroën DS 19",
+            "alfa romeo 33 stradale (1969)": "Alfa Romeo 33 Stradale (1969)",
+            "chevrolet corvette c2": "Chevrolet Corvette C2", "bmw 507": "BMW 507"}
     shots = []
     for nm in HEROES:
         ph = photo_of(nm)
@@ -1306,7 +1340,7 @@ car — founders, engineers, designers, champions and industrialists.</p>
 
     body = f"""<section class="home-hero-v2"><div class="wrap hh-grid">
 <div class="hh-copy">
-<span class="hh-kicker">{n_models:,} models · {len(LIB_PHOTOS):,} photographs · {N_GEO} countries</span>
+<span class="hh-kicker">{n_models:,} models · {CATALOG_PHOTOS:,} photographs · {N_GEO} countries</span>
 <h1>What does that car <em>really</em> cost to own?</h1>
 <p class="hh-sub">Every car ever made, priced for <b>your</b> country — from NHTSA complaints,
 recall campaigns and EPA data. Not opinions.</p>
@@ -1371,9 +1405,20 @@ def gen_search(con, all_rows):
             fuel = "hybrid"
         else:
             fuel = fuel_kind_of.get(ft, "gasoline")
+        try:
+            curve = json.loads(r["cost_curve"] or "[]")
+            age = max(0, CURRENT_YEAR - int(r["year"]))
+            pt = min(curve, key=lambda p: abs(p["age"] - age)) if curve else None
+            maint_mid = int(round((pt["total_low"] + pt["total_high"]) / 2)) if pt else 0
+        except Exception:
+            maint_mid = 0
+        annual_fuel = int(r["annual_fuel_cost"] or 0)
+        annual_running = maint_mid + annual_fuel if maint_mid else 0
+        insurance_mid = int(round(((r["insurance_low"] or 0) + (r["insurance_high"] or 0)) / 2))
         rows.append([f"{r['year']} {r['make']} {r['model']}", url_my(r), r["year"],
                      r["make"], fuel, r["segment"] or "", r["score"], r["verdict"] or "",
-                     r["price_today"] or 0, r["complaint_count"] or 0])
+                     r["price_today"] or 0, r["complaint_count"] or 0,
+                     annual_running, annual_fuel, insurance_mid, r["depreciation_per_year"] or 0])
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
     (SITE / "assets" / "search-index.json").write_text(
         json.dumps(rows, separators=(",", ":"), ensure_ascii=False))
@@ -1445,9 +1490,14 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
     }});
     count.textContent = hits.length.toLocaleString() + ' model year' + (hits.length === 1 ? '' : 's') + ' match';
     out.innerHTML = hits.slice(0, shown).map(function (r) {{
+      var costs = [];
+      if (r[8]) costs.push(money(r[8]) + ' typical price');
+      if (r[10]) costs.push(money(r[10]) + '/yr ' + (r[11] ? 'fuel + maintenance' : 'maintenance; fuel unavailable'));
+      if (r[12]) costs.push(money(r[12]) + '/yr insurance');
+      if (r[13]) costs.push(money(r[13]) + '/yr depreciation');
       return '<a href="' + r[1] + '">' + r[0] +
         '<small>score ' + (r[6] == null ? '—' : r[6] + '/100') + ' · ' + (r[7] || 'DATA PENDING') +
-        (r[8] ? ' · ' + money(r[8]) + ' typical' : '') + '</small></a>';
+        (costs.length ? ' · ' + costs.join(' · ') : '') + '</small></a>';
     }}).join('') || '<p class="muted" style="grid-column:1/-1">Nothing matches. Loosen a filter — or browse the <a href="/library/">full library</a>.</p>';
     more.hidden = hits.length <= shown;
   }}

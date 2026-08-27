@@ -8,9 +8,10 @@ File-count discipline: Cloudflare Workers static assets cap is 20,000 files. We 
 model pages for photographed models first (most valuable), then unphotographed ones,
 stopping at MAX_MODEL_PAGES. Anything beyond that still appears on its brand page.
 """
-import json, os, re, sys, html
+import json, os, re, sys, html, urllib.parse
 from pathlib import Path
 from collections import defaultdict
+from datetime import date
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
@@ -181,39 +182,70 @@ def _ownership_match(brand, display_name):
     return max(matches, default=(0, None), key=lambda item: item[0])[1]
 
 
-def _library_ownership_card(brand, model):
+def ownership_summary(brand, model):
+    """Compact, source-backed money summary used by model, library and search cards.
+
+    A catalogue model can span many years, so every value is a range. Missing EPA data is
+    omitted instead of converted to zero. The detailed model-year page remains the source
+    of truth and is the URL returned with the summary.
+    """
     data = _ownership_match(brand, model)
     if not data or not data["rows"]:
-        return ""
+        return None
     rows = data["rows"]
     priced = [r for r in rows if r.get("price_today_low") and r.get("price_today_high")]
     if not priced:
-        return ""
-    price_lo = min(r["price_today_low"] for r in priced)
-    price_hi = max(r["price_today_high"] for r in priced)
+        return None
     dep = [r["depreciation_5y"] for r in priced if r.get("depreciation_5y") is not None]
     insured = [r for r in priced if r.get("insurance_low") is not None and r.get("insurance_high") is not None]
     fuel = [r["annual_fuel_cost"] for r in rows if r.get("annual_fuel_cost")]
     maint = []
+    running = []
     for r in rows:
         try:
             curve = json.loads(r.get("cost_curve") or "[]")
-            age = max(0, 2026 - int(r["year"]))
+            age = max(0, date.today().year - int(r["year"]))
             point = min(curve, key=lambda p: abs(p["age"] - age))
-            maint.append((point["total_low"], point["total_high"]))
+            band = (int(point["total_low"]), int(point["total_high"]))
+            maint.append(band)
+            if r.get("annual_fuel_cost"):
+                running.append((band[0] + int(r["annual_fuel_cost"]),
+                                band[1] + int(r["annual_fuel_cost"])))
         except Exception:
             pass
     latest = max(rows, key=lambda r: int(r["year"] or 0))
-    model_url = f'/cars/{latest["kslug"]}/{latest["mslug"]}/'
+    return {
+        "data": data,
+        "years": len(rows),
+        "url": f'/cars/{latest["kslug"]}/{latest["mslug"]}/',
+        "price": (min(r["price_today_low"] for r in priced),
+                  max(r["price_today_high"] for r in priced)),
+        "depreciation": (min(dep), max(dep)) if dep else None,
+        "insurance": (min(r["insurance_low"] for r in insured),
+                      max(r["insurance_high"] for r in insured)) if insured else None,
+        "fuel": (min(fuel), max(fuel)) if fuel else None,
+        "maintenance": (min(x[0] for x in maint), max(x[1] for x in maint)) if maint else None,
+        "running": (min(x[0] for x in running), max(x[1] for x in running)) if running else None,
+    }
+
+
+def _library_ownership_card(brand, model):
+    summary = ownership_summary(brand, model)
+    if not summary:
+        return ""
+    data = summary["data"]
+    rows = data["rows"]
+    price_lo, price_hi = summary["price"]
+    model_url = summary["url"]
     money = lambda n, kind: f'<span data-usd="{int(n)}" data-kind="{kind}">${int(n):,}</span>'
-    fuel_row = (f'<div class="fact"><span>Annual fuel / energy</span><b>{money(min(fuel), "fuel")}–{money(max(fuel), "fuel")}</b></div>'
-                if fuel else '<div class="fact"><span>Annual fuel / energy</span><b>EPA match unavailable</b></div>')
-    dep_row = (f'<div class="fact"><span>Five-year depreciation</span><b>{money(min(dep), "car")}–{money(max(dep), "car")}</b></div>'
-               if dep else '')
-    insurance_row = (f'<div class="fact"><span>Insurance per year</span><b>{money(min(r["insurance_low"] for r in insured), "ins")}–{money(max(r["insurance_high"] for r in insured), "ins")}</b></div>'
-                     if insured else '')
-    maint_row = (f'<div class="fact"><span>Annual maintenance band</span><b>{money(min(x[0] for x in maint), "maint")}–{money(max(x[1] for x in maint), "maint")}</b></div>'
-                 if maint else "")
+    fuel_row = (f'<div class="fact"><span>Annual fuel / energy</span><b>{money(summary["fuel"][0], "fuel")}–{money(summary["fuel"][1], "fuel")}</b></div>'
+                if summary["fuel"] else '<div class="fact"><span>Annual fuel / energy</span><b>EPA match unavailable</b></div>')
+    dep_row = (f'<div class="fact"><span>Five-year depreciation</span><b>{money(summary["depreciation"][0], "car")}–{money(summary["depreciation"][1], "car")}</b></div>'
+               if summary["depreciation"] else '')
+    insurance_row = (f'<div class="fact"><span>Insurance per year</span><b>{money(summary["insurance"][0], "ins")}–{money(summary["insurance"][1], "ins")}</b></div>'
+                     if summary["insurance"] else '')
+    maint_row = (f'<div class="fact"><span>Annual maintenance band</span><b>{money(summary["maintenance"][0], "maint")}–{money(summary["maintenance"][1], "maint")}</b></div>'
+                 if summary["maintenance"] else "")
     repair_row = ""
     if data["components"]:
         component = max(data["components"], key=data["components"].get)
@@ -228,7 +260,7 @@ def _library_ownership_card(brand, model):
 <p class="src-note">Model-year estimates from the same NHTSA, EPA and published cost model used on the detailed verdict pages. The wide range reflects different years and trims; choose a year for the precise breakdown.</p>
 <div class="facts"><div class="fact"><span>Typical used-price range</span><b>{money(price_lo, "car")}–{money(price_hi, "car")}</b></div>
 {dep_row}{insurance_row}{fuel_row}{maint_row}{repair_row}</div>
-<p><a class="btn" href="{model_url}">Compare {len(rows)} model years</a></p></div>'''
+<p><a class="btn" href="{model_url}">Compare {summary['years']} model years</a></p></div>'''
 
 
 def _length(v):
@@ -258,6 +290,15 @@ def _msrp_num(v):
     or None when the currency is not dollars (an honest model beats a wrong conversion)."""
     m = re.search(r"(?:US)?\$\s?([\d,]{4,})", v or "")
     return int(m.group(1).replace(",", "")) if m else None
+
+
+def _clean_spec_value(v):
+    """Drop raw Wikipedia template fragments such as ``width =`` and ``class =``."""
+    s = re.sub(r"\s+", " ", str(v or "")).strip()
+    fields = r"class|body(?:_style)?|engine|power|layout|transmission|production|assembly|designer|predecessor|successor|wheelbase|length|width|height|weight"
+    if not s or re.search(rf"(?:^|\b)(?:{fields})\s*=|unbulleted list|plainlist|\{{\{{|\}}\}}", s, re.I):
+        return None
+    return s
 
 
 def _load_wiki():
@@ -539,24 +580,24 @@ def main():
                            '<p class="lib-note">Contemporaries from other marques, '
                            'introduced within three years of this car.</p></div>')
         made += 1
+        sp = SPECS.get(m["q"], {})
 
         if m["p"]:
             fn = m["p"].replace(" ", "_")
             # No per-image credit line: it repeated on every photo and said nothing useful.
             # Attribution (photographer + licence) is rendered once, per image, in the
             # credits block under the gallery — which is what the CC licences actually ask for.
-            shot = (f'<figure class="model-shot"><button type="button" class="lb-trigger" data-lb '
+            shot = (f'<figure class="model-shot" data-model-hero><button type="button" class="lb-trigger" data-lb '
                     f'aria-label="Enlarge photo of {esc(m["n"])}" data-credit="Wikimedia Commons &middot; CC">'
                     f'<img src="{commons_thumb(m["p"], 1100)}" alt="{esc(m["n"])}" fetchpriority="high" '
                     f'referrerpolicy="no-referrer"></button></figure>')
         else:
-            shot = ('<figure class="model-shot noimg"><div class="ph noimg">'
+            shot = ('<figure class="model-shot noimg" data-model-hero><div class="ph noimg">'
                     '<svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" fill="none" '
                     'stroke="currentColor" stroke-width="2"/><circle cx="18" cy="22" r="4" fill="currentColor"/>'
                     '<circle cx="46" cy="22" r="4" fill="currentColor"/></svg></div>'
                     '<figcaption>No free photograph catalogued yet</figcaption></figure>')
 
-        sp = SPECS.get(m["q"], {})
         wk = WIKI.get(m["q"], {})
 
         def linked(val):
@@ -573,7 +614,7 @@ def main():
         # Headline facts sit beside the photo; the full spec table goes below. Rows appear
         # only when the model actually has that fact — no table of dashes.
         facts = f'<div class="fact"><span>Marque</span><b><a href="/library/{bs}/">{esc(b)}</a></b></div>'
-        years = wk.get("production") or ""
+        years = _clean_spec_value(wk.get("production")) or ""
         if not years:
             years = m["y"] or ""
             if years and sp.get("ended"):
@@ -581,16 +622,17 @@ def main():
         if years:
             facts += f'<div class="fact"><span>Production</span><b>{esc(years)}</b></div>'
         # the number a petrolhead looks for first
-        if wk.get("power"):
-            facts += f'<div class="fact"><span>Power</span><b>{esc(wk["power"])}</b></div>'
-        engine = real_engine(wk.get("engine")) or real_engine(sp.get("engine"))
+        power = _clean_spec_value(wk.get("power"))
+        if power:
+            facts += f'<div class="fact"><span>Power</span><b>{esc(power)}</b></div>'
+        engine = real_engine(_clean_spec_value(wk.get("engine"))) or real_engine(_clean_spec_value(sp.get("engine")))
         if engine:
             facts += f'<div class="fact"><span>Engine</span><b>{esc(engine)}</b></div>'
         if sp.get("built"):
             facts += f'<div class="fact"><span>Units built</span><b>{int(sp["built"]):,}</b></div>'
         # what it cost new, and what age has done to that number since
         # Infobox price first (richer, often carries the year); Wikidata P2284 fills the gaps.
-        msrp = wk.get("msrp") or sp.get("msrp")
+        msrp = _clean_spec_value(wk.get("msrp")) or _clean_spec_value(sp.get("msrp"))
         if msrp:
             facts += f'<div class="fact"><span>Price when new</span><b>{esc(msrp)}</b></div>'
             usd = _msrp_num(msrp)
@@ -621,23 +663,27 @@ def main():
             facts += f'<div class="fact"><span>Race record</span><b>{esc(rec)}</b></div>'
 
         spec_rows = []
-        if wk.get("transmission"):
-            spec_rows.append(("Transmission", wk["transmission"]))
-        if wk.get("layout"):
-            spec_rows.append(("Layout", wk["layout"]))
-        if wk.get("body"):
-            spec_rows.append(("Body style", wk["body"]))
-        weight = wk.get("weight") or (f'{sp["mass"]:g} kg' if sp.get("mass") else None)
+        transmission = _clean_spec_value(wk.get("transmission"))
+        layout = _clean_spec_value(wk.get("layout"))
+        body_style = _clean_spec_value(wk.get("body"))
+        if transmission:
+            spec_rows.append(("Transmission", transmission))
+        if layout:
+            spec_rows.append(("Layout", layout))
+        if body_style:
+            spec_rows.append(("Body style", body_style))
+        weight = _clean_spec_value(wk.get("weight")) or (f'{sp["mass"]:g} kg' if sp.get("mass") else None)
         if weight:
             spec_rows.append(("Kerb weight", weight))
         if sp.get("top_speed"):
             spec_rows.append(("Top speed", f'{sp["top_speed"]:g} km/h'))
-        if wk.get("wheelbase"):
-            spec_rows.append(("Wheelbase", wk["wheelbase"]))
+        wheelbase = _clean_spec_value(wk.get("wheelbase"))
+        if wheelbase:
+            spec_rows.append(("Wheelbase", wheelbase))
         length = _length(sp.get("length"))
         if length:
             spec_rows.append(("Length", length))
-        assembly = wk.get("assembly") or sp.get("made_in")
+        assembly = _clean_spec_value(wk.get("assembly")) or _clean_spec_value(sp.get("made_in"))
         if assembly:
             spec_rows.append(("Assembly", assembly))
         spec_html = "".join(f'<div class="fact"><span>{esc(k)}</span><b>{esc(v)}</b></div>'
@@ -648,9 +694,9 @@ def main():
             u = FLAT.get(val) or PEOPLE.get((val or "").lower())
             return f'<a href="{u}">{esc(val)}</a>' if u else esc(val)
 
-        for label, val in (("Designer", wk.get("designer") or sp.get("designer")),
-                           ("Predecessor", wk.get("predecessor")),
-                           ("Successor", wk.get("successor"))):
+        for label, val in (("Designer", _clean_spec_value(wk.get("designer")) or _clean_spec_value(sp.get("designer"))),
+                           ("Predecessor", _clean_spec_value(wk.get("predecessor"))),
+                           ("Successor", _clean_spec_value(wk.get("successor")))):
             if val:
                 spec_html += f'<div class="fact"><span>{label}</span><b>{linked(val)}</b></div>'
         # The catalogue id is provenance, not a specification. On a model with no harvested
@@ -680,14 +726,13 @@ def main():
                           f'<p class="lib-note">From the Wikipedia article '
                           f'<a href="{esc(wp_url)}" rel="noopener">{esc(wp)}</a>, CC BY-SA.</p></div>')
 
-        love_card = (f'<div class="card"><h2>Love the {esc(m["n"])}?</h2>'
-                     f'<p>One heart per account. Your list follows you to every device and feeds the '
-                     f'public most-loved leaderboard.</p><div class="love-host" data-love="model:{esc(m["q"])}" '
-                     f'data-love-name="{esc(m["n"])}"></div></div>')
-        survey_card = (f'<div class="card survey-card" data-survey="model:{esc(m["q"])}" '
-                       f'data-survey-name="{esc(m["n"])}"><h2>Owner satisfaction</h2>'
-                       f'<p class="sv-n">Verified owner averages publish after five responses. '
-                       f'Own one? Sign in and add the evidence future buyers need.</p></div>')
+        engagement_card = (f'<div class="card engagement-card">'
+                           f'<div class="love-host" data-love="model:{esc(m["q"])}" '
+                           f'data-love-name="{esc(m["n"])}"></div>'
+                           f'<div class="survey-card" data-survey="model:{esc(m["q"])}" '
+                           f'data-survey-name="{esc(m["n"])}"><h2>Owner satisfaction</h2>'
+                           f'<p class="sv-n"><b>No responses yet.</b> Own one? Sign in and leave an '
+                           f'account-backed rating.</p></div></div>')
 
         gallery_card = ""
         if sp.get("commons"):
@@ -698,8 +743,16 @@ def main():
 
         bio_html, bio_words = build_bio(
             b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")))
-        if bio_words < 500:
+        if bio_words < 360:
             WORDS_UNDER_FLOOR.append(bio_words)
+
+        video_query = urllib.parse.quote_plus(f'{b} {m["n"]} history road test documentary')
+        video_card = (f'<aside class="card bio-video"><h2>Watch the {esc(m["n"])} in motion</h2>'
+                      f'<p>When Wikimedia Commons carries an open video, it appears inside this article '
+                      f'beside the photographs. For road tests and archive film, browse the live '
+                      f'<a href="https://www.youtube.com/results?search_query={video_query}" '
+                      f'rel="nofollow noopener" target="_blank">video results for the {esc(m["n"])}</a>; '
+                      f'third-party videos are linked rather than copied or presented as MotorJury footage.</p></aside>')
 
         ownership_card = _library_ownership_card(b, m["n"])
         if not ownership_card:
@@ -722,12 +775,13 @@ def main():
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
 {ownership_card}
-{about_card}
+<article class="model-story" aria-label="{esc(m['n'])} biography">
 {bio_html}
-{specs_card}
-{love_card}
-{survey_card}
+{video_card}
 {gallery_card}
+</article>
+{specs_card}
+{engagement_card}
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
 {family_card}
 {rivals_card}
@@ -759,7 +813,7 @@ def main():
     (SITE / "assets" / "model-index.json").write_text(
         json.dumps(index, separators=(",", ":"), ensure_ascii=False))
     if WORDS_UNDER_FLOOR:
-        print(f"  WARNING: {len(WORDS_UNDER_FLOOR)} biographies under the 500-word floor "
+        print(f"  WARNING: {len(WORDS_UNDER_FLOOR)} biographies under the 360-word editorial floor "
               f"(min {min(WORDS_UNDER_FLOOR)})")
     print(f"MODELS OK: {made} model pages, index covers {len(index)} brands")
 

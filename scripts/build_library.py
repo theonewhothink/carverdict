@@ -235,7 +235,7 @@ def load_model_index():
     if f.exists():
         MODEL_INDEX = json.loads(f.read_text())
 
-def card(m, lang="en", lazy=True, brand_slug=""):
+def card(m, lang="en", lazy=True, brand_slug="", brand=""):
     """The WHOLE card links to the model page — a photo click opens the car, never an image file."""
     y = f'<small>{t(lang, "lib_since")} {m["y"]}</small>' if m["y"] else ""
     has_page = m["n"] in MODEL_INDEX.get(brand_slug, {})
@@ -254,8 +254,23 @@ def card(m, lang="en", lazy=True, brand_slug=""):
         img = ('<span class="ph noimg"><svg viewBox="0 0 64 28"><path d="M6 22c2-6 8-9 14-9h20c6 0 12 3 14 9" '
                'fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="22" r="4" fill="currentColor"/>'
                '<circle cx="46" cy="22" r="4" fill="currentColor"/></svg></span>')
+    cost = ""
+    try:
+        # Local import avoids a module cycle: build_models imports this module for the
+        # catalogue naming rules, while the library runs later and can safely reuse its
+        # one ownership-cost matcher.
+        from build_models import ownership_summary
+        s = ownership_summary(brand, m["n"])
+        if s:
+            p0, p1 = s["price"]
+            bits = [f'${p0:,}–${p1:,} typical']
+            if s.get("running"):
+                bits.append(f'${s["running"][0]:,}–${s["running"][1]:,}/yr running')
+            cost = '<span class="lib-money">' + ' · '.join(bits) + '</span>'
+    except Exception:
+        pass
     return (f'<a class="lib-card" id="m-{slug(m["n"])}" href="{url}">{img}'
-            f'<b>{esc(m["n"])}</b>{y}</a>')
+            f'<b>{esc(m["n"])}</b>{y}{cost}</a>')
 
 
 REST_DATA = {}
@@ -283,10 +298,18 @@ def main():
         for m in v:
             has_page = 1 if m["n"] in MODEL_INDEX.get(bs, {}) else 0
             if m["p"] or has_page:
-                prim.append([m["n"], m["p"] and 1 or 0, m["y"], has_page])
+                cost = None
+                try:
+                    from build_models import ownership_summary
+                    s = ownership_summary(b, m["n"])
+                    if s:
+                        cost = [*s["price"], *(s.get("running") or (0, 0))]
+                except Exception:
+                    pass
+                prim.append([m["n"], m["p"] and 1 or 0, m["y"], has_page, cost])
             else:
                 deep_out.append([m["n"], b, bs])
-        data_out[b] = {"s": bs, "m": prim}
+        data_out[b] = {"s": bs, "c": len(v), "m": prim}
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
     (SITE / "assets" / "deep-index.json").write_text(
         json.dumps(deep_out, separators=(",", ":"), ensure_ascii=False))
@@ -322,7 +345,7 @@ def main():
         # Every model renders as a card. The old 48-card cap with a "show all"
         # button read as missing data — a marque page that says "every model ever
         # made" must actually show every model without a click.
-        cards = "".join(card(m, brand_slug=bs, lazy=(ci >= 10))
+        cards = "".join(card(m, brand_slug=bs, brand=b, lazy=(ci >= 10))
                         for ci, m in enumerate(models))
         more = ""
         with_photos = sum(1 for m in models if m["p"])

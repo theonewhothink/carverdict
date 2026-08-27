@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 """make_icons.py — the MotorJury mark and the whole icon set from one definition.
 
-The old mark was a gold gavel on navy at three-quarter weight. It read as a smudge at
-16 pixels, which is the only size a favicon is ever actually seen at, and its two shapes
-merged into one at that scale. This version is drawn for the tab strip first: two shapes,
-maximum contrast, thick enough that antialiasing cannot dissolve them, and a silhouette
-(diagonal bar over a horizontal bar) that stays recognisable when it is nine pixels tall.
-
-The gavel is the jury. The bar it strikes is the road. Amber on navy because at small
-sizes hue matters less than luminance distance, and this pair has plenty.
+The gavel remains the jury, but the former road bar was too abstract at favicon size. It is
+now a high-contrast car silhouette with two unmistakable wheels. The result still belongs
+to the same navy-and-gold identity, while the automotive meaning survives at 16 pixels.
 
 Run:  python scripts/make_icons.py     (writes static/ and site/ icon files)
 """
@@ -40,12 +35,11 @@ SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="51
     <rect x="88" y="148" width="336" height="130" rx="46" fill="url(#gold)"/>
     <rect x="210" y="268" width="92" height="144" rx="42" fill="url(#gold)"/>
   </g>
-  <!-- the road it lands on: a bar with a centre line, which is what stops the mark
-       reading as a hammer and nothing else -->
-  <rect x="56" y="396" width="400" height="64" rx="32" fill="#FFB02E"/>
-  <rect x="146" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
-  <rect x="240" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
-  <rect x="334" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
+  <!-- a real car silhouette: body, glass and two wheels remain legible at 16 px -->
+  <path d="M58 386h74l48-62c10-13 25-20 42-20h92c18 0 34 8 44 23l40 59h49c23 0 41 18 41 41v13H58c-19 0-34-15-34-34s15-20 34-20z" fill="#F4F7FB"/>
+  <path d="M170 371l34-45c5-7 13-11 22-11h37v56zm108 0v-56h31c10 0 18 4 24 12l30 44z" fill="#122A4E"/>
+  <circle cx="145" cy="424" r="42" fill="#071426"/><circle cx="145" cy="424" r="17" fill="#FFB02E"/>
+  <circle cx="375" cy="424" r="42" fill="#071426"/><circle cx="375" cy="424" r="17" fill="#FFB02E"/>
 </svg>
 """
 
@@ -55,7 +49,8 @@ MASK = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="5
       <rect x="88" y="148" width="336" height="130" rx="46"/>
       <rect x="210" y="268" width="92" height="144" rx="42"/>
     </g>
-    <rect x="56" y="396" width="400" height="64" rx="32"/>
+    <path d="M58 386h74l48-62c10-13 25-20 42-20h92c18 0 34 8 44 23l40 59h49c23 0 41 18 41 41v13H58c-19 0-34-15-34-34s15-20 34-20z"/>
+    <circle cx="145" cy="424" r="42"/><circle cx="375" cy="424" r="42"/>
   </g>
 </svg>
 """
@@ -115,12 +110,14 @@ def draw_icon(size, maskable=False, transparent_bg=False):
 
     road = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     rd = ImageDraw.Draw(road)
-    rd.rounded_rectangle([56, 396, 456, 460], radius=32, fill=AMBER + (255,))
-    # The centre line is what turns a hammer into a road, but below about 64 pixels the
-    # dashes stop resolving and only muddy the bar. Draw them only where they can be seen.
-    if size >= 64:
-        for x in (146, 240, 334):
-            rd.rounded_rectangle([x, 420, x + 62, 436], radius=8, fill=NAVY_BOT + (235,))
+    # A simple roof + body is clearer after downsampling than a detailed Bezier outline.
+    rd.rounded_rectangle([24, 366, 488, 442], radius=34, fill=(244, 247, 251, 255))
+    rd.polygon([(132, 368), (184, 304), (316, 304), (382, 368)], fill=(244, 247, 251, 255))
+    rd.polygon([(169, 358), (204, 318), (255, 318), (255, 358)], fill=NAVY_TOP + (255,))
+    rd.polygon([(270, 318), (310, 318), (350, 358), (270, 358)], fill=NAVY_TOP + (255,))
+    for cxw in (145, 375):
+        rd.ellipse([cxw - 42, 382, cxw + 42, 466], fill=NAVY_BOT + (255,))
+        rd.ellipse([cxw - 17, 407, cxw + 17, 441], fill=AMBER + (255,))
     if k != 1.0:
         small = road.resize((int(S * k), int(S * k)), Image.LANCZOS)
         road = Image.new("RGBA", (S, S), (0, 0, 0, 0))

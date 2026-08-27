@@ -10,8 +10,8 @@
     fetch('/assets/library-data.json').then(function (r) { return r.json(); }).then(function (j) {
       MODELS = []; BRANDS = [];
       Object.keys(j).forEach(function (b) {
-        BRANDS.push({ n: b, s: j[b].s, c: j[b].m.length });
-        j[b].m.forEach(function (m) { MODELS.push({ n: m[0], b: b, s: j[b].s, y: m[2], h: m[3] }); });
+        BRANDS.push({ n: b, s: j[b].s, c: j[b].c || j[b].m.length });
+        j[b].m.forEach(function (m) { MODELS.push({ n: m[0], b: b, s: j[b].s, y: m[2], h: m[3], c: m[4] }); });
       });
       cb();
     });
@@ -76,7 +76,8 @@
                     : '/library/' + h.s + '/#m-' + mslug(h.n);
       return '<a href="' + url + '">' +
         '<span class="q-n">' + h.n + '</span>' +
-        '<span class="q-b">' + h.b + (h.y ? ' · ' + h.y : '') + '</span></a>';
+        '<span class="q-b">' + h.b + (h.y ? ' · ' + h.y : '') +
+        (h.c ? ' · $' + Number(h.c[0]).toLocaleString() + '–$' + Number(h.c[1]).toLocaleString() : '') + '</span></a>';
     }).join('');
     out.hidden = false;
   }
@@ -95,7 +96,7 @@
         for (i = 0; i < MODELS.length; i++) {
           sc = best(MODELS[i].n, vs);
           if (sc > 3) sc = best(MODELS[i].b + ' ' + MODELS[i].n, vs);
-          if (sc < 4) hits.push({ kind: 'model', sc: sc, n: MODELS[i].n, b: MODELS[i].b, s: MODELS[i].s, y: MODELS[i].y });
+          if (sc < 4) hits.push({ kind: 'model', sc: sc, n: MODELS[i].n, b: MODELS[i].b, s: MODELS[i].s, y: MODELS[i].y, h: MODELS[i].h, c: MODELS[i].c });
           if (hits.length > 400) break;
         }
         hits.sort(function (a, b) { return a.sc - b.sc || a.n.length - b.n.length; });

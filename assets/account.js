@@ -75,7 +75,9 @@
       (local.recent || []).filter(function (r) {
         return !(server.recent || []).some(function (s) { return s.u === r.u; });
       })).slice(0, 12);
-    merged.ratings = Object.assign({}, local.ratings || {}, server.ratings || {});
+    // Star ratings are owner responses in the account database, never a second set of
+    // local-only scores. Drop the retired local bucket after its other preferences merge.
+    delete merged.ratings;
     // Hydrate account surfaces immediately; the API round-trip should not make a saved
     // garage look empty for a moment after sign-in.
     ME.prefs = merged;
@@ -151,9 +153,12 @@
           score('Running cost', r.running_cost) +
           '<div class="sv-score"><b>' + Math.round(r.again_pct) + '%</b><span>would buy it again</span></div>' +
           '</div><p class="sv-n">' + r.n + ' owners have answered. Averages update as more come in.</p>';
+      } else if (r.n) {
+        head = '<p class="sv-n">' + r.n + ' owner' + (r.n > 1 ? 's have' : ' has') +
+          ' answered so far. Averages appear once ' + MIN_RESPONSES +
+          ' owners have answered — below that an average is noise.</p>';
       } else {
-        head = '<p class="sv-n">' + (r.n ? r.n + ' owner' + (r.n > 1 ? 's have' : ' has') + ' answered so far. ' : '') +
-          'Averages appear once ' + MIN_RESPONSES + ' owners have answered — below that an average is noise.</p>';
+        head = '<p class="sv-n"><b>No responses yet.</b> Own this car? Your account-backed rating can start the evidence.</p>';
       }
       var comments = (j.comments || []).length
         ? '<div class="sv-comments"><h4>What owners wrote</h4>' + j.comments.map(function (c) {
@@ -177,20 +182,24 @@
         '<span>' + label + '</span><i class="sv-bar"><u style="width:' + pct + '%"></u></i></div>';
     }
 
-    function sel(nm, label, mine) {
-      var o = '';
-      for (var i = 5; i >= 1; i--) o += '<option value="' + i + '"' +
-        (mine && +mine[nm] === i ? ' selected' : '') + '>' + i + '</option>';
-      return '<label>' + label + '<select name="' + nm + '">' + o + '</select></label>';
+    function stars(nm, label, mine) {
+      var chosen = mine ? +mine[nm] : 5;
+      var buttons = '';
+      for (var i = 1; i <= 5; i++) buttons += '<button type="button" data-star data-star-name="' + nm +
+        '" data-star-value="' + i + '" class="' + (i <= chosen ? 'on' : '') + '" aria-label="' +
+        i + ' out of 5" aria-pressed="' + (i === chosen ? 'true' : 'false') + '">★</button>';
+      return '<div class="star-field"><span>' + label + '</span><input type="hidden" name="' + nm +
+        '" value="' + chosen + '"><div class="stars" role="radiogroup" aria-label="' + label +
+        '">' + buttons + '</div></div>';
     }
 
     function formHtml(mine) {
       return '<form class="sv-form" data-sv-form>' +
         '<p>' + (mine ? 'You have rated this car. Change anything and save again.' : 'Own one? Rate it.') + '</p>' +
         '<div class="sv-grid">' +
-        sel('overall', 'Overall', mine) +
-        sel('reliability', 'Reliability', mine) +
-        sel('running_cost', 'Running cost', mine) +
+        stars('overall', 'Overall', mine) +
+        stars('reliability', 'Reliability', mine) +
+        stars('running_cost', 'Running cost', mine) +
         '<label>Years owned<input type="number" name="years_owned" min="0" max="40" value="' +
           (mine ? (mine.years_owned || 0) : '') + '"></label>' +
         '<label class="sv-check"><input type="checkbox" name="would_buy_again"' +
@@ -205,6 +214,17 @@
     function bindForm(itemId, root) {
       var f = root.querySelector('[data-sv-form]');
       if (!f) return;
+      f.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-star]');
+        if (!b) return;
+        var nm = b.getAttribute('data-star-name'), value = +b.getAttribute('data-star-value');
+        f.querySelector('[name="' + nm + '"]').value = value;
+        f.querySelectorAll('[data-star-name="' + nm + '"]').forEach(function (x) {
+          var selected = +x.getAttribute('data-star-value') <= value;
+          x.classList.toggle('on', selected);
+          x.setAttribute('aria-pressed', +x.getAttribute('data-star-value') === value ? 'true' : 'false');
+        });
+      });
       f.addEventListener('submit', function (e) {
         e.preventDefault();
         var d = new FormData(f);
@@ -224,7 +244,9 @@
 
     function load() {
       fetch('/api/survey?item=' + encodeURIComponent(item), { credentials: 'same-origin' })
-        .then(function (r) { return r.json(); }).then(render).catch(function () {});
+        .then(function (r) { return r.json(); }).then(render).catch(function () {
+          host.innerHTML = '<h2>Owner satisfaction</h2><p class="sv-n">Responses are temporarily unavailable. Please try again.</p>';
+        });
     }
     whenMe(load);
   }
@@ -317,6 +339,7 @@
       var likes = (u.likes || []);
       var garage = (u.prefs && u.prefs.garage) || [];
       var recent = (u.prefs && u.prefs.recent) || [];
+      var ratings = u.ratings || [];
       host.innerHTML =
         '<div class="acct-head"><span class="acct-av big">' +
           esc((u.name || u.email).charAt(0).toUpperCase()) + '</span>' +
@@ -336,6 +359,13 @@
               return '<a class="acct-card" href="' + esc(g.u || '/') + '"><b>' + esc(g.n || g.t || 'Saved car') + '</b></a>';
             }).join('') + '</div>'
           : '<p class="muted">Add a car from any model page and it follows you to every device.</p>') +
+        '</section>' +
+        '<section><h2>Your ratings <span class="cnt">' + ratings.length + '</span></h2>' +
+        (ratings.length
+          ? '<div class="acct-grid">' + ratings.map(function (r) {
+              return '<div class="acct-card"><b>' + esc(r.item) + '</b><small>' + r.overall + '/5 overall</small></div>';
+            }).join('') + '</div>'
+          : '<p class="muted">No ratings yet. Ratings are saved to your account and follow you across devices.</p>') +
         '</section>' +
         '<section><h2>Recently viewed <span class="cnt">' + recent.length + '</span></h2>' +
         (recent.length

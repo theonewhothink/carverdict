@@ -35,6 +35,15 @@ def _num(v):
     except ValueError:
         return None
 
+
+def _clean(v):
+    """Reject infobox-template debris before it reaches prose."""
+    s = re.sub(r"\s+", " ", str(v or "")).strip()
+    fields = r"class|body(?:_style)?|engine|power|layout|transmission|production|assembly|designer|predecessor|successor|wheelbase|length|width|height|weight"
+    if not s or re.search(rf"(?:^|\b)(?:{fields})\s*=|unbulleted list|plainlist|\{{\{{|\}}\}}", s, re.I):
+        return None
+    return s
+
 DECADES = {
     1890: "the very dawn of the automobile, when the first petrol, steam and electric carriages were hand-built one at a time and a public demonstration run was front-page news",
     1900: "the pioneering years, when motoring was still an adventure for the wealthy, roads were unpaved, and every manufacturer was effectively an experimental workshop",
@@ -57,7 +66,7 @@ def _decade_key(year):
         return None
     return max(k for k in DECADES if k <= max(1890, (year // 10) * 10))
 
-def build_bio(b, m, sp, wk, sib, riv, fe, brand_count, era_year, has_gallery):
+def _build_bio_legacy(b, m, sp, wk, sib, riv, fe, brand_count, era_year, has_gallery):
     """Return (html, words). Cards carry class bio-card; up to three
     <figure data-gal-slot hidden> slots are woven between sections for the
     client-side gallery to fill."""
@@ -222,3 +231,163 @@ def build_bio(b, m, sp, wk, sib, riv, fe, brand_count, era_year, has_gallery):
             slots_used += 1
     html_out = "".join(parts)
     return html_out, _wc(total)
+
+
+def build_bio(b, m, sp, wk, sib, riv, fe, brand_count, era_year, has_gallery):
+    """Write a compact, magazine-style biography from facts the record actually carries.
+
+    The former template described the database more than the car. This version leads with
+    the machine, interprets its sourced figures in plain English and uses archive caveats
+    only where the record is genuinely thin. Media slots are part of the article flow, so
+    every available photograph or Commons video appears beside the relevant prose.
+    """
+    name, year = m["n"], era_year
+    seed = _seed(m["q"])
+    engine = _clean(wk.get("engine")) or _clean(sp.get("engine"))
+    power = _clean(wk.get("power"))
+    body = _clean(wk.get("body"))
+    designer = _clean(wk.get("designer")) or _clean(sp.get("designer"))
+    assembly = _clean(wk.get("assembly")) or _clean(sp.get("made_in"))
+    production = _clean(wk.get("production")) or (str(year) if year else "")
+    weight = _clean(wk.get("weight")) or (f"{sp['mass']:g} kg" if sp.get("mass") else None)
+
+    def full_name(brand, row):
+        n = row["n"]
+        return n if n.lower().startswith(brand.lower() + " ") else f"{brand} {n}"
+
+    details = []
+    if engine:
+        details.append(_esc(engine))
+    if power:
+        details.append(_esc(power))
+    if body:
+        details.append(_esc(body))
+    signature = ", ".join(details[:3])
+
+    if signature:
+        leads = [
+            f"The {_esc(name)} enters the record with a clear mechanical signature: {signature}. That is the useful place to begin—not with nostalgia, but with the choices its engineers made.",
+            f"Start with the hardware. For the {_esc(name)}, the surviving specification lists {signature}. Those few lines already place the car more precisely than a slogan ever could.",
+            f"A car reveals its priorities in the numbers it cannot hide. The {_esc(name)} is recorded with {signature}, a combination that frames the rest of its story.",
+        ]
+    else:
+        leads = [
+            f"Some cars arrive with a thick press pack; the {_esc(name)} survives in a thinner, more intriguing trail. Its place in the record is secure even where the specification sheet is not.",
+            f"The {_esc(name)} is the kind of car that makes an archive work for its answer. The name is established, but parts of the technical record remain incomplete—and the gaps are more honest than guessed figures.",
+            f"There is no neat one-line specification for the {_esc(name)} in the open record. What remains is a car best understood through its era, its relatives and the few hard facts that have survived.",
+        ]
+    lead = _pick(leads, seed, 0)
+    if production:
+        lead += f" Production is recorded as {_esc(production)}."
+    elif year:
+        lead += f" Its introduction is placed in {year}."
+    if designer:
+        lead += f" The design is credited to {_esc(designer)}."
+
+    sections = [(None, lead)]
+
+    dk = _decade_key(year)
+    if dk:
+        era = (f"The {_esc(name)} appeared against the backdrop of the {dk}s, {DECADES[dk]}. "
+               "That context matters because cars are answers to the roads, rules, fuel prices and ambitions of their moment. ")
+        if riv:
+            rivals = ", ".join(f"the {_esc(full_name(b2, m2))}" for b2, m2, _, _, _ in riv[:3])
+            era += f"On a period showroom list, its nearest catalogue contemporaries include {rivals}. Read together, they show the different answers manufacturers gave to the same brief."
+        else:
+            era += "Even without a neat list of direct rivals, its date is enough to explain the engineering vocabulary and proportions visible in the photographs."
+        sections.append(("The world it drove into", era))
+
+    facts = []
+    if engine:
+        facts.append(f"engine: {_esc(engine)}")
+    if power:
+        facts.append(f"power: {_esc(power)}")
+    transmission = _clean(wk.get("transmission"))
+    layout = _clean(wk.get("layout"))
+    if transmission:
+        facts.append(f"transmission: {_esc(transmission)}")
+    if layout:
+        facts.append(f"layout: {_esc(layout)}")
+    if weight:
+        facts.append(f"kerb weight: {_esc(weight)}")
+    if sp.get("top_speed"):
+        facts.append(f"top speed: {sp['top_speed']:g} km/h")
+    if facts:
+        engineering = (f"Read as a single package, the confirmed figures are {'; '.join(facts)}. "
+                       "They are manufacturer specifications carried by Wikipedia or Wikidata, not road-test measurements. ")
+        pn, wn = _num(power), _num(weight)
+        if pn and wn and 300 < wn < 4000 and 5 < pn < 2500:
+            engineering += (f"Taken at face value, that is about {pn / (wn / 1000):.0f} horsepower per tonne. "
+                            "It is only a ratio, but it says more about the likely character of the car than horsepower alone. ")
+        engineering += "Where the sources disagree or say nothing, MotorJury leaves the row out; precision is useful only when it is real."
+    else:
+        engineering = (f"No verified engine, output or weight has yet been attached to the {_esc(name)} in the open record. "
+                       "That usually points to a prototype, regional derivative, coachbuilt special or a model whose paperwork never made the digital jump. "
+                       "The omission is deliberate: a blank is more useful to a buyer or historian than a confident number borrowed from the wrong generation.")
+    sections.append(("Under the skin", engineering))
+
+    lineage_bits = []
+    predecessor, successor = _clean(wk.get("predecessor")), _clean(wk.get("successor"))
+    if predecessor:
+        lineage_bits.append(f"it followed the {_esc(predecessor)}")
+    if successor:
+        lineage_bits.append(f"it handed the line to the {_esc(successor)}")
+    if assembly:
+        lineage_bits.append(f"assembly is recorded at {_esc(assembly)}")
+    if sp.get("built"):
+        n = int(sp["built"])
+        lineage_bits.append(f"recorded production totals {n:,} cars")
+    if lineage_bits:
+        lineage = f"The family history is unusually legible: {'; '.join(lineage_bits)}. "
+    else:
+        lineage = "Its family tree is less complete than its nameplate deserves, but nearby models still give it a place in the marque's chronology. "
+    if sib:
+        lineage += "Around it sit " + ", ".join(f"the {_esc(s['n'])}" for s in sib[:4]) + ". "
+    if designer:
+        lineage += f"Knowing that {_esc(designer)} shaped it adds a human hand to what can otherwise read like a table of dimensions."
+    sections.append((f"Its place in the {_esc(b)} story", lineage))
+
+    market = []
+    msrp = _clean(wk.get("msrp")) or _clean(sp.get("msrp"))
+    if msrp:
+        market.append(f"The recorded new-car price was {_esc(msrp)}")
+    if fe:
+        fuel_text = f"EPA combined economy is {fe[0]:g} mpg"
+        if fe[1]:
+            fuel_text += f", with an annual fuel estimate near ${int(fe[1]):,}"
+        market.append(fuel_text)
+    if wk.get("wins"):
+        race = f"the competition record lists {wk['wins']} wins"
+        if wk.get("races"):
+            race += f" from {wk['races']} starts"
+        market.append(race)
+    if market:
+        ownership = ("For an owner, the hard numbers change the tone: " + "; ".join(market) + ". "
+                     "They should be read as anchors, not promises—condition, mileage, market and specification can move an individual car far from the headline figure. "
+                     "The linked ownership years below separate purchase price, depreciation, insurance, fuel, maintenance and repair risk so missing data never masquerades as zero.")
+    else:
+        ownership = (f"The open catalogue does not yet carry a defensible purchase price or EPA economy match for the {_esc(name)}. "
+                     "MotorJury therefore does not manufacture a cost figure. Where a United States model-year record can be matched, the ownership section below shows purchase price, depreciation, insurance, fuel, maintenance and repair estimates separately; otherwise the calculator lets a reader supply the figures from an actual listing.")
+    sections.append(("What ownership changes", ownership))
+
+    ending = (f"The {_esc(name)} is most interesting when the record is allowed to stay textured: engineering beside design, period context beside present-day cost, and photography beside the facts. "
+              "The sources on this page are live public records, so the biography grows as specifications and media are added. That makes it less like a plaque in a museum and more like a working motoring file—one that can become sharper without rewriting history.")
+    sections.append(("The verdict", ending))
+
+    # Add one source-aware paragraph only when the story is still too short. Quality beats
+    # a fixed 500-word quota, but a thin model still needs enough context to be useful.
+    text = " ".join(p for _, p in sections)
+    if _wc(text) < 360:
+        sections.insert(-1, ("How to read the record",
+            "Specifications describe the car when it was new; ownership data describes what time did to it. The two should never be collapsed into one score. A celebrated design can be costly to keep, while an ordinary-looking model can be the better long-term decision. That is why this article keeps sourced history, federal safety evidence and estimated costs visibly separate. The photographs deserve the same care: a launch image can show the shape the designer intended, while an owner photograph reveals stance, scale and the way the car has aged in the real world. Look for the relationship between glass and bodywork, wheel size and ride height, and how much of the cabin sits between the axles. Those details often explain the character of a car before a road test begins. If a figure or image is missing, the page says so and leaves room for the public record to improve."))
+        text = " ".join(p for _, p in sections)
+
+    slot = '<figure class="bio-fig" data-gal-slot hidden></figure>'
+    parts, slots_used = [], 0
+    for i, (title, paragraph) in enumerate(sections):
+        heading = f"<h2>{title}</h2>" if title else ""
+        parts.append(f'<section class="card bio-card">{heading}<p>{paragraph}</p></section>')
+        if has_gallery and slots_used < 6 and i < len(sections) - 1:
+            parts.append(slot)
+            slots_used += 1
+    return "".join(parts), _wc(text)

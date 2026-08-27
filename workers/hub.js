@@ -132,6 +132,8 @@ export class HubDO {
       id: u.id, email: u.email, name: u.name, provider: u.provider || "email",
       prefs: u.prefs ? JSON.parse(u.prefs) : {},
       likes: this.rows(`SELECT item, name, url, created FROM likes WHERE user_id=? ORDER BY created DESC`, u.id),
+      ratings: this.rows(`SELECT item, overall, reliability, running_cost, would_buy_again,
+                          years_owned, created FROM survey WHERE user_id=? ORDER BY created DESC`, u.id),
     };
   }
 
@@ -230,6 +232,7 @@ export class HubDO {
       case "prefs": {
         const u = await this.userForToken(b.token);
         if (!u) throw new Error("Not signed in.");
+        if (JSON.stringify(b.prefs || {}).length > 100000) throw new Error("Preferences are too large.");
         const merged = Object.assign(u.prefs ? JSON.parse(u.prefs) : {}, b.prefs || {});
         this.sql.exec(`UPDATE users SET prefs=? WHERE id=?`, JSON.stringify(merged), u.id);
         return { prefs: merged };
@@ -260,9 +263,11 @@ export class HubDO {
 
       case "most-loved": {
         return { items: this.rows(
-          `SELECT c.item, c.n, (SELECT name FROM likes WHERE item=c.item ORDER BY created LIMIT 1) name,
-                  (SELECT url  FROM likes WHERE item=c.item ORDER BY created LIMIT 1) url
-           FROM like_counts c WHERE c.n > 0 ORDER BY c.n DESC LIMIT ?`, Math.min(+q.limit || 24, 60)) };
+          `SELECT item, COUNT(*) n,
+                  (SELECT name FROM likes n2 WHERE n2.item=likes.item ORDER BY created DESC LIMIT 1) name,
+                  (SELECT url  FROM likes u2 WHERE u2.item=likes.item ORDER BY created DESC LIMIT 1) url
+           FROM likes GROUP BY item HAVING COUNT(*) > 0 ORDER BY n DESC, item LIMIT ?`,
+          Math.min(+q.limit || 24, 60)) };
       }
 
       case "survey": {

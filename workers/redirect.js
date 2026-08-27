@@ -30,6 +30,8 @@ export { HubDO } from "./hub.js";
 // same JSON the generator writes is bundled here and prefix-matched per request.
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
+import { b64urlToBytes, idTokenClaims, isJsonRequest, stateCookie,
+         validIdentityClaims } from "./oauth.mjs";
 
 const REDIRECT_MAP = new Map(Object.entries(MODEL_REDIRECTS).filter(([a, b]) => a !== b));
 
@@ -94,26 +96,6 @@ function providers(env) {
 
 /* ---------------------------------------------------------------- OAuth --- */
 
-function b64urlToBytes(s) {
-  s = s.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = s.length % 4 ? "=".repeat(4 - (s.length % 4)) : "";
-  const bin = atob(s + pad);
-  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-}
-
-/** Claims out of an ID token. The token came straight from the provider's own token
- *  endpoint over TLS in this same request, so the transport is the trust anchor; we read
- *  the claims rather than re-verifying a signature we just received first-hand. */
-function idTokenClaims(idToken) {
-  const parts = String(idToken || "").split(".");
-  if (parts.length !== 3) throw new Error("malformed identity token");
-  return JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[1])));
-}
-
-function stateCookie(value) {
-  return `mj_oauth=${value}; Path=/api/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`;
-}
-
 async function appleClientSecret(env) {
   // Apple wants a short-lived ES256 JWT signed with the .p8 key instead of a static secret.
   const now = Math.floor(Date.now() / 1000);
@@ -161,10 +143,10 @@ async function oauthStart(kind, url, env) {
 async function oauthCallback(kind, req, url, env) {
   const saved = (cookie(req, "mj_oauth") || "").split("|");
   const next = saved[1] || "/account/";
-  let code, state, idToken, name = "";
+  let code, state, name = "";
   if (req.method === "POST") {
     const form = await req.formData();
-    code = form.get("code"); state = form.get("state"); idToken = form.get("id_token");
+    code = form.get("code"); state = form.get("state");
     const user = form.get("user");
     if (user) {
       try {
@@ -175,7 +157,7 @@ async function oauthCallback(kind, req, url, env) {
   } else {
     code = url.searchParams.get("code"); state = url.searchParams.get("state");
   }
-  if (!state || state !== saved[0]) return Response.redirect(url.origin + "/login/?e=state", 302);
+  if (!state || state !== saved[0] || !code) return Response.redirect(url.origin + "/login/?e=state", 302);
 
   const redirect = `${url.origin}/api/auth/${kind}/callback`;
   let claims;
@@ -191,19 +173,22 @@ async function oauthCallback(kind, req, url, env) {
     if (!tok.id_token) return Response.redirect(url.origin + "/login/?e=token", 302);
     claims = idTokenClaims(tok.id_token);
   } else {
-    if (!idToken) {
-      const res = await fetch("https://appleid.apple.com/auth/token", {
-        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          code, client_id: env.APPLE_CLIENT_ID, client_secret: await appleClientSecret(env),
-          redirect_uri: redirect, grant_type: "authorization_code",
-        }),
-      });
-      const tok = await res.json();
-      if (!tok.id_token) return Response.redirect(url.origin + "/login/?e=token", 302);
-      idToken = tok.id_token;
-    }
-    claims = idTokenClaims(idToken);
+    // Always exchange Apple's one-time authorization code. Trusting the front-channel
+    // id_token from the form post would skip the provider-authenticated token endpoint.
+    const res = await fetch("https://appleid.apple.com/auth/token", {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code, client_id: env.APPLE_CLIENT_ID, client_secret: await appleClientSecret(env),
+        redirect_uri: redirect, grant_type: "authorization_code",
+      }),
+    });
+    const tok = await res.json();
+    if (!tok.id_token) return Response.redirect(url.origin + "/login/?e=token", 302);
+    claims = idTokenClaims(tok.id_token);
+  }
+
+  if (!validIdentityClaims(kind, claims, env)) {
+    return Response.redirect(url.origin + "/login/?e=token", 302);
   }
 
   const { ok, data } = await call(env, "oauth", {
@@ -225,9 +210,10 @@ async function api(req, url, env) {
   const path = url.pathname.replace(/\/+$/, "");
   const token = cookie(req, COOKIE);
   const ip = req.headers.get("CF-Connecting-IP") || "";
-  const body = req.method === "POST"
-    ? await req.json().catch(() => ({}))
-    : {};
+  // Do not consume Apple's application/x-www-form-urlencoded callback as JSON before
+  // oauthCallback gets to req.formData().
+  const isJson = isJsonRequest(req);
+  const body = req.method === "POST" && isJson ? await req.json().catch(() => ({})) : {};
 
   if (path === "/api/auth/providers") return json(providers(env));
 

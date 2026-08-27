@@ -279,11 +279,11 @@ document.addEventListener('click', function (e) {{
 </script></body></html>"""
 
 
-def follow_page():
+def follow_page(model_count, brand_count):
     """The link-in-bio page every social profile points at. One screen, thumb-sized targets,
     no hero image to wait for."""
     links = [
-        ("Every car ever made", "The library — 16,000 models with photography", "/library/"),
+        ("Every car ever made", f"The library — {model_count:,} models from {brand_count:,} marques", "/library/"),
         ("What will it cost me?", "Price, depreciation, insurance and running cost", "/calculators/"),
         ("Today's car quiz", "One car a day, guess it in three clues", "/play/"),
         ("The most-loved cars", "Voted by readers, one vote per account", "/loved/"),
@@ -347,7 +347,15 @@ def main():
     (SITE / "studio").mkdir(parents=True, exist_ok=True)
     (SITE / "studio" / "index.html").write_text(studio_page(items))
     (SITE / "follow").mkdir(parents=True, exist_ok=True)
-    (SITE / "follow" / "index.html").write_text(follow_page())
+    try:
+        from build_library import load_model_index, build_dataset
+        load_model_index()
+        catalogue = build_dataset()
+        model_count = sum(len(v) for v in catalogue.values())
+        brand_count = len(catalogue)
+    except Exception:
+        model_count, brand_count = 0, 0
+    (SITE / "follow" / "index.html").write_text(follow_page(model_count, brand_count))
     print(f"SOCIAL OK: {len(items)} packages over 7 days -> /studio/ (noindex) + /follow/")
     return 0
 

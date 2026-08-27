@@ -13,10 +13,9 @@
     <rect x="88" y="148" width="336" height="130" rx="46" fill="url(#gold)"/>
     <rect x="210" y="268" width="92" height="144" rx="42" fill="url(#gold)"/>
   </g>
-  <!-- the road it lands on: a bar with a centre line, which is what stops the mark
-       reading as a hammer and nothing else -->
-  <rect x="56" y="396" width="400" height="64" rx="32" fill="#FFB02E"/>
-  <rect x="146" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
-  <rect x="240" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
-  <rect x="334" y="420" width="62" height="16" rx="8" fill="#071426" opacity="0.88"/>
+  <!-- a real car silhouette: body, glass and two wheels remain legible at 16 px -->
+  <path d="M58 386h74l48-62c10-13 25-20 42-20h92c18 0 34 8 44 23l40 59h49c23 0 41 18 41 41v13H58c-19 0-34-15-34-34s15-20 34-20z" fill="#F4F7FB"/>
+  <path d="M170 371l34-45c5-7 13-11 22-11h37v56zm108 0v-56h31c10 0 18 4 24 12l30 44z" fill="#122A4E"/>
+  <circle cx="145" cy="424" r="42" fill="#071426"/><circle cx="145" cy="424" r="17" fill="#FFB02E"/>
+  <circle cx="375" cy="424" r="42" fill="#071426"/><circle cx="375" cy="424" r="17" fill="#FFB02E"/>
 </svg>

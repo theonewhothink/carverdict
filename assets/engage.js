@@ -45,7 +45,7 @@
     prefs = Object.assign({}, local, server);
     prefs.garage = mergeRows(server.garage, local.garage, 'u');
     prefs.recent = mergeRows(server.recent, local.recent, 'u').slice(0, 12);
-    prefs.ratings = Object.assign({}, local.ratings || {}, server.ratings || {});
+    delete prefs.ratings; // ratings live in the account-backed owner-response system
     save();
     garageButton();
     garageList();
