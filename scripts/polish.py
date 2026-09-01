@@ -70,11 +70,37 @@ SOCIAL_ROW = (
     + '<span class="social-share" data-share></span></div></div>')
 
 
+# Cache-busting. /assets/* is served with a seven-day cache, so every deploy left readers
+# on last week's JavaScript for up to a week - a fixed bug stayed broken, a new feature
+# stayed invisible. Each asset reference now carries ?v=<content hash>: unchanged files
+# keep their cached copy, changed files fetch immediately.
+ASSET_VERSIONS = {}
+
+
+def asset_versions():
+    import hashlib
+    for f in glob.glob("site/assets/*.js") + glob.glob("site/assets/*.css"):
+        name = "/assets/" + os.path.basename(f)
+        ASSET_VERSIONS[name] = hashlib.md5(open(f, "rb").read()).hexdigest()[:8]
+    return ASSET_VERSIONS
+
+
+RE_ASSET = re.compile(r'((?:src|href)=["\'])(/assets/[\w.-]+\.(?:js|css))(\?v=[0-9a-f]+)?(["\'])')
+
+
+def bust(s):
+    def rep(m):
+        v = ASSET_VERSIONS.get(m.group(2))
+        return m.group(1) + m.group(2) + (f"?v={v}" if v else "") + m.group(4)
+    return RE_ASSET.sub(rep, s)
+
+
 def polish(path):
     s = open(path, encoding="utf-8").read()
     if "<head>" not in s and "<head " not in s:
         return False
     orig = s
+    s = bust(s)
 
     # 1. one correct theme-colour pair (the old single dark value painted a black bar
     #    above a white page in mobile Chrome)
@@ -189,6 +215,7 @@ def polish(path):
 
 
 def main():
+    asset_versions()
     pages = glob.glob("site/**/*.html", recursive=True)
     n = sum(1 for p in pages if polish(p))
     print(f"POLISH OK: {n}/{len(pages)} pages normalised "

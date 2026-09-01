@@ -12,6 +12,11 @@
 /assets/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
+# Data files the pages fetch at runtime change nightly; scripts and styles are
+# cache-busted with ?v=<hash> by polish.py so they can stay long-lived.
+/assets/*.json
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
 /og/*
   Cache-Control: public, max-age=2592000, immutable
 
