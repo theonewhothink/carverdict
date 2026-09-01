@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 BRAND = "MotorJury"
-MAX_MODEL_PAGES = 11000
+MAX_MODEL_PAGES = 10000
 
 
 def _load_specs():
@@ -328,12 +328,12 @@ def shell(title, desc, canon, body):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
 </div></header>
 {body}
 <footer><div class="wrap"><p>Catalogue: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0) ·
 Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a> ·
-<a href="/methodology/">Methodology</a></p></div></footer>
+<a href="/methodology/">Methodology</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/about/">About</a> · <a href="/contact/">Contact</a> · <a href="/privacy/">Privacy</a></p></div></footer>
 <script src="/assets/site.js" defer></script>
 <script src="/assets/lightbox.js" defer></script>
 <script src="/assets/gallery.js" defer></script></body></html>"""
@@ -341,6 +341,12 @@ Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Co
 
 def main():
     data = json.load(open(ROOT / "data" / "car_library.json"))
+    # Low-precision Wikidata inceptions ("20th century", "2000s") were harvested as the
+    # literal years 1950 and 2005 and printed as facts ("introduced 1950" on a 1970 concept).
+    # The harvest now filters on precision; the committed catalogue still carries them.
+    for x in data:
+        if str(x.get("y") or "") in ("1950", "2005"):
+            x["y"] = ""
     known = {}
     for x in data:
         m = (x.get("m") or "").strip()
@@ -517,6 +523,7 @@ def main():
         return out
 
     WORDS_UNDER_FLOOR = []
+    THIN_PAGES = []
 
     # ---- the family through the years ----
     # "Range Rover" is not one car: it is a Classic, a P38A, four more generations and a
@@ -741,26 +748,21 @@ def main():
                             f'<div class="gal-grid" data-gal></div>'
                             f'<p class="lib-note" data-gal-credits></p></div>')
 
-        bio_html, bio_words = build_bio(
+        bio_html, bio_words, bio_facts = build_bio(
             b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")))
-        if bio_words < 360:
-            WORDS_UNDER_FLOOR.append(bio_words)
+        # Index gate. A library page earns a place in Google's index only when it carries
+        # something a reader cannot get from the marque list: a photograph AND at least two
+        # sourced facts (or a Wikipedia summary). Everything else stays online for readers and
+        # navigation but is noindex,follow — thousands of hollow pages are what AdSense read
+        # as "low value content".
+        substantive = bool(m["p"]) and (bio_facts >= 2 or bool(wk.get("about")))
+        if not substantive:
+            THIN_PAGES.append(url)
 
-        video_query = urllib.parse.quote_plus(f'{b} {m["n"]} history road test documentary')
-        video_card = (f'<aside class="card bio-video"><h2>Watch the {esc(m["n"])} in motion</h2>'
-                      f'<p>When Wikimedia Commons carries an open video, it appears inside this article '
-                      f'beside the photographs. For road tests and archive film, browse the live '
-                      f'<a href="https://www.youtube.com/results?search_query={video_query}" '
-                      f'rel="nofollow noopener" target="_blank">video results for the {esc(m["n"])}</a>; '
-                      f'third-party videos are linked rather than copied or presented as MotorJury footage.</p></aside>')
 
         ownership_card = _library_ownership_card(b, m["n"])
         if not ownership_card:
-            ownership_card = (f'<div class="card"><h2>What it costs to run</h2>'
-                              f'<p>MotorJury has not yet matched this catalogue entry to an exact US model-year '
-                              f'ownership record. Nothing missing is shown as zero. Browse the live '
-                              f'<a href="/cars/">NHTSA and EPA ownership index</a>, or use the '
-                              f'<a href="/calculators/">true-cost calculator</a> with your own figures.</p></div>')
+            ownership_card = ""
 
         body = f"""<div class="model-hero"><div class="wrap">
 <nav class="crumbs"><a href="/library/">Library</a> › <a href="/library/{bs}/">{esc(b)}</a> › {esc(m["n"])}</nav>
@@ -770,6 +772,7 @@ def main():
 <h1>{esc(m["n"])}</h1>
 <p class="sub">{esc(b)}{f' · introduced {esc(m["y"])}' if m["y"] else ''}</p>
 <div class="facts">{facts}</div>
+<p class="triad"><b>Editor</b> <a href="/about/">Adir Trabelsi</a> · sources: Wikidata, Wikipedia, Wikimedia Commons · <a href="/editorial-policy/">editorial policy</a></p>
 <div class="hh-cta"><a class="btn" href="/cars/">Ownership-cost data</a>
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
@@ -777,7 +780,6 @@ def main():
 {ownership_card}
 <article class="model-story" aria-label="{esc(m['n'])} biography">
 {bio_html}
-{video_card}
 {gallery_card}
 </article>
 {specs_card}
@@ -802,20 +804,19 @@ def main():
                 {"@type": "ListItem", "position": 3, "name": m["n"],
                  "item": ORIGIN + url}]},
         ], separators=(",", ":"))
+        robots = '' if substantive else '<meta name="robots" content="noindex,follow">'
         page = shell(f"{m['n']} — {b} | {BRAND}",
                      f"{m['n']} by {b}: photograph, catalogue facts and ownership-cost context.",
                      ORIGIN + url, body).replace("</head>",
-                     f'<script type="application/ld+json">{jsonld}</script></head>')
+                     f'{robots}<script type="application/ld+json">{jsonld}</script></head>')
         out = SITE / url.lstrip("/") / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(page)
 
     (SITE / "assets" / "model-index.json").write_text(
         json.dumps(index, separators=(",", ":"), ensure_ascii=False))
-    if WORDS_UNDER_FLOOR:
-        print(f"  WARNING: {len(WORDS_UNDER_FLOOR)} biographies under the 360-word editorial floor "
-              f"(min {min(WORDS_UNDER_FLOOR)})")
-    print(f"MODELS OK: {made} model pages, index covers {len(index)} brands")
+    print(f"MODELS OK: {made} model pages, index covers {len(index)} brands; "
+          f"{made - len(THIN_PAGES)} indexable, {len(THIN_PAGES)} thin (noindex,follow)")
 
 
 if __name__ == "__main__":

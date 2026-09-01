@@ -433,7 +433,10 @@ so a confirmed date appears here as soon as it is public.</p>
     desc = (f'{r["n"]}: {r["s"]} at {r["p"]}, {r["co"]}. '
             + (f'Next edition {r["dh"]}. ' if r["dh"] else f'Usually held {r["w"]}. ')
             + "Dates, venue and official ticket links.")
-    return shell(f'{r["n"]} — Dates, Venue & Tickets | {BRAND}', desc, ORIGIN + r["u"], body)
+    # An event page is ~140 words of catalogue data and no confirmed date: useful on the
+    # calendar, not worth an index entry of its own. The calendar index stays indexable.
+    return shell(f'{r["n"]} — Dates, Venue & Tickets | {BRAND}', desc, ORIGIN + r["u"], body,
+                 extra_head='<meta name="robots" content="noindex,follow">')
 
 
 def main():

@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 DATA = json.load(open(ROOT / "data" / "car_library.json"))
+for _x in DATA:  # low-precision Wikidata inceptions harvested as literal 1950 / 2005
+    if str(_x.get("y") or "") in ("1950", "2005"):
+        _x["y"] = ""
 
 
 def _load_logos():
@@ -205,7 +208,7 @@ def header(lang="en", origin_prefix=""):
 <a class="logo" href="{pre or "/"}">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="{esc(t(lang, "search_ph"))}" autocomplete="off"
  aria-label="search"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">{t(lang, "nav_browse")}</a><a href="{pre}/library/" class="cur">{t(lang, "nav_library")}</a><a href="/events/">Events</a><a href="/calculators/">{t(lang, "nav_calculators")}</a><a href="/recalls/">{t(lang, "nav_recalls")}</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/cars/">{t(lang, "nav_browse")}</a><a href="{pre}/library/" class="cur">{t(lang, "nav_library")}</a><a href="/events/">Events</a><a href="/calculators/">{t(lang, "nav_calculators")}</a><a href="/recalls/">{t(lang, "nav_recalls")}</a></nav>
 <details class="langs"><summary>{lang.upper()}</summary><div>{langsw}</div></details>
 </div></header>"""
 
@@ -223,9 +226,18 @@ def shell(lang, title, desc, canon, body, extra_head="", hreflang_on=False):
 <meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
 <link rel="stylesheet" href="/assets/site.css">{hreflang}{extra_head}</head><body>
 {header(lang)}{body}
-<footer><div class="wrap"><p>{t(lang, "footer_data")} · <a href="/methodology/">{t(lang, "nav_methodology")}</a> · {t(lang, "lib_photo_credit")} (<a href="https://commons.wikimedia.org" rel="noopener">CC</a>)</p></div></footer>
+<footer><div class="wrap"><p>{t(lang, "footer_data")} · <a href="/methodology/">{t(lang, "nav_methodology")}</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/about/">About</a> · <a href="/contact/">Contact</a> · <a href="/privacy/">Privacy</a> · {t(lang, "lib_photo_credit")} (<a href="https://commons.wikimedia.org" rel="noopener">CC</a>)</p></div></footer>
 <script src="/assets/site.js" defer></script>
 <script src="/assets/lightbox.js" defer></script></body></html>"""
+
+
+def _load_editorial(name):
+    try:
+        return json.load(open(ROOT / "data" / "editorial" / name))
+    except Exception:
+        return {}
+MARQUE_NOTES = _load_editorial("marques.json")
+HUB_NOTES = _load_editorial("hubs.json")
 
 
 MODEL_INDEX = {}
@@ -349,11 +361,17 @@ def main():
                         for ci, m in enumerate(models))
         more = ""
         with_photos = sum(1 for m in models if m["p"])
+        note = MARQUE_NOTES.get(bs, "")
+        own_link = (f' Ownership claims refer to the <a href="/cars/{bs}/">{esc(b)} ownership index</a>.'
+                    if (SITE / "cars" / bs / "index.html").exists() else
+                    ' This marque has no United States ownership record on the site; claims about it come from the manufacturer\'s published recall and warranty actions.')
+        marque_note = (f'<div class="card prose editorial"><p>{note}</p>'
+                       f'<p class="lib-note">Editor\'s note by <a href="/about/">Adir Trabelsi</a>.{own_link}</p></div>') if note else ""
         body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <nav class="crumbs"><a href="/library/">{t("en", "nav_library")}</a> › {esc(b)}</nav>
 <h1>{esc(b)}: every model ever made</h1>
 <p class="sub">{len(models)} {t("en", "lib_models")} · {with_photos} {t("en", "lib_photos")}</p></div></div>
-<div class="wrap"><div class="lib-grid" id="lib-grid">{cards}</div>
+<div class="wrap">{marque_note}<div class="lib-grid" id="lib-grid">{cards}</div>
 <div style="padding:6px 0 22px">{more}</div>
 <p class="lib-note">Photos: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>, hotlinked with per-file credit links. Catalog: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0).</p></div>"""
         out = SITE / "library" / bs / "index.html"
@@ -361,7 +379,9 @@ def main():
         # A marque page carrying one or two models and no photography is a thin page, and
         # 1,000 of them is a thin-content signal across the whole section. Keep them — they
         # are useful and they carry links — but tell search engines not to index them.
-        thin = len(models) < 3 and with_photos == 0
+        # Index gate: a marque page is worth indexing when it shows real photography or
+        # carries an editor's note. A roster of grey placeholders is not.
+        thin = with_photos < 3 and not note
         head_extra = '<meta name="robots" content="noindex,follow">' if thin else ""
         title = (f"{b} models | MotorJury" if len(b) > 26
                  else f"{b} — Complete Model Library | MotorJury")
@@ -425,6 +445,7 @@ def main():
 <p class="sub"><b>{n_models:,}</b> {t("en", "lib_sub")} <b>{len(brands):,}</b> {t("en", "lib_brands")} — <b>{n_photos:,}</b> {t("en", "lib_photos")}.</p>
 </div></div>
 <div class="wrap">
+<div class="card prose editorial">{HUB_NOTES.get("library", "")}</div>
 <h2 class="sec">{t("en", "lib_top_brands")}</h2><div class="brand-grid">{top_html}</div>
 <h2 class="sec">{t("en", "lib_all_brands")}</h2><div class="az">{az_html}</div>
 </div>"""
@@ -432,7 +453,7 @@ def main():
     (SITE / "library" / "index.html").write_text(
         shell("en", "The Car Library — Every Car Model Ever Made | MotorJury",
               f"{n_models:,} car models from {len(brands):,} brands, with photography. The complete automotive catalog.",
-              f"{ORIGIN}/library/", body, hreflang_on=True))
+              f"{ORIGIN}/library/", body))
 
     # localized dynamic library (renders client-side from shared JSON)
     for lang in LANGS:
@@ -450,7 +471,8 @@ def main():
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(shell(lang, t(lang, "lib_title") + " | MotorJury",
                              f"{n_models:,} models from {len(brands):,} brands.",
-                             f"{ORIGIN}/{lang}/library/", body, hreflang_on=True))
+                             f"{ORIGIN}/{lang}/library/", body,
+                             extra_head='<meta name="robots" content="noindex,follow">'))
 
     (SITE / "assets" / "brand-rest.json").write_text(
         json.dumps(REST_DATA, separators=(",", ":"), ensure_ascii=False))

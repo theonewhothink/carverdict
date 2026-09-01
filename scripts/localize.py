@@ -17,7 +17,7 @@ from i18n import LANGS, RTL, P, t, meta
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 import os
-ORIGIN = os.environ.get("SITE_ORIGIN", "https://carverdict.example").rstrip("/")
+ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 
 LOCALIZE_DIRS = ["cars", "calculators", "recalls"]
 
@@ -87,8 +87,14 @@ def localize_html(html, lang, urls, rel=""):
     # canonical -> localized
     html = re.sub(r'(<link rel="canonical" href=")([^"]+)(")',
                   lambda m: m.group(1) + ORIGIN + urls[lang] + m.group(3), html)
-    # hreflang (replace, never append)
-    html = set_hreflang(html, urls)
+    # Localised copies are pattern-substituted English, and the long tail stays English.
+    # A half-translated page is exactly what Google's "automatically generated content"
+    # rule describes, so these copies serve readers who pick a language but stay
+    # noindex,follow and carry no hreflang cluster. The English page is the only indexed one.
+    html = RE_HREFLANG.sub("", html)
+    html = re.sub(r'<link rel="alternate" hreflang="x-default" href="[^"]+">', "", html)
+    if 'name="robots"' not in html:
+        html = html.replace("</head>", '<meta name="robots" content="noindex,follow"></head>', 1)
     # translated title + description
     html = set_meta(html, rel, lang)
     # nav + search chrome
@@ -134,9 +140,11 @@ def main():
         rel = p.relative_to(SITE).as_posix()
         urls = rel_urls(rel)
         src = p.read_text()
-        # add hreflang to the EN source too
-        p.write_text(set_hreflang(src, urls))
-        src = p.read_text()
+        # The EN source carries no hreflang: the localised copies are noindex (see
+        # localize_html), and an alternate cluster pointing at noindexed pages is invalid.
+        src = RE_HREFLANG.sub("", src)
+        src = re.sub(r'<link rel="alternate" hreflang="x-default" href="[^"]+">', "", src)
+        p.write_text(src)
         for lang in LANGS:
             if lang == "en":
                 continue

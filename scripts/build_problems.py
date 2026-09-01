@@ -20,13 +20,27 @@ BRAND = "MotorJury"
 MIN_COMPLAINTS = 25          # below this the page is thin; the model index still lists the year
 
 
+def _hubs():
+    try:
+        return json.load(open(ROOT / "data" / "editorial" / "hubs.json"))
+    except Exception:
+        return {}
+HUB_NOTES = _hubs()
+
+
 def esc(s):
     return html.escape(str(s), quote=True)
 
 
-def shell(title, desc, canon, body):
+# /problems/<make>/<model>/<year>/ repeats the complaint record already published on the
+# /cars/ page for the same year. Two indexable copies of one record is duplicate content;
+# the /cars/ page is canonical and these stay noindex,follow.
+NOINDEX = '<meta name="robots" content="noindex,follow">'
+
+
+def shell(title, desc, canon, body, robots=""):
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">{robots}
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
 <meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}">
@@ -35,11 +49,11 @@ def shell(title, desc, canon, body):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car" autocomplete="off" aria-label="search"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/problems/">Problems</a><a href="/compare/">Compare</a><a href="/stories/">Stories</a><a href="/library/">Library</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/cars/">Browse</a><a href="/problems/">Problems</a><a href="/compare/">Compare</a><a href="/stories/">Stories</a><a href="/library/">Library</a></nav>
 </div></header>
 {body}
 <footer><div class="wrap"><p>Every number on this page is computed from NHTSA public records.
-· <a href="/methodology/">Methodology</a></p></div></footer>
+· <a href="/methodology/">Methodology</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/about/">About</a> · <a href="/contact/">Contact</a> · <a href="/privacy/">Privacy</a></p></div></footer>
 <script src="/assets/site.js" defer></script></body></html>"""
 
 
@@ -133,7 +147,8 @@ top issue: <b>{esc(top)}</b> · verdict <span class="tag v-{verdict if verdict i
     (d / "index.html").write_text(shell(
         f"{name} Problems &amp; Complaints | {BRAND}",
         f"{name} problems from {r['cc'] or 0:,} NHTSA owner complaints: top issue {top}, "
-        f"{r['rc'] or 0} recalls. Verdict: {verdict} {r['score'] or '?'}/100.", ORIGIN + url, body))
+        f"{r['rc'] or 0} recalls. Verdict: {verdict} {r['score'] or '?'}/100.", ORIGIN + url, body,
+        robots=NOINDEX))
     return url
 
 
@@ -170,7 +185,8 @@ and recall data only.</p></div></div>
     (d / "index.html").write_text(shell(
         title + f" | {BRAND}",
         f"Which {make} {model} year to avoid: {worst['year']} scored {worst['score']}/100 with "
-        f"{worst['cc'] or 0:,} NHTSA complaints. Best year: {best['year']}.", ORIGIN + url, body))
+        f"{worst['cc'] or 0:,} NHTSA complaints. Best year: {best['year']}.", ORIGIN + url, body,
+        robots=NOINDEX))
 
 
 def hall_of_shame(rows):
@@ -186,6 +202,7 @@ def hall_of_shame(rows):
 <p class="sub">The 25 model years American owners complain about most, normalised per year on
 the road. Computed from the federal record on every build - nobody edits this list.</p></div></div>
 <div class="wrap" style="padding:8px 16px 40px;max-width:860px">
+<div class="card prose editorial">{HUB_NOTES.get("problems", "")}<p class="lib-note">Editor's note by <a href="/about/">Adir Trabelsi</a>.</p></div>
 <ol class="story-list">{items}</ol>
 <div class="card" style="margin-top:20px"><h2>Share the list</h2>
 {share_row(ORIGIN + url, "The 25 most complained-about cars in America, straight from the federal record:")}</div></div>"""

@@ -50,7 +50,7 @@ CLASSES = {
 QUERY = """SELECT ?i ?iLabel ?mLabel ?inc ?img WHERE {
   ?i wdt:P31 wd:%s .
   OPTIONAL { ?i wdt:P176 ?m }
-  OPTIONAL { ?i wdt:P571 ?inc }
+  OPTIONAL { ?i p:P571/psv:P571 ?incv . ?incv wikibase:timeValue ?inc ; wikibase:timePrecision ?incp . FILTER(?incp >= 9) }
   OPTIONAL { ?i wdt:P18 ?img }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }"""

@@ -261,6 +261,63 @@ def esc(s):
 ORG_LD = None
 
 
+def _load_editorial(name):
+    try:
+        return json.load(open(ROOT / "data" / "editorial" / name))
+    except Exception:
+        return {}
+EDITOR_NOTES = _load_editorial("models.json")   # "make/model" -> {"note", "avoid"}
+HUB_NOTES = _load_editorial("hubs.json")
+EDITOR = "Adir Trabelsi"
+NOINDEX = '<meta name="robots" content="noindex,follow">'
+
+
+def guides_index():
+    """Front matter of every guide in data/guides, newest first, for the home page and hubs.
+    build_guides.py renders the pages; this only reads the headers so links never dangle."""
+    out = []
+    for f in sorted((ROOT / "data" / "guides").glob("*.md")):
+        head = f.read_text().split("\n---", 1)[0]
+        meta = dict(re.findall(r"^(\w+):\s*(.+)$", head, re.M))
+        if meta.get("title") and meta.get("slug"):
+            out.append(meta)
+    out.sort(key=lambda m: m.get("date", ""), reverse=True)
+    return out
+
+
+def editor_card(kslug, mslug, year=None, r=None):
+    """The human-written layer on a model page: the editor's note for the nameplate plus,
+    on a year page, one data-specific line for that year. Returns "" where no note exists."""
+    e = EDITOR_NOTES.get(f"{kslug}/{mslug}")
+    if not e or not e.get("note"):
+        return ""
+    note = e["note"]
+    year_line = ""
+    if year is not None and r is not None:
+        # A year page carries the opening of the note plus its own line; the full note lives
+        # once, on the model page. Fifteen year pages repeating 200 identical words is the
+        # duplicate-content pattern this whole change exists to remove.
+        sents = re.split(r"(?<=[.!?])\s+", note)
+        note = " ".join(sents[:2]) + (f' <a href="/cars/{kslug}/{mslug}/">Read the full note on the model page.</a>'
+                                       if len(sents) > 2 else "")
+        avoid = set(e.get("avoid") or [])
+        cc = r["complaint_count"] or 0
+        if int(year) in avoid:
+            year_line = (f"<p><b>{year} specifically:</b> this is one of the years the note above says to "
+                         f"approach with care — {cc:,} complaints on record, verdict {esc(r['verdict'] or 'pending')}.</p>")
+        elif r["score"] is not None and r["score"] >= 70:
+            year_line = (f"<p><b>{year} specifically:</b> a year the record favours — {cc:,} complaints, "
+                         f"score {r['score']}/100. The caveats in the note apply to other years of this nameplate more than to this one.</p>")
+        else:
+            year_line = (f"<p><b>{year} specifically:</b> {cc:,} complaints on record, score "
+                         f"{r['score'] if r['score'] is not None else '—'}/100 — read the year table on the "
+                         f"<a href='/cars/{kslug}/{mslug}/'>model page</a> to see where it sits among its siblings.</p>")
+    return (f'<div class="card editorial"><h2>Editor\'s note</h2><p>{note}</p>{year_line}'
+            f'<p class="src-note">Written by <a href="/about/">{EDITOR}</a>, editor, from the federal record '
+            f'and the manufacturer\'s published recall and warranty actions · '
+            f'<a href="/editorial-policy/">editorial policy</a> · corrections: corrections@motorjury.com</p></div>')
+
+
 def _org_ld():
     """Publisher identity on every page: who stands behind the numbers (E-E-A-T)."""
     global ORG_LD
@@ -331,7 +388,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/vin-check/">VIN check</a><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/vin-check/">VIN check</a><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <div class="acct-host" data-account-chip></div>
 <details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
 </div></header>
@@ -341,8 +398,8 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 </main>
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
-<div><a href="/methodology/">Methodology</a><br><a href="/about/">About</a><br><a href="/calculators/">Calculators</a></div>
-<div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/follow/">Follow</a></div>
+<div><a href="/guides/">Buyer's guides</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/contact/">Contact</a></div>
+<div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/calculators/">Calculators</a><br><a href="/follow/">Follow</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
 <script src="/assets/site.js" defer></script>
@@ -795,7 +852,7 @@ Last updated: {TODAY}.</p></div>"""
 <nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/cars/{r['kslug']}/">{esc(make)}</a> › <a href="/cars/{r['kslug']}/{r['mslug']}/">{esc(model)}</a> › {year}</nav>
 <h1>{name}: True Cost, Problems &amp; Verdict</h1>
 <p class="sub">{(r['complaint_count'] or 0):,} NHTSA owner complaints · {(r['recall_count'] if r['recall_count'] is not None else '—')} recalls · data-computed verdict. No opinions — public data only.</p>
-<div class="triad"><b>Reviewed by</b> the MotorJury data desk · <a href="/methodology/">2 sources</a> · <b>Last updated</b> {TODAY}</div>
+<div class="triad"><b>Editor</b> <a href="/about/">{EDITOR}</a> · <b>Data</b> <a href="/methodology/">NHTSA, EPA</a> · <b>Updated</b> {TODAY}</div>
 </div>
 {hero_art(make, model, bool(r['is_ev']), year)}
 </div></div>"""
@@ -804,6 +861,7 @@ Last updated: {TODAY}.</p></div>"""
 <div class="wrap grid">
 <div style="display:grid;gap:20px;min-width:0">
 {AD.format(slot='top')}
+{editor_card(r['kslug'], r['mslug'], year, r)}
 {comp_html}
 {rec_html}
 {price_html}
@@ -836,9 +894,20 @@ Last updated: {TODAY}.</p></div>"""
          "name": f"{name} NHTSA complaints, recalls and EPA data",
          "description": f"Structured ownership-cost dataset for the {name}.",
          "license": "https://creativecommons.org/licenses/by/4.0/",
-         "creator": {"@type": "Organization", "name": BRAND}, "url": canon}]
+         "creator": {"@type": "Organization", "name": BRAND}, "url": canon},
+        {"@context": "https://schema.org", "@type": "Article", "headline": f"{name}: True Cost, Problems & Verdict",
+         "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+         "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
+         "dateModified": TODAY, "mainEntityOfPage": canon}]
     og_rel = f"/og/{r['kslug']}-{r['mslug']}-{year}.png"
-    extra_head = ""
+    # Index gate. A verdict on a thin record (under 50 complaints, "low" confidence) is a
+    # page Google reads as auto-generated: same skeleton, few facts. Those pages stay online
+    # for readers and for the year tables that link them, but out of the index. A page is
+    # indexable on a strong or moderate record, on EV battery data, or when the editor has
+    # written a note for the nameplate.
+    indexable = ((_conf in ("high", "medium")) or bool(r["is_ev"] and r["battery_warranty"])
+                 or bool(editor_card(r['kslug'], r['mslug'])))
+    extra_head = "" if indexable else NOINDEX
     if og_card is not None:
         og_card(SITE / og_rel.lstrip("/"), name, "True cost, problems & data verdict",
                 r["score"], r["verdict"] or "", bool(r["is_ev"]))
@@ -1021,6 +1090,7 @@ complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, w
 {hero_art(make, model, bool(r0['is_ev']))}
 </div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0">
+{editor_card(r0['kslug'], r0['mslug'])}
 <div class="card"><h2>Year-by-year data table</h2>{verdict_line}
 <div class="table-wrap"><table class="cost-table"><thead><tr><th>Year</th><th>Score</th><th>Verdict</th>
 <th>Running cost / yr</th><th>NHTSA complaints</th><th>Recalls</th></tr></thead>
@@ -1048,10 +1118,11 @@ age today, re-priced to your country. Purchase price, insurance and depreciation
         jsonld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
             for q, a in m_faqs]})
+    # A model overview with no scored year is a table of dashes: keep it, do not index it.
     return write(url.lstrip("/") + "index.html",
                  page(f"{make} {model}: Best & Worst Years | {BRAND}",
                       f"{make} {model} years ranked by NHTSA complaints and recalls — which years to buy and which to avoid.",
-                      canon, body, jsonld))
+                      canon, body, jsonld, extra_head="" if (scored or editor_card(r0['kslug'], r0['mslug'])) else NOINDEX))
 
 # ---------------- brand hub, index, static ----------------
 def gen_brand(con, kslug, make, models, all_rows):
@@ -1202,13 +1273,25 @@ def gen_cars_index(brands):
     body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Browse by brand</h1>
 <p class="sub">Ownership verdicts where the United States data runs deep, and the complete
 A-Z of every marque ever catalogued below.</p></div></div>
-<div class="wrap" style="padding:28px 0"><h2 class="sec">Deep ownership data</h2>
+<div class="wrap" style="padding:28px 0">
+<div class="card prose editorial">{HUB_NOTES.get("cars", "")}<p class="src-note">Editor's note by <a href="/about/">{EDITOR}</a>.</p></div>
+<h2 class="sec">Deep ownership data</h2>
 <div class="card"><div class="rel-grid">{items}</div></div>
 {az_html}</div>"""
     return write("cars/index.html", page(f"All Car Brands A-Z | {BRAND}", "Every car marque ever made, A-Z with logos, plus deep NHTSA ownership data by brand.", ORIGIN + "/cars/", body))
 
 def gen_home(con, all_rows):
     gated = [r for r in all_rows if gate(r)]
+    _g = guides_index()[:6]
+    guides_section = ""
+    if _g:
+        guides_section = ('<section class="card"><h2>Buyer\'s guides</h2>'
+                          '<p style="margin-bottom:12px">Written and signed by the editor, built on the same '
+                          'federal record as the verdicts: which years of each nameplate to buy and which to walk past.</p>'
+                          '<div class="rel-grid">' + "".join(
+                              f'<a href="/guides/{esc(m["slug"])}/">{esc(m["title"])}<small>{esc(m.get("date", ""))}</small></a>'
+                              for m in _g) + '</div>'
+                          '<p style="margin-top:12px;font-size:13px"><a href="/guides/">All guides →</a></p></section>')
     n_complaints = sum(r["complaint_count"] or 0 for r in all_rows)
     # The home page shows cars worth wanting. "Years to avoid" was the second data block on
     # it, which meant the first impression of the site was four Chrysler Pacificas scoring
@@ -1366,6 +1449,7 @@ anyone was paid for.</p>{cardlist(best)}
 {AD.format(slot='home')}
 <div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
 {legends_section}
+{guides_section}
 <h2 class="sec">Explore</h2>
 <div class="rel-grid"><a href="/events/">The motoring calendar<small>races · concours · auctions worldwide</small></a>
 <a href="/vin-check/">Free VIN & recall check<small>decode the exact car before you buy</small></a>
@@ -1672,6 +1756,10 @@ DESCRIPTIONS = {
     "Terms of Use": "Terms covering the use, citation and licensing of MotorJury data and verdicts.",
     "Affiliate Disclosure": "How MotorJury is funded, and why advertising and affiliate links never "
                             "touch a score or a verdict.",
+    "Editorial Policy": "How MotorJury decides what to publish, who writes it, how errors are corrected "
+                        "and how advertising is kept away from verdicts.",
+    "Contact": "How to reach the MotorJury editor for corrections, press, privacy requests and "
+               "advertising.",
 }
 
 
@@ -1814,7 +1902,8 @@ free, and almost unreadable in raw form. This site turns them into a verdict per
 <p>Operated and edited by <b>Adir Trabelsi</b>. Data engineering and publication are automated; the
 methodology, the source selection and the editorial standards are human decisions, documented in full on
 the <a href="/methodology/">methodology page</a>. Nobody pays for a verdict, and no verdict is written by
-hand.</p>
+hand. The <a href="/guides/">buyer's guides</a> and the editor's notes on model pages are the written layer:
+signed, dated and revised when the data moves, under the <a href="/editorial-policy/">editorial policy</a>.</p>
 
 <h2>How to reach us</h2>
 <p>General and press: <a href="mailto:hello@motorjury.com">hello@motorjury.com</a><br>
@@ -1834,6 +1923,74 @@ year without enough data does not get a page.</p>
 <h2>Independence</h2>
 <p>{BRAND} is not affiliated with any manufacturer, dealer, insurer or parts retailer. The site is funded by
 advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p>"""))
+    gen.append(prose_page("editorial-policy/index.html", "Editorial Policy", f"""
+<p>{BRAND} publishes two kinds of page, and this policy says how each is made, who is responsible for it,
+and what happens when it is wrong.</p>
+
+<h2>Computed pages</h2>
+<p>Model-year verdicts, model overviews, rankings and comparisons are generated from public records —
+NHTSA owner complaints and recall campaigns, and EPA fuel-economy data — by a published formula. No person
+writes or adjusts an individual verdict, and no advertiser, dealer or manufacturer can buy one. The formula
+is on the <a href="/methodology/">methodology page</a>; the source records are linked from every page.
+Because the data is federal and the formula is fixed, two people running the same build get the same score.</p>
+<p>A computed page is published only when the record behind it is deep enough to mean something. A model
+year with fewer than thirty complaints does not get its own page, and a verdict built on fewer than fifty is
+labelled thin evidence. Pages that do not meet the bar for search indexing — catalogue entries with no
+photograph or sourced specification, translated copies, head-to-head pages — remain available to readers
+but are marked so search engines do not index them.</p>
+
+<h2>Written pages</h2>
+<p>Buyer's guides, editor's notes on model pages, and the introductions to each section are written by the
+editor, <b>Adir Trabelsi</b>, and carry his name and the date of the last revision. They draw on the same
+federal record as the computed pages, on manufacturers' published recall and warranty actions, and on
+court filings where a defect has been litigated. They do not draw on anonymous forum posts, and they are
+not generated by a language model and published unread. Where a written page makes a factual claim about a
+specific model year, that claim can be checked against the model page it links to.</p>
+
+<h2>Corrections</h2>
+<p>Errors are corrected in the data or the formula, not by editing one page, so a fix reaches every affected
+page on the next nightly build. Send corrections to
+<a href="mailto:corrections@motorjury.com">corrections@motorjury.com</a> with the page address and what you
+believe the right figure is. Corrections are answered before any other mail. Written pages that are
+materially revised carry a new revision date.</p>
+
+<h2>Advertising and affiliates</h2>
+<p>The site is funded by advertising and disclosed affiliate links. Verdicts are computed before any
+advertisement is attached to a page, advertising placements are never sold against a specific verdict, and
+affiliate links are disclosed on the <a href="/disclosure/">disclosure page</a>. Sponsored content, if it is
+ever published, will be labelled as such on the page itself.</p>
+
+<h2>Sources and licensing</h2>
+<p>Complaint and recall data: NHTSA, public domain. Fuel economy: EPA, public domain. Catalogue data:
+Wikidata, CC0. Photographs: Wikimedia Commons, under the licence stated on each file, credited per image.
+Specification excerpts: Wikipedia, CC BY-SA, attributed on the page. MotorJury's own scores and written text
+may be quoted with a link to the page.</p>
+
+<h2>Contact</h2>
+<p>Editor: Adir Trabelsi · <a href="/contact/">contact page</a> · <a href="/about/">about {BRAND}</a>.</p>"""))
+
+    gen.append(prose_page("contact/index.html", "Contact", f"""
+<p>{BRAND} is edited by <b>Adir Trabelsi</b>. Mail is read daily; corrections are answered first.</p>
+
+<h2>Corrections</h2>
+<p><a href="mailto:corrections@motorjury.com">corrections@motorjury.com</a> — include the page address and
+the figure you believe is wrong. A confirmed correction goes into the data or the formula and reaches every
+affected page on the next nightly build. See the <a href="/editorial-policy/">editorial policy</a>.</p>
+
+<h2>General and press</h2>
+<p><a href="mailto:hello@motorjury.com">hello@motorjury.com</a></p>
+
+<h2>Privacy and data requests</h2>
+<p><a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a> — see the
+<a href="/privacy/">privacy policy</a> for what is collected and how to have it removed.</p>
+
+<h2>Advertising</h2>
+<p>Display advertising on {BRAND} is served through Google AdSense. Direct placements are not sold against
+specific verdicts or pages; enquiries to <a href="mailto:hello@motorjury.com">hello@motorjury.com</a>.</p>
+
+<h2>Follow</h2>
+<p>Social accounts are listed on the <a href="/follow/">follow page</a>.</p>"""))
+
     gen.append(write("login/index.html", page(
         "Sign in to MotorJury",
         "Sign in to keep the cars you love, your garage and your settings on every device.",

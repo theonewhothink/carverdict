@@ -1,0 +1,190 @@
+{
+  "ford/explorer": {
+    "avoid": [2013, 2016, 2020],
+    "note": "The Explorer is the clearest example on this site of a nameplate whose reputation depends entirely on the year. The fifth generation (2011–2019) opens well, then the 2013 and 2016 model years carry more than 2,000 complaints each, concentrated in the powertrain (the 2.0 and 2.3-litre EcoBoost engines and the six-speed automatic), power-steering assist loss, and the exhaust-odour issue that prompted a federal investigation into Police Interceptor and civilian Explorers. Ford issued technical service bulletins rather than a single recall for the exhaust problem, which is why it shows up as complaints rather than campaigns. The sixth generation launched in 2020 with a rough first year — transmission and electrical complaints climbed again — and settled from 2021. If you are buying used, the 2018–2019 and 2022–2023 model years are where the record is clean; treat 2013, 2016 and 2020 as years to walk past unless the price reflects the risk."
+  },
+  "ford/escape": {
+    "avoid": [2013, 2014, 2018, 2020],
+    "note": "The third-generation Escape (2013–2019) launched with the 1.6-litre EcoBoost engine, and that engine is the reason the 2013 and 2014 model years carry the highest complaint counts of any compact crossover in the dataset: coolant leaks into the cylinders, overheating and engine fires, addressed by a string of recalls that continued for years. The 2.0-litre EcoBoost in the same body is a better engine, but the transmission and electrical complaints of the early years apply to both. Complaints fall sharply from 2015 and the 2016–2017 cars are the sweet spot of that generation. The 2018 year is an outlier again, and the fourth generation's first year, 2020, repeats the pattern seen across Ford's launches: a new platform, a new three-cylinder engine and an eight-speed automatic, and a jump in complaints that subsides by 2021. Hybrid versions from 2020 onward have a separate, quieter record."
+  },
+  "ford/focus": {
+    "avoid": [2012, 2013, 2014],
+    "note": "The 2012–2016 Focus is the best-known transmission failure of its decade. Ford's PowerShift dual-clutch automatic (the DPS6) shuddered, slipped and lost drive, and the 2012 model year alone has close to 3,800 complaints on file — more than most nameplates accumulate across their entire run. Ford extended the clutch and control-module warranties, settled a class action, and the problem never fully went away on cars that keep the original design. The 2011 car, the last of the previous generation with a conventional automatic, scores 94 on this site; the 2015–2017 cars are better than 2012–2014 but still carry the same transmission. If you are considering a used Focus with PowerShift, ask for the clutch-replacement history and budget for it; a manual-gearbox car avoids the issue entirely, and the ST and RS are manual-only. The electric Focus has its own, much smaller record."
+  },
+  "jeep/grand-cherokee": {
+    "avoid": [2011, 2012, 2014],
+    "note": "The WK2 Grand Cherokee (2011–2021) is a long-lived platform whose complaint record tells you which components Jeep fixed and when. The 2011–2012 years carry electrical complaints — the Totally Integrated Power Module, which controls fuel pump and lighting, was the subject of an investigation and a recall — along with the early Pentastar V6 cylinder-head issue. The 2014 year, the first with the ZF eight-speed automatic and the monostable electronic shifter, has the highest count of the generation; the shifter design was linked to rollaway incidents and recalled in 2016. From 2016 the record improves markedly and the 2017 and 2019–2020 years are among the best large SUVs on the site. The WL generation from 2022 has a moderate record so far, with infotainment and electrical complaints leading."
+  },
+  "hyundai/sonata": {
+    "avoid": [2011, 2012, 2013, 2015],
+    "note": "The sixth-generation Sonata (2011–2014) is the car that brought Hyundai's Theta II engine problem into the open. Connecting-rod bearing failure in the 2.0 and 2.4-litre engines leads to knocking, stalling and, in the worst cases, fire; Hyundai recalled 2011–2014 Sonatas in 2015 and 2017, extended the engine warranty, installed a knock-sensor detection system, and in 2020 paid a civil penalty to the federal regulator over the timing of the recalls. The 2011 model year has more than 3,300 complaints on record and scores 24. The 2015–2017 seventh generation shares the engine and shares the pattern at a lower level. Everything changes with the 2018 and especially the 2019 model years, once the engines had been reworked and the fleet had been through the recall campaigns: the 2019–2025 Sonata is among the best-scoring family saloons on the site. Buy 2018 onward; if you buy earlier, verify the engine recall and the knock-sensor update have been completed."
+  },
+  "ram/1500": {
+    "avoid": [2014, 2019],
+    "note": "The Ram 1500's record splits by generation. The fourth-generation truck (2009–2018, continued as the 1500 Classic to 2024) carries steady complaints about the air suspension, the electronic shifter, and — from 2013 when the eight-speed arrived — the transmission and the EcoDiesel V6, whose emissions recall and engine failures dominate the 2014–2016 counts. The fifth generation launched in 2019, and that first year has the highest count of the modern truck: the Uconnect infotainment screen delaminating, the eTorque mild-hybrid system, and electrical faults. From 2020 the record settles, and the truck scores in the 60s and 70s. A pre-purchase check on any Ram with air suspension is worth its cost; the coil-sprung trucks are simpler and cheaper to own."
+  },
+  "honda/cr-v": {
+    "avoid": [2017, 2018, 2019, 2023],
+    "note": "For six years the fourth-generation CR-V (2012–2016) was one of the most dependable cars in the dataset, scoring in the 80s. Then the fifth generation arrived in 2017 with a 1.5-litre turbocharged engine, and the record turned: petrol diluting the engine oil in cold climates, rising oil levels, misfires and stalling, and a heater that would not warm the cabin in winter. Honda extended the warranty and issued software and hardware updates in 2018–2019 rather than a recall, so the problem lives in the complaint counts — 1,756 for 2017 and 2,119 for 2018. The 2020–2022 years show it fading. The sixth generation from 2023 opened with a new cluster of complaints, mostly electrical and infotainment, and its early years are scoring below the 2020–2022 cars. The CR-V Hybrid, available from 2020, has a cleaner record than the turbo petrol in every year."
+  },
+  "jeep/cherokee": {
+    "avoid": [2014, 2015, 2019],
+    "note": "The KL Cherokee (2014–2023) launched with the first mass-market nine-speed automatic transmission, and that gearbox is the story of its early years: harsh shifts, hesitation, loss of drive, and repeated software reflashes that did not fully cure it. The 2014 model year has more than 2,600 complaints on record. Jeep improved the transmission calibration and hardware through 2016, and the counts fall accordingly, but the 2019 year — when the 2.0-litre turbo engine arrived alongside a facelift — spikes again. The 2020–2023 years are quiet and score well; they are the ones to buy. The Cherokee was discontinued after 2023."
+  },
+  "ford/fusion": {
+    "avoid": [2011, 2013, 2016],
+    "note": "The Fusion's record has two separate problems in it. The 2010–2012 first generation carries complaints about the power steering (an electric-assist failure that was recalled) and the throttle body. The 2013–2020 second generation launched with the same 1.6-litre EcoBoost engine as the Escape and inherited its coolant and overheating problems, along with the 1.5-litre engine that replaced it and transmission complaints across the range. The 2016 model year carries a large share of the steering and transmission-shifter complaints of the facelifted car. The Fusion Hybrid's record is markedly cleaner from 2013 on — see its own page. The Fusion was discontinued in 2020."
+  },
+  "kia/sorento": {
+    "avoid": [2011, 2016],
+    "note": "The Sorento shares Hyundai's Theta II 2.4-litre and 2.0-litre turbo engines, and the 2011 and 2016 model years are where its engine-failure complaints concentrate — the same bearing wear, knocking and stalling that hit the Sonata and Optima, covered by the same recall campaigns and warranty extensions. Between those years the record is moderate, and from 2018 the Sorento becomes one of the better three-row crossovers on the site, with the 2020 model year scoring 91. The fourth generation from 2021 introduced a new 2.5-litre turbo and a dual-clutch transmission; its complaint counts are low so far, with the dual-clutch attracting most of them."
+  },
+  "honda/accord": {
+    "avoid": [2013, 2018],
+    "note": "The Accord has one of the longest clean stretches in the dataset, interrupted twice. The 2013 model year, the first of the ninth generation, carries complaints about the continuously variable transmission, the direct-injection four-cylinder's starter, and Bluetooth and infotainment faults. The 2018 model year, the first of the tenth generation, repeats the pattern with a 1.5-litre turbo that suffers the same oil-dilution problem as the CR-V, plus complaints about the heater and the infotainment screen. In both cases the second and third years of the generation are markedly better. The 2021–2024 cars score in the 70s and 80s. The Accord Hybrid, from 2014, has a separate and generally strong record."
+  },
+  "chevrolet/malibu": {
+    "avoid": [2011, 2013, 2016, 2017, 2018],
+    "note": "The Malibu's record is defined by the 2013–2015 eighth generation's electrical and stop-start problems and by the 2016 ninth-generation launch, which brought a 1.5-litre turbo engine, a new eight-speed automatic and a spike to 1,669 complaints — hesitation, loss of power and transmission shudder. The 2017 and 2018 years are only marginally better. From 2019 the counts fall to a few hundred and the car scores in the 80s; a 2019–2023 Malibu is one of the better-value used saloons on the site. Chevrolet ended Malibu production in 2024."
+  },
+  "jeep/wrangler": {
+    "avoid": [2018, 2019, 2020],
+    "note": "The JK Wrangler (2007–2018) has a moderate, consistent record — the 2011–2017 years score between 60 and 79 — with the usual Jeep electrical complaints and, on the earlier Pentastar engines, cylinder-head problems. The JL Wrangler launched for 2018 and its first year has the highest complaint count of any Wrangler on file: the 'death wobble' steering oscillation, welds on the frame, and the 2.0-litre turbo engine. Jeep replaced steering dampers under a customer-satisfaction programme in 2019 and revised the steering box. Counts halve for 2019 and again for 2020, but both still score below the JK's better years. Four-door Wranglers are catalogued separately as Wrangler Unlimited through 2020."
+  },
+  "nissan/altima": {
+    "avoid": [2013, 2014, 2015],
+    "note": "The 2013–2015 Altima is the centre of Nissan's continuously variable transmission problem. The fifth-generation car launched with a Jatco CVT that overheated, shuddered, went into limp mode and, at worst, failed outright; the 2013 model year carries more than 2,300 complaints and scores 23. Nissan extended the transmission warranty on the 2013–2014 cars to seven years and settled a class action. From 2016 the transmission was revised and the record improves year on year; the 2019 onward sixth generation is a different car in the data, scoring in the 80s and 90s from 2021. A used 2013–2015 Altima should be priced for a transmission replacement unless one has already been done."
+  },
+  "hyundai/elantra": {
+    "avoid": [2011, 2012, 2013, 2017],
+    "note": "The fifth-generation Elantra (2011–2016) carries complaints about the engine's piston-slap ticking, premature brake wear, and — with the highest counts — steering that pulls and wanders, which Hyundai addressed with a software update to the electric power steering. The 2011–2013 years are the worst of it; 2014–2016 score above 78. The sixth generation launched in 2017 with a jump in complaints, mostly engine and transmission, then settles: 2018 onward scores between 74 and 88. The Elantra does not use the Theta II engine at the centre of the Sonata recalls, so its engine complaints are of a different and less severe kind."
+  },
+  "honda/pilot": {
+    "avoid": [2016, 2017, 2019],
+    "note": "The second-generation Pilot (2009–2015) is one of the quieter three-row SUVs in the dataset. The third generation arrived for 2016 with a nine-speed automatic on the upper trims, cylinder deactivation on the V6, and a new infotainment system — and 1,688 complaints: harsh and delayed shifts, warning-light cascades, and the engine idling roughly under cylinder deactivation. Honda reflashed the transmission and later replaced the nine-speed with its own ten-speed. The 2019 facelift year spikes again. The 2022–2024 fourth-generation cars score in the 70s. If you want a used Pilot, 2014–2015 or 2022 onward are the safe years."
+  },
+  "subaru/outback": {
+    "avoid": [2019, 2020],
+    "note": "The Outback's record is quiet through the fourth and fifth generations apart from the FB25 engine's oil-consumption complaints on 2013–2014 cars, which Subaru settled with a class action. The sixth generation launched for 2020 on a new platform with a new infotainment system and a turbocharged 2.4-litre option, and the 2019–2020 years carry the highest counts in the Outback's history: the Starlink touchscreen freezing and rebooting, the battery draining, the windscreen cracking. From 2021 the counts fall and the 2023–2024 cars score in the 90s. The battery and windscreen complaints have been the subject of class-action litigation."
+  },
+  "nissan/rogue": {
+    "avoid": [2023, 2025],
+    "note": "The Rogue is an unusual case: its complaint counts through the CVT era (2013–2018) are moderate rather than severe, because the Rogue's transmission calibration and cooling were revised earlier than the Altima's. The 2013–2018 years score between 65 and 83. The third generation launched for 2021 and the 2023 model year, when the 1.5-litre variable-compression three-cylinder engine became standard, has the highest count of any Rogue: engine noise, loss of power and stalling. That engine has been the subject of a federal investigation. The 2021–2022 cars with the 2.5-litre four-cylinder are the better buy."
+  },
+  "kia/optima": {
+    "avoid": [2013, 2015],
+    "note": "The Optima shares the Sonata's Theta II engines and the same recall history, and its 2013 and 2015 model years carry the highest counts — engine knocking, stalling and fire risk, addressed by the 2017 recall and the extended engine warranty. From 2017 the Optima improves sharply, and the 2018–2020 cars score around 90. The nameplate was replaced by the K5 for 2021. As with the Sonata, an early Optima is a reasonable buy only if the engine recall, the knock-sensor update and, ideally, an engine replacement are documented."
+  },
+  "chevrolet/equinox": {
+    "avoid": [2011, 2025],
+    "note": "The second-generation Equinox (2010–2017) with the 2.4-litre four-cylinder is known for consuming oil, which leads to timing-chain wear and, if neglected, engine failure; General Motors extended the warranty on the piston rings. The complaint counts are steady rather than spiking, and the 2016–2017 years score 86 and 91. The third generation from 2018 with the 1.5-litre turbo has a moderate record. The 2025 redesign opened with a jump in complaints and the lowest score in the Equinox's run, mostly electrical and infotainment. The sweet spot is 2016–2023."
+  },
+  "hyundai/tucson": {
+    "avoid": [2016, 2017, 2022, 2025],
+    "note": "The third-generation Tucson launched for 2016 with a seven-speed dual-clutch transmission on the 1.6-litre turbo, and that transmission is the reason 2016 carries 1,616 complaints: hesitation from a standstill, jerking and loss of drive. Hyundai reflashed and, in some cases, replaced the transmission, and the 2018–2021 years score between 74 and 90. The fourth generation from 2022 opened with a new round of electrical and infotainment complaints, and the 2025 year is following the same pattern. The 2018–2021 cars, particularly with the naturally aspirated 2.0 and 2.4-litre engines and conventional automatic, are the ones to buy."
+  },
+  "kia/soul": {
+    "avoid": [2014, 2015, 2016],
+    "note": "The second-generation Soul (2014–2019) carries the Gamma and Nu engines that were subject to Kia's engine-failure investigation and the 2019 recall for catalytic-converter damage leading to piston failure; the 2014–2016 years have the highest counts, with engine noise, stalling and fire cited. The 2017–2019 years are better, and the third generation from 2020 is quiet apart from a bump in 2020. A 2014–2016 Soul should have the engine recall and the knock-sensor update completed."
+  },
+  "subaru/forester": {
+    "avoid": [2019, 2020],
+    "note": "The Forester's record mirrors the Outback's: oil-consumption complaints on the FB25 engine in 2014–2015, a long moderate stretch, and then a spike for the 2019 model year with the fifth generation's launch — the Starlink infotainment, battery drain, and the EyeSight driver-assistance system braking unnecessarily. The 2021–2024 years score between 83 and 91. For a used Forester the choice is simple: 2016–2018 or 2021 onward."
+  },
+  "honda/odyssey": {
+    "avoid": [2018, 2019, 2020, 2025],
+    "note": "The fourth-generation Odyssey (2011–2017) is one of the best minivans in the dataset, scoring in the 70s and 80s. The fifth generation launched for 2018 with a ten-speed automatic and a new infotainment system, and the record collapsed: nearly a thousand complaints for each of 2018 and 2019, most of them transmission shudder and hesitation, sliding-door failures, and the rear-seat entertainment system. The 2021–2024 years recover to the 60s. The 2025 model year has jumped again, with idle stop-start failures and unintended braking cited in the owner reports quoted on its page. The 2014–2017 cars remain the safest used buy."
+  },
+  "toyota/rav4": {
+    "avoid": [2019, 2020],
+    "note": "The RAV4 is consistent through the fourth generation (2013–2018), scoring between 76 and 88 every year. The fifth generation launched for 2019 with a new eight-speed automatic and a direct-injection 2.5-litre engine, and the 2019–2020 years carry the highest counts in the nameplate's history: transmission hesitation and lurching at low speed, fuel-tank capacity shortfalls, and coolant leaks from the engine block on early 2019–2020 engines that led to a warranty extension. The 2021–2023 years improve. The RAV4 Hybrid has a separate record and is generally quieter than the petrol car."
+  },
+  "dodge/durango": {
+    "avoid": [2011, 2012, 2013, 2014],
+    "note": "The third-generation Durango launched for 2011 on the Grand Cherokee's platform and inherited its early electrical problems — the Totally Integrated Power Module, the alternator recall, and the Pentastar V6 cylinder-head failure. The 2011–2014 years score in the 20s and 30s. From 2016, once the eight-speed and the electrical fixes had been in production for two years, the Durango becomes one of the better large SUVs on the site, and the 2020 and 2023–2025 years score above 90."
+  },
+  "hyundai/santa-fe": {
+    "avoid": [2017, 2024, 2025],
+    "note": "The Santa Fe carries the Theta II 2.4 and 2.0 turbo engines and the same recall history as the Sonata, but its complaint counts are lower because its volumes are lower. The 2017 model year is the outlier, with 951 complaints, almost all engine failure and fire. The 2018–2020 years score in the 80s. The fifth generation launched for 2024 with a new look and a new platform, and its first two years are following the launch-year pattern seen across Hyundai: electrical, infotainment and transmission complaints, and scores in the 30s and 40s so far."
+  },
+  "chevrolet/traverse": {
+    "avoid": [2011, 2014, 2025],
+    "note": "The first-generation Traverse (2009–2017) carries timing-chain and engine complaints on the 3.6-litre V6, plus the steering-rack and power-steering complaints of the 2011–2014 years. The 2015–2017 cars score in the 70s. The second generation from 2018 has a moderate record with the 2021–2023 years above 85. The third generation launched for 2024 with a 2.5-litre turbo four-cylinder replacing the V6; the 2025 year is following the usual launch pattern with a spike in electrical and transmission complaints."
+  },
+  "gmc/acadia": {
+    "avoid": [2014, 2017],
+    "note": "The Acadia is the Traverse's sibling, and its record has the same first-generation timing-chain and steering complaints, with the 2014 year the worst. The second generation launched for 2017 on a smaller platform with a new transmission, and that year has 1,340 complaints, most of them the shift-to-park fault in which the vehicle cannot recognise that the shifter is in Park; General Motors extended the warranty on the shifter after a class action. The 2020–2024 years score in the 80s."
+  },
+  "chrysler/200": {
+    "avoid": [2015],
+    "note": "The second-generation 200 launched for 2015 with the ZF nine-speed automatic and a rotary shifter, and that single model year carries nearly 2,000 complaints, most of them the transmission: harsh shifts, loss of drive, and shutdowns. Chrysler recalled the car twice for transmission software and wiring. The 2016 and 2017 years, with revised software, score 78 and 92 — but by then the model was ending; Chrysler discontinued the 200 in 2017. The 2011–2014 first generation is a different, older car with a moderate record."
+  },
+  "dodge/grand-caravan": {
+    "avoid": [2016],
+    "note": "The fifth-generation Grand Caravan ran from 2008 to 2020 with few changes, and its record is steady — transmission and electrical complaints at a moderate level, scoring in the 70s and 80s — apart from the 2016 model year, which carries 1,155 complaints for reasons the record attributes mainly to the six-speed transmission and the air-conditioning system. The 2017–2020 years are among the cheapest reliable people-carriers on the site."
+  },
+  "chevrolet/cruze": {
+    "avoid": [2012, 2014],
+    "note": "The first-generation Cruze (2011–2015) carries the 1.4-litre turbo's coolant-leak, water-pump and turbocharger complaints, plus the six-speed automatic's shudder; the 2012 and 2014 years are the worst. The second generation from 2016 is a better car in the data, with the 2017–2019 years scoring 86 to 93. The diesel Cruze has a small separate record. Chevrolet ended the Cruze in 2019."
+  },
+  "toyota/camry": {
+    "avoid": [2011, 2012, 2018, 2019],
+    "note": "The Camry's reputation for invulnerability is only partly borne out by the record. The 2007–2011 cars with the 2.4-litre engine consumed oil and had melting dashboards; the 2011–2012 years carry those complaints. The 2013–2017 seventh generation is quiet, with the 2014 car scoring 93. The eighth generation launched for 2018 with a new 2.5-litre engine and eight-speed automatic, and the 2018 year carries 734 complaints — transmission hesitation at low speed and the infotainment system — with 2019 not much better. From 2021 the counts fall and the 2022–2024 cars score in the 80s. The Camry Hybrid is consistently quieter than the petrol car."
+  },
+  "chrysler/pacifica": {
+    "avoid": [2017, 2018],
+    "note": "The Pacifica launched for 2017 with the nine-speed automatic and a new electrical architecture, and its first year carries nearly 1,500 complaints: stalling, the transmission, the sliding doors, the Uconnect screen and, on the plug-in hybrid, a recall for fire risk. The 2018 year is only somewhat better. The 2019–2020 cars score 70 and 80, and the 2022–2025 years are moderate. The plug-in hybrid has its own recall history and should be checked separately at nhtsa.gov/recalls."
+  },
+  "volkswagen/jetta": {
+    "avoid": [2011, 2012, 2013, 2019],
+    "note": "The sixth-generation Jetta (2011–2018) opened with a cheapened interior and a cluster of engine and electrical complaints; the 2011–2013 years score in the 20s and 30s. The diesel versions are the cars affected by the emissions scandal and the buy-back. From 2014 the record improves steadily and the 2018 year scores 87. The seventh generation launched for 2019 with a new platform, a 1.4-litre turbo and an eight-speed automatic, and the first year spikes again before the 2020–2024 years settle in the 80s."
+  },
+  "toyota/corolla": {
+    "avoid": [2011, 2020],
+    "note": "The Corolla's record is as flat as its reputation suggests, with two dips. The 2009–2011 cars carry the same oil-consumption and steering complaints as the Camry of the period. The 2020 model year, the first of the twelfth generation with a new continuously variable transmission and a new infotainment system, doubles the complaint count and scores 45; the counts fall again from 2021. The 2013–2018 cars score between 78 and 86 and are among the cheapest reliable compact cars on the site. The Corolla Hybrid from 2020 has a separate record."
+  },
+  "jeep/compass": {
+    "avoid": [2018, 2022],
+    "note": "The second-generation Compass launched for 2018 with the nine-speed automatic and the 2.4-litre Tigershark engine, and that year carries 933 complaints — the transmission, the engine stalling and consuming oil, and the electrical system. Jeep revised the transmission software and, in 2022, the engine-control calibration; the 2020–2021 years score in the 80s and 90s. The 2022 facelift year dips again, and 2023 onward recovers. The first-generation Compass (2007–2017) has a low, steady record."
+  },
+  "ford/mustang": {
+    "avoid": [2015],
+    "note": "The Mustang's record is moderate and steady through the fifth generation (2005–2014). The sixth generation launched for 2015 with the 2.3-litre EcoBoost engine and independent rear suspension, and the 2015 year carries the highest count of the modern car — the EcoBoost's head-gasket and coolant complaints, and the six-speed automatic. Counts fall from 2017 and the 2018–2022 cars score in the 70s and 80s. The seventh generation from 2024 has a small record so far."
+  },
+  "nissan/sentra": {
+    "avoid": [2013, 2014],
+    "note": "The seventh-generation Sentra (2013–2019) shares the Altima's CVT problem, and the 2013 model year carries 638 complaints, most of them transmission shudder, overheating and failure. Nissan extended the CVT warranty on these cars. From 2015 the counts fall steadily, and the eighth generation from 2020 scores in the 70s and 80s, with the 2023 car at 92."
+  },
+  "dodge/charger": {
+    "avoid": [2011, 2012],
+    "note": "The seventh-generation Charger launched for 2011, and its first two years carry the highest counts in the nameplate's run — the Totally Integrated Power Module and alternator failures shared with the Grand Cherokee and Durango of the same years, plus the five-speed automatic. From 2015, with the eight-speed automatic and the revised electrical system, the record is quiet: the 2020–2023 years score between 88 and 92, which is unusual for a large performance saloon."
+  },
+  "gmc/terrain": {
+    "avoid": [],
+    "note": "The Terrain's record is one of the more consistent in the dataset. The first generation (2010–2017) carries the 2.4-litre oil-consumption and timing-chain complaints shared with the Equinox, but at a moderate level, and the 2016–2017 years score above 90. The second generation from 2018 opened with a modest bump for the shift-to-park fault and has scored between 72 and 93 since. There is no year of the Terrain in the data that stands out as one to avoid."
+  },
+  "dodge/journey": {
+    "avoid": [2015],
+    "note": "The Journey ran from 2009 to 2020 with the same basic platform, and its record is moderate throughout — brake wear, the four-speed automatic on the base four-cylinder, and the electrical system. The 2015 year carries the most complaints; the 2017–2020 years score between 71 and 93 and are among the cheapest three-row vehicles on the site to buy, if not to run."
+  },
+  "toyota/prius": {
+    "avoid": [2011],
+    "note": "The third-generation Prius (2010–2015) carries complaints about the inverter, the brake actuator, and, on the 2010–2011 cars, oil consumption and head-gasket failure on the 1.8-litre engine. Hybrid-battery degradation on high-mileage examples appears as complaints rather than recalls. The 2012–2015 years score above 75. The fourth generation from 2016 is quiet. MotorJury carries battery-warranty and replacement-cost figures for every Prius year."
+  },
+  "tesla/model-s": {
+    "avoid": [2013],
+    "note": "The early Model S (2012–2015) carries complaints about the drive unit, the retractable door handles, the touchscreen's eMMC memory chip wearing out — the subject of a 2021 recall — and the suspension. Later years shift toward Autopilot and touchscreen complaints. The record is unusual in that the most complained-about component is software, not mechanical. MotorJury carries battery-warranty and replacement-cost figures for every Tesla year."
+  },
+  "tesla/model-3": {
+    "avoid": [2018],
+    "note": "The Model 3's 2018 launch year carries the highest count of the nameplate — paint and panel-fit complaints, the touchscreen, phantom braking under Autopilot, and delivery-quality issues — and the counts fall in every subsequent year. The 2021 onward cars have a moderate record dominated by driver-assistance complaints. The heat-pump failure on 2021–2022 cars in cold climates was addressed by a recall."
+  },
+  "ford/f-150": {
+    "avoid": [2015, 2021],
+    "note": "The F-150's record is spread thin across an enormous volume, which is why its scores are better than its complaint counts suggest. The 2011–2014 trucks carry the first-generation 3.5-litre EcoBoost's timing-chain and condensation complaints. The aluminium-bodied 2015 year adds transmission and electrical complaints at launch. The ten-speed automatic from 2017 carries shudder and harsh-shift complaints. The 2021 fourteenth generation opened with the usual launch-year spike, including the PowerBoost hybrid's software. There is no catastrophic year; there are launch years to skip."
+  },
+  "chevrolet/silverado-1500": {
+    "avoid": [2014, 2019],
+    "note": "The Silverado 1500's record follows its generations: the 2014 launch of the K2XX truck brought the eight-speed automatic's shudder and the 5.3-litre's cylinder-deactivation lifter complaints; the 2019 launch of the T1 truck brought a spike in electrical and transmission complaints. The lifter problem on the 5.3 and 6.2 V8s from 2019 onward has been the subject of a federal investigation. Between the launch years the truck scores respectably for its volume."
+  }
+}

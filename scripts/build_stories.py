@@ -55,9 +55,20 @@ def slug(s):
     return re.sub(r"[\s_]+", "-", s)[:60] or "x"
 
 
-def shell(title, desc, canon, body):
+def _hubs():
+    try:
+        return json.load(open(ROOT / "data" / "editorial" / "hubs.json"))
+    except Exception:
+        return {}
+HUB_NOTES = _hubs()
+NOINDEX = '<meta name="robots" content="noindex,follow">'
+BYLINE = ('<p class="lib-note">Ranking computed from the federal record; commentary by '
+          '<a href="/about/">Adir Trabelsi</a>, editor · <a href="/editorial-policy/">editorial policy</a></p>')
+
+
+def shell(title, desc, canon, body, robots=""):
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">{robots}
 <meta name="theme-color" content="#0B0D10"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
 <meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}">
@@ -66,11 +77,11 @@ def shell(title, desc, canon, body):
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search 17,000+ cars" autocomplete="off" aria-label="search"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
 </div></header>
 {body}
 <footer><div class="wrap"><p>Every number on this page is computed from NHTSA and EPA public
-records on the day this site was last built. · <a href="/methodology/">Methodology</a></p></div></footer>
+records on the day this site was last built. · <a href="/methodology/">Methodology</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/about/">About</a> · <a href="/contact/">Contact</a> · <a href="/privacy/">Privacy</a></p></div></footer>
 <script src="/assets/site.js" defer></script></body></html>"""
 
 
@@ -113,7 +124,7 @@ def story(slug_, title, desc, intro, ranked, value_of):
 <div class="wrap" style="padding:8px 16px 40px">
 <ol class="story-list">{items}</ol>
 <p class="lib-note">Computed from the federal complaint and recall record at build time -
-this list updates itself as new data lands. Sources: NHTSA, EPA.</p>
+this list updates itself as new data lands. Sources: NHTSA, EPA.</p>{BYLINE}
 <h2 class="sec">Keep going</h2>
 <div class="rel-grid"><a href="/stories/">All data stories<small>rankings from the record</small></a>
 <a href="/compare/">Head to head<small>the classic rivalries, settled by data</small></a>
@@ -164,7 +175,7 @@ def build_stories(rows):
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>Data stories</h1><p class="sub">Rankings nobody edits: computed from the federal complaint
 and recall record every time this site is built.</p></div></div>
-<div class="wrap" style="padding:8px 16px 40px"><div class="rel-grid">{cards}</div></div>"""
+<div class="wrap" style="padding:8px 16px 40px"><div class="card prose editorial">{HUB_NOTES.get("stories", "")}</div><div class="rel-grid">{cards}</div></div>"""
     (SITE / "stories").mkdir(parents=True, exist_ok=True)
     (SITE / "stories" / "index.html").write_text(
         shell(f"Data Stories - Rankings from the Federal Record | {BRAND}",
@@ -265,9 +276,9 @@ every model year, owner narratives and running costs.</p>
 <h2 class="sec">More head-to-heads</h2><div class="rel-grid" id="more-cmp"></div></div>"""
         (SITE / "compare" / s).mkdir(parents=True, exist_ok=True)
         (SITE / "compare" / s / "index.html").write_text(
-            shell(title + f" | {BRAND}",
+            shell(robots=NOINDEX, title=title + f" | {BRAND}", desc=
                   f"{mk1} {mo1} or {mk2} {mo2}? Complaint and recall records compared, "
-                  f"with a data verdict.", f"{ORIGIN}/compare/{s}/", body))
+                  f"with a data verdict.", canon=f"{ORIGIN}/compare/{s}/", body=body))
         made.append((s, f"{mk1} {mo1} vs {mk2} {mo2}",
                      f"{win['make']} {win['model']} wins on data, {win['score']}/100"))
 
@@ -291,7 +302,7 @@ every model year, owner narratives and running costs.</p>
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <h1>Head to head</h1><p class="sub">The classic rivalries, settled by the federal complaint
 record instead of a comments section.</p></div></div>
-<div class="wrap" style="padding:8px 16px 40px"><div class="rel-grid">{links}</div></div>"""
+<div class="wrap" style="padding:8px 16px 40px"><div class="card prose editorial">{HUB_NOTES.get("compare", "")}</div><div class="rel-grid">{links}</div></div>"""
     (SITE / "compare").mkdir(parents=True, exist_ok=True)
     (SITE / "compare" / "index.html").write_text(
         shell(f"Car Comparisons - Rivalries Settled by Data | {BRAND}",
