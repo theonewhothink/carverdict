@@ -54,6 +54,22 @@ jobs:
           python scripts/verify_dataset.py 10
           ls -lh data/cars.sqlite
 
+      # Specifications and Wikipedia summaries for the catalogue. The deploy build has
+      # 90 seconds for this and gets almost nothing, which left ~11,000 library pages with
+      # no sourced facts - the "low value content" AdSense rejected. Here it has an hour,
+      # and the result is published beside the dataset so the build only tops it up.
+      - name: Harvest specifications (long budget)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WIKI_SPECS_BUDGET: "3600"
+          IMG_SCORE_BUDGET: "600"
+        run: |
+          gh release download data-latest --pattern wiki_specs.json --output data/wiki_specs.json --clobber || true
+          gh release download data-latest --pattern car_specs.json --output data/car_specs.json --clobber || true
+          timeout 4000 python scripts/harvest_wiki_specs.py || echo "wiki specs: partial"
+          timeout 1200 python scripts/harvest_specs.py || echo "specs: partial"
+          ls -lh data/wiki_specs.json data/car_specs.json || true
+
       - name: Publish as the rolling dataset
         env:
           GH_TOKEN: ${{ github.token }}
@@ -62,4 +78,7 @@ jobs:
             gh release create data-latest --title "Ownership dataset (rolling)" \
               --notes "NHTSA complaints and recalls plus EPA fuel economy, extended nightly by the Ownership data workflow. Consumed by build.sh at deploy time."
           gh release upload data-latest data/cars.sqlite --clobber
+          for f in data/wiki_specs.json data/car_specs.json; do
+            [ -s "$f" ] && gh release upload data-latest "$f" --clobber || true
+          done
           echo "::notice::$(python scripts/verify_dataset.py 10 | head -1)"
