@@ -144,11 +144,14 @@ def held():
         con.row_factory = sqlite3.Row
         cols = {r[1] for r in con.execute("PRAGMA table_info(model_years)")}
         order = "my.ingested_at IS NOT NULL, my.ingested_at" if "ingested_at" in cols else "my.id"
+        # Rows with no EPA record refresh first: a missing fuel figure is a visible hole on
+        # the page ("fuel excluded"), a slightly stale complaint count is not.
         rows = con.execute(f"""SELECT mk.name make, mo.name model, my.year
                                FROM model_years my
                                JOIN models mo ON mo.id = my.model_id
                                JOIN makes mk ON mk.id = mo.make_id
-                               ORDER BY {order}""").fetchall()
+                               LEFT JOIN fuel f ON f.my_id = my.id AND f.annual_fuel_cost > 0
+                               ORDER BY (f.my_id IS NOT NULL), {order}""").fetchall()
         con.close()
     except Exception as e:                                    # noqa: BLE001
         print(f"ingest: could not read existing database ({e}); planning from scratch")
@@ -263,13 +266,55 @@ def _fetch_one(t):
                             "severe": 1 if SEVERE.search(part) else 0})
     row["recalls"] = recalls
 
-    menu = get(f"{EPA}/menu/options?year={yr}&make={mk}&model={mo}")
-    veh = None
-    its = items(menu)
-    if its and isinstance(its[0], dict) and its[0].get("value"):
-        veh = get(f"{EPA}/{its[0].get('value')}")
-    row["epa"] = veh
+    row["epa"] = fetch_epa(yr, t["make"], t["model"])
     return row
+
+
+_EPA_MODELS = {}
+
+
+def epa_model_names(yr, mk):
+    """EPA's own model names for one make-year, cached per run."""
+    key = (yr, mk)
+    if key not in _EPA_MODELS:
+        menu = get(f"{EPA}/menu/model?year={yr}&make={urllib.parse.quote(mk)}")
+        _EPA_MODELS[key] = [it.get("value", "") for it in items(menu) if isinstance(it, dict)]
+    return _EPA_MODELS[key]
+
+
+def fetch_epa(yr, mk, model):
+    """The vehicle record for a nameplate, resolving our stripped name back to EPA's.
+
+    plan() stores "CR-V" (from base_model) while EPA lists "CR-V AWD" and "CR-V FWD", and
+    menu/options for the stripped name returns nothing. That single mismatch left 1,173 of
+    5,296 model-years - every CR-V, Escape, Explorer, Rogue and Equinox year - with no fuel
+    record and a "fuel excluded" ownership total. Try the exact name first; then every EPA
+    name whose base form equals ours, most common first; then a prefix match.
+    """
+    mq = urllib.parse.quote(model)
+    candidates = [model]
+    try:
+        names = epa_model_names(yr, mk)
+    except Exception:
+        names = []
+    want = base_model(model).lower()
+    exact = [n for n in names if base_model(n).lower() == want and n != model]
+    loose = [n for n in names if n.lower().startswith(want + " ") and n not in exact and n != model]
+    candidates += exact + loose[:4]
+    for name in candidates:
+        try:
+            menu = get(f"{EPA}/menu/options?year={yr}&make={urllib.parse.quote(mk)}&model={urllib.parse.quote(name)}")
+        except Exception:
+            continue
+        its = items(menu)
+        if its and isinstance(its[0], dict) and its[0].get("value"):
+            try:
+                veh = get(f"{EPA}/{its[0].get('value')}")
+            except Exception:
+                veh = None
+            if veh:
+                return veh
+    return None
 
 
 def num(v, cast=float):

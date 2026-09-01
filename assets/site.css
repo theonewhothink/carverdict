@@ -1214,3 +1214,13 @@ html,body{overflow-x:clip}
 .guide .card{margin:18px 0}
 .guide .table-wrap{overflow-x:auto}
 .card.editorial .src-note{color:var(--faint);font-size:13.5px;margin-top:10px}
+
+/* Unified engagement row: heart (vote) + the reader's star rating (owner response). */
+.engage-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px}
+.quick-rate{display:inline-flex;align-items:center;gap:10px}
+.quick-rate .stars{min-height:44px}
+.quick-rate .stars button{font-size:24px;padding:0 2px;cursor:pointer}
+.quick-rate .stars button.on{color:var(--accent-ice,#F59E0B)}
+.quick-rate small{font-size:13px;color:var(--muted)}
+.quick-rate small b{color:var(--text)}
+.oauth-gis{display:flex;justify-content:center;min-height:48px}

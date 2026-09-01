@@ -11,9 +11,13 @@ Idempotent: every insertion checks for itself first, so re-running changes nothi
 Runs last in build.sh, before the dead-link gate.
 """
 import glob
+import json
 import os
 import re
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 
@@ -38,14 +42,23 @@ RE_HREFLANG = re.compile(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">'
 
 ACCT_CHIP = '<div class="acct-host" data-account-chip></div>'
 
+def _social_urls():
+    """data/social.json: only networks with a real profile URL are linked anywhere."""
+    try:
+        d = json.load(open(ROOT / "data" / "social.json"))
+        return {k: v for k, v in d.items() if not k.startswith("_") and v}
+    except Exception:
+        return {}
+_SOCIAL_URLS = _social_urls()
+
 SOCIAL = [
-    ("Instagram", "https://www.instagram.com/motorjury/",
+    ("Instagram", _SOCIAL_URLS.get("Instagram", ""),
      "M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 5.3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 7.4a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm5.7-7.6a1 1 0 1 1-2.1 0 1 1 0 0 1 2.1 0z"),
-    ("TikTok", "https://www.tiktok.com/@motorjury",
+    ("TikTok", _SOCIAL_URLS.get("TikTok", ""),
      "M16.6 5.8c-1-.7-1.6-1.8-1.8-3h-2.9v11.6a2.4 2.4 0 1 1-1.7-2.3V9.1a5.3 5.3 0 1 0 4.6 5.3V9.1c1 .7 2.3 1.1 3.6 1.1V7.3c-.6 0-1.2-.2-1.8-.5z"),
-    ("Facebook", "https://www.facebook.com/motorjury",
+    ("Facebook", _SOCIAL_URLS.get("Facebook", ""),
      "M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.3H7.5V13h2.8v8h3.2z"),
-    ("YouTube", "https://www.youtube.com/@motorjury",
+    ("YouTube", _SOCIAL_URLS.get("YouTube", ""),
      "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15.1V8.9l5.2 3.1-5.2 3.1z"),
 ]
 SOCIAL_ROW = (
@@ -53,7 +66,7 @@ SOCIAL_ROW = (
     + "".join(
         '<a class="soc soc-%s" href="%s" rel="noopener me" target="_blank" aria-label="%s" '
         'title="%s"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" '
-        'd="%s"/></svg></a>' % (n.lower(), u, n, n, d) for n, u, d in SOCIAL)
+        'd="%s"/></svg></a>' % (n.lower(), u, n, n, d) for n, u, d in SOCIAL if u)
     + '<span class="social-share" data-share></span></div></div>')
 
 

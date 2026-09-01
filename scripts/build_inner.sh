@@ -131,6 +131,11 @@ WIKI_SPECS_BUDGET="${WIKI_SPECS_BUDGET:-90}" timeout 150 "$PY" scripts/harvest_w
 # card, the verdict card and the calculator all read the same table.
 "$PY" scripts/price_model.py
 
+# Every model-year gets a fuel figure: EPA's, else the nearest EPA-covered year of the same
+# nameplate, else the segment mean — written into the database with its provenance so all
+# generators agree and every page labels the estimate. Fixes the "fuel unavailable" holes.
+"$PY" scripts/fill_fuel.py
+
 # The mark and the whole icon set, drawn from one definition so the favicon, the app icons
 # and the default social card can never drift apart again.
 "$PY" scripts/make_icons.py || echo "WARNING: icon generation skipped"
@@ -310,5 +315,5 @@ except Exception as e:
     print(f"WARNING: IndexNow ping failed ({e}); key file still deployed")
 PY_EOF
 
-node --test workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/vin.test.mjs
+node --test workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/gis.test.mjs workers/vin.test.mjs
 echo "build complete"

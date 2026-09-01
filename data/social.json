@@ -1,0 +1,7 @@
+{
+  "_note": "Official MotorJury social profiles. A network renders in the footer, on /follow/ and in the studio only when its URL is non-empty here; an empty string means the account has not been created yet and no link is shown. Fill a URL in the moment the account exists and push - the next build picks it up.",
+  "Instagram": "",
+  "TikTok": "",
+  "Facebook": "",
+  "YouTube": ""
+}

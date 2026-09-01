@@ -30,12 +30,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = "https://motorjury.com"
 
-HANDLES = [
-    ("Instagram", "motorjury", "https://www.instagram.com/motorjury/"),
-    ("TikTok", "@motorjury", "https://www.tiktok.com/@motorjury"),
-    ("Facebook", "MotorJury", "https://www.facebook.com/motorjury"),
-    ("YouTube", "@motorjury", "https://www.youtube.com/@motorjury"),
-]
+def _handles():
+    """Only profiles that exist (data/social.json) are linked. Handles to register are the
+    same everywhere: motorjury."""
+    try:
+        d = json.load(open(ROOT / "data" / "social.json"))
+    except Exception:
+        d = {}
+    want = [("Instagram", "motorjury"), ("TikTok", "@motorjury"), ("Facebook", "MotorJury"), ("YouTube", "@motorjury")]
+    return [(n, h, d.get(n)) for n, h in want if d.get(n)]
+HANDLES = _handles()
 
 BIO = ("What that car really costs to own. Price, depreciation, repairs, insurance and a "
        "verdict — computed from public NHTSA and EPA data, never opinions.")
@@ -294,7 +298,9 @@ def follow_page(model_count, brand_count):
         f'<a class="fl-link" href="{u}"><b>{esc(t)}</b><span>{esc(d)}</span></a>'
         for t, d, u in links)
     socials = "".join(
-        f'<a class="fl-soc" href="{u}" rel="noopener">{n}</a>' for n, _h, u in HANDLES)
+        f'<a class="fl-soc" href="{u}" rel="noopener">{n}</a>' for n, _h, u in HANDLES) or \
+        '<span class="fl-soc">Social profiles are being set up — follow here for now</span>'
+
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MotorJury — start here</title>

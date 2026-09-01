@@ -339,14 +339,23 @@ def _org_ld():
 # Follow and share. The site had no way for a reader to take a page anywhere, and no way
 # to find the channels the content is published on — which is a strange thing for a site
 # whose growth plan runs through social video. One row, in every footer, on every page.
+def _social_urls():
+    """data/social.json: only networks with a real profile URL are linked anywhere."""
+    try:
+        d = json.load(open(ROOT / "data" / "social.json"))
+        return {k: v for k, v in d.items() if not k.startswith("_") and v}
+    except Exception:
+        return {}
+_SOCIAL_URLS = _social_urls()
+
 SOCIAL = [
-    ("Instagram", "https://www.instagram.com/motorjury/",
+    ("Instagram", _SOCIAL_URLS.get("Instagram", ""),
      "M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 5.3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 7.4a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8zm5.7-7.6a1 1 0 1 1-2.1 0 1 1 0 0 1 2.1 0z"),
-    ("TikTok", "https://www.tiktok.com/@motorjury",
+    ("TikTok", _SOCIAL_URLS.get("TikTok", ""),
      "M16.6 5.8c-1-.7-1.6-1.8-1.8-3h-2.9v11.6a2.4 2.4 0 1 1-1.7-2.3V9.1a5.3 5.3 0 1 0 4.6 5.3V9.1c1 .7 2.3 1.1 3.6 1.1V7.3c-.6 0-1.2-.2-1.8-.5z"),
-    ("Facebook", "https://www.facebook.com/motorjury",
+    ("Facebook", _SOCIAL_URLS.get("Facebook", ""),
      "M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.3H7.5V13h2.8v8h3.2z"),
-    ("YouTube", "https://www.youtube.com/@motorjury",
+    ("YouTube", _SOCIAL_URLS.get("YouTube", ""),
      "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15.1V8.9l5.2 3.1-5.2 3.1z"),
 ]
 SOCIAL_ROW = (
@@ -355,7 +364,7 @@ SOCIAL_ROW = (
         f'<a class="soc soc-{n.lower()}" href="{u}" rel="noopener me" target="_blank" '
         f'aria-label="{n}" title="{n}"><svg viewBox="0 0 24 24" aria-hidden="true">'
         f'<path fill="currentColor" d="{d}"/></svg></a>'
-        for n, u, d in SOCIAL)
+        for n, u, d in SOCIAL if u)
     + '<span class="social-share" data-share></span></div>')
 
 
@@ -435,7 +444,7 @@ def rows_all(con):
         price_in5 INT, price_in5_low INT, price_in5_high INT,
         depreciation_5y INT, depreciation_per_year INT,
         insurance_low INT, insurance_high INT)""")
-    return con.execute("""SELECT my.id my_id, my.year, my.complaint_count, my.complaint_sample,
+    rows = con.execute("""SELECT my.id my_id, my.year, my.complaint_count, my.complaint_sample,
       my.recall_count, my.severe_recalls, my.is_ev, my.data_gap,
       mo.id model_id, mo.name model, mo.slug mslug, mk.name make, mk.slug kslug,
       cs.reliability_score score, cs.verdict, cs.reasons, cs.cost_curve, cs.complaints_per_year,
@@ -453,6 +462,24 @@ def rows_all(con):
       LEFT JOIN ev_extras e ON e.my_id=my.id
       LEFT JOIN price_estimates pe ON pe.my_id=my.id
       ORDER BY mk.name, mo.name, my.year""").fetchall()
+    return fill_fuel([dict(r) for r in rows])
+
+
+def fill_fuel(rows):
+    """fill_fuel.py already wrote a fuel row for every model-year, into the database, with
+    the provenance in fuel_type: EPA's own string, "est-adjacent:<year>", or "est-segment".
+    Expose it as fuel_src so the templates can label the figure honestly."""
+    for r in rows:
+        ft = r.get("fuel_type") or ""
+        if not r.get("annual_fuel_cost"):
+            r["fuel_src"] = None
+        elif ft.startswith("est-adjacent:"):
+            r["fuel_src"] = "adjacent:" + ft.split(":", 1)[1]
+        elif ft.startswith("est-"):
+            r["fuel_src"] = "segment"
+        else:
+            r["fuel_src"] = "epa"
+    return rows
 
 SEGMENT_LABEL = {
     "economy": "city car", "compact": "compact car", "midsize": "mid-size car",
@@ -494,9 +521,13 @@ def price_block(r, five_run_usd, fuel_usd):
     total_label = "Five-year cost of owning it" if has_fuel else "Five-year cost shown (excludes fuel)"
     mile_label = ("Per mile driven, at 12,000 miles a year" if has_fuel
                   else "Per mile shown, excluding fuel")
-    missing_fuel = ("" if has_fuel else
-                    '<p class="data-missing"><b>Fuel cost is not $0.</b> EPA has no matched economy record '
-                    'for this model year, so the totals below exclude fuel rather than inventing a number.</p>')
+    _fs = r.get("fuel_src") or ""
+    missing_fuel = ("" if (has_fuel and _fs == "epa") else
+                    ('<p class="src-note">Fuel is an <b>estimate</b> here (EPA has no record for this exact '
+                     'model year); it is carried from the nearest EPA-covered year of this nameplate or the class mean, '
+                     'and labelled as such above.</p>' if has_fuel else
+                     '<p class="data-missing"><b>Fuel cost is not $0.</b> EPA has no matched economy record '
+                     'for this model year, so the totals below exclude fuel rather than inventing a number.</p>'))
     anchor_note = ("anchored on the published list price for this model"
                    if r["price_anchor"] == "wikipedia"
                    else f"priced as a {seg} of its model year")
@@ -676,17 +707,31 @@ def gen_model_year(con, r, all_rows):
 
     # cost block
     fuel_line = ""
-    if r["annual_fuel_cost"]:
+    _src = r.get("fuel_src") or ""
+    _kind = 'energy' if r['is_ev'] else 'fuel'
+    if _src == "epa":
         _unit = 'MPGe' if r['is_ev'] else 'MPG'
         fuel_line = (f"<p>EPA combined <span class='num' data-mpg=\"{r['mpg_comb']:.1f}\" data-mpg-unit=\"{_unit}\">"
                      f"{r['mpg_comb']:.0f} {_unit}</span>"
-                     f" · estimated annual {'energy' if r['is_ev'] else 'fuel'} cost "
+                     f" · estimated annual {_kind} cost "
                      f"<span class='num' data-usd=\"{r['annual_fuel_cost']}\" data-kind=\"fuel\">${r['annual_fuel_cost']:,}</span>"
                      + (f" · EPA range <span class='num' data-mi=\"{r['ev_range']:.0f}\">{r['ev_range']:.0f} mi</span>" if r["ev_range"] else "") + "</p>")
+    elif _src.startswith("adjacent:"):
+        _unit = 'MPGe' if r['is_ev'] else 'MPG'
+        _y = _src.split(":")[1]
+        fuel_line = (f"<p>Est. annual {_kind} cost "
+                     f"<span class='num' data-usd=\"{r['annual_fuel_cost']}\" data-kind=\"fuel\">${r['annual_fuel_cost']:,}</span>"
+                     + (f" · <span class='num' data-mpg=\"{r['mpg_comb']:.1f}\" data-mpg-unit=\"{_unit}\">{r['mpg_comb']:.0f} {_unit}</span>" if r.get("mpg_comb") else "")
+                     + " <em>(estimate)</em></p>"
+                     f"<p class='src-note'>Carried over from EPA's {_y} {esc(make)} {esc(model)} record, the nearest model year "
+                     f"EPA covers; the exact {year} trim can differ by a few MPG.</p>")
     else:
-        fuel_line = ("<p class='data-missing'><b>Fuel or energy cost unavailable.</b> "
-                     "EPA has no matched economy record for this model year. MotorJury shows "
-                     "maintenance separately and never turns missing data into $0.</p>")
+        fuel_line = (f"<p>Est. annual {_kind} cost "
+                     f"<span class='num' data-usd=\"{r['annual_fuel_cost']}\" data-kind=\"fuel\">${r['annual_fuel_cost']:,}</span>"
+                     " <em>(estimate)</em></p>"
+                     f"<p class='src-note'>EPA has no matched record for this model year: this is the mean EPA figure for "
+                     f"{'electric cars' if r['is_ev'] else 'a ' + esc(SEGMENT_LABEL.get(r.get('segment') or '', 'car of this class'))} "
+                     f"in this dataset at EPA's 15,000-mile assumption. <a href='/methodology/#prices'>How estimates are labelled</a>.</p>")
     ev_block = ""
     if r["is_ev"] and r["battery_warranty"]:
         ev_block = f"""<h3>EV battery reality check</h3>
@@ -1091,6 +1136,9 @@ complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, w
 </div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0">
 {editor_card(r0['kslug'], r0['mslug'])}
+<div class="card engagement-card"><div class="love-host" data-love="nameplate:{r0['kslug']}/{r0['mslug']}" data-love-name="{esc(make)} {esc(model)}"></div>
+<div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}"><h2>Owner satisfaction</h2>
+<p class="sv-n"><b>No responses yet.</b> Own a {esc(make)} {esc(model)}? Sign in and rate it — one response per owner.</p></div></div>
 <div class="card"><h2>Year-by-year data table</h2>{verdict_line}
 <div class="table-wrap"><table class="cost-table"><thead><tr><th>Year</th><th>Score</th><th>Verdict</th>
 <th>Running cost / yr</th><th>NHTSA complaints</th><th>Recalls</th></tr></thead>
@@ -1317,6 +1365,12 @@ def gen_home(con, all_rows):
 
     evs = _amazing([r for r in gated if r["is_ev"]], 4) or [r for r in gated if r["is_ev"]][:4]
     best = _amazing(gated, 8)
+    # The most-loved leaderboard shows real votes only. Until readers have cast any, the
+    # page shows this data-derived list under a label that says exactly that, instead of
+    # an empty grid — the same cars the home page leads with, one year per nameplate.
+    (SITE / "assets" / "loved-fallback.json").write_text(json.dumps(
+        [{"name": f'{x["year"]} {x["make"]} {x["model"]}', "url": url_my(x), "score": x["score"]}
+         for x in _amazing(gated, 24)], separators=(",", ":"), ensure_ascii=False))
 
     def card_money(x):
         bits = []

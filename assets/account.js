@@ -89,6 +89,25 @@
 
   /* ------------------------------------------------------------ love button -- */
 
+  /* One engagement row per car: the heart (a vote) and the reader's own 1–5 star rating
+     (an owner response) side by side, both account-backed, both from the same database.
+     The star row writes the "overall" field of the owner survey below it, so a quick tap
+     and the full form are one record, not two rating systems. */
+  var RATING = {};   // item -> {mine: overall|null, n, avg}
+
+  function quickStars(item) {
+    var r = RATING[item] || {};
+    var mine = r.mine || 0, out = '';
+    for (var i = 1; i <= 5; i++) out += '<button type="button" data-quick-star="' + i + '" class="' +
+      (i <= mine ? 'on' : '') + '" aria-label="Rate ' + i + ' out of 5" aria-pressed="' +
+      (i === mine ? 'true' : 'false') + '">★</button>';
+    var summary = r.n >= MIN_RESPONSES
+      ? '<b>' + (r.avg || 0).toFixed(1) + '</b>/5 · ' + r.n + ' owners'
+      : (r.n ? r.n + ' owner' + (r.n > 1 ? 's' : '') + ' rated it' : (mine ? 'Your rating' : 'Rate it'));
+    return '<span class="quick-rate" data-quick-rate="' + esc(item) + '"><span class="stars" role="group" aria-label="Your rating">' +
+      out + '</span><small>' + summary + '</small></span>';
+  }
+
   function loveMarkup(n, mine) {
     return '<button class="love' + (mine ? ' on' : '') + '" data-love-btn' +
       ' aria-pressed="' + (mine ? 'true' : 'false') + '" title="Love this car">' +
@@ -101,16 +120,55 @@
     var hosts = [].slice.call(document.querySelectorAll('[data-love]'));
     if (!hosts.length) return;
     var items = hosts.map(function (h) { return h.getAttribute('data-love'); });
-    hosts.forEach(function (h) { h.innerHTML = loveMarkup(0, false); });
+    function paint(h, n, mine) {
+      var id = h.getAttribute('data-love');
+      h.innerHTML = '<div class="engage-row">' + loveMarkup(n, mine) + quickStars(id) + '</div>';
+    }
+    hosts.forEach(function (h) { paint(h, 0, false); });
 
     fetch('/api/love?items=' + encodeURIComponent(items.join(',')), { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         hosts.forEach(function (h) {
           var id = h.getAttribute('data-love');
-          h.innerHTML = loveMarkup((j.counts || {})[id] || 0, (j.mine || []).indexOf(id) > -1);
+          h.setAttribute('data-love-n', (j.counts || {})[id] || 0);
+          h.setAttribute('data-love-mine', (j.mine || []).indexOf(id) > -1 ? '1' : '');
+          paint(h, (j.counts || {})[id] || 0, (j.mine || []).indexOf(id) > -1);
         });
       }).catch(function () {});
+
+    // Ratings summary for the same items, from the owner-response rollups.
+    document.addEventListener('cv:rating', function (e) {
+      hosts.forEach(function (h) {
+        if (h.getAttribute('data-love') !== e.detail.item) return;
+        paint(h, +h.getAttribute('data-love-n') || 0, !!h.getAttribute('data-love-mine'));
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      var star = e.target.closest('[data-quick-star]');
+      if (!star) return;
+      var host = star.closest('[data-love]');
+      var id = host.getAttribute('data-love');
+      if (!ME) {
+        location.href = '/login/?next=' + encodeURIComponent(location.pathname) + '&why=survey';
+        return;
+      }
+      var v = +star.getAttribute('data-quick-star');
+      var prev = (RATING[id] && RATING[id].mineRow) || {};
+      api('/api/survey', {
+        item: id, overall: v,
+        reliability: prev.reliability || v, running_cost: prev.running_cost || v,
+        years_owned: prev.years_owned || 0, would_buy_again: prev.would_buy_again ? true : v >= 4,
+        comment: prev.comment || '',
+      }).then(function (j) {
+        var r = j.rollup || {};
+        RATING[id] = { mine: v, n: r.n || 0, avg: r.o || r.overall || 0,
+                       mineRow: Object.assign({}, prev, { overall: v }) };
+        document.dispatchEvent(new CustomEvent('cv:rating', { detail: { item: id } }));
+        document.dispatchEvent(new CustomEvent('cv:survey-saved', { detail: { item: id } }));
+      }).catch(function () {});
+    });
 
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-love-btn]');
@@ -125,7 +183,9 @@
       api('/api/love', {
         item: id, name: host.getAttribute('data-love-name') || document.title, url: location.pathname,
       }).then(function (j) {
-        host.innerHTML = loveMarkup(j.count, j.loved);
+        host.setAttribute('data-love-n', j.count);
+        host.setAttribute('data-love-mine', j.loved ? '1' : '');
+        paint(host, j.count, j.loved);
       }).catch(function () { btn.disabled = false; });
     });
   }
@@ -139,13 +199,17 @@
   var MIN_RESPONSES = 5;
 
   function surveyInit() {
-    var host = document.querySelector('[data-survey]');
-    if (!host) return;
+    [].slice.call(document.querySelectorAll('[data-survey]')).forEach(surveyOne);
+  }
+
+  function surveyOne(host) {
     var item = host.getAttribute('data-survey');
     var name = host.getAttribute('data-survey-name') || 'this car';
 
     function render(j) {
       var r = j.rollup || { n: 0 };
+      RATING[item] = { mine: j.mine ? +j.mine.overall : 0, n: r.n || 0, avg: r.overall || 0, mineRow: j.mine || null };
+      document.dispatchEvent(new CustomEvent('cv:rating', { detail: { item: item } }));
       var head;
       if (r.n >= MIN_RESPONSES) {
         head = '<div class="sv-scores">' +
@@ -245,9 +309,11 @@
     function load() {
       fetch('/api/survey?item=' + encodeURIComponent(item), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); }).then(render).catch(function () {
-          host.innerHTML = '<h2>Owner satisfaction</h2><p class="sv-n">Responses are temporarily unavailable. Please try again.</p>';
+          host.innerHTML = '<h2>Owner satisfaction</h2><p class="sv-n"><b>No responses yet.</b> ' +
+            'Ratings could not be loaded right now; the form returns when the connection does.</p>';
         });
     }
+    document.addEventListener('cv:survey-saved', function (e) { if (e.detail.item === item) load(); });
     whenMe(load);
   }
 
@@ -275,7 +341,11 @@
       .catch(function () { return { email: true, google: false, apple: false }; })
       .then(function (p) {
       var social = '';
-      if (p.google) social += '<a class="oauth g" href="/api/auth/google?next=' + encodeURIComponent(next) + '">' +
+      if (p.google && p.google_client_id) {
+        // Google Identity Services: the official button, then the credential is posted
+        // to the Worker, which verifies the signature and sets the session cookie.
+        social += '<div class="oauth-gis" data-gis-host><div id="gis-btn"></div></div>';
+      } else if (p.google) social += '<a class="oauth g" href="/api/auth/google?next=' + encodeURIComponent(next) + '">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6.1 12 6.1z"/></svg>' +
         'Continue with Google</a>';
       if (p.apple) social += '<a class="oauth a" href="/api/auth/apple?next=' + encodeURIComponent(next) + '">' +
@@ -298,6 +368,8 @@
         '<p class="login-fine">We store your email, your list and your preferences — nothing else, ' +
         'and nothing is sold. <a href="/privacy/">Privacy</a>.</p>' +
         '</form>';
+
+      if (p.google && p.google_client_id) gisButton(p.google_client_id, next, host);
 
       var f = host.querySelector('[data-login-form]');
       var mode = 'login';
@@ -324,6 +396,41 @@
           });
       });
     });
+  }
+
+  function gisButton(clientId, next, host) {
+    function onCredential(resp) {
+      var msg = host.querySelector('[data-msg]');
+      if (msg) { msg.textContent = 'Signing you in with Google…'; msg.className = 'login-msg'; }
+      api('/api/auth/google/token', { credential: resp.credential })
+        .then(function () { location.href = next.charAt(0) === '/' ? next : '/account/'; })
+        .catch(function (err) {
+          if (msg) { msg.textContent = (err && err.error) || 'Google sign-in did not complete.'; msg.className = 'login-msg bad'; }
+        });
+    }
+    function render() {
+      if (!window.google || !google.accounts || !google.accounts.id) return false;
+      google.accounts.id.initialize({ client_id: clientId, callback: onCredential, ux_mode: 'popup',
+        auto_select: false, itp_support: true });
+      var el = document.getElementById('gis-btn');
+      if (el) google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 320,
+        text: 'continue_with', shape: 'pill', logo_alignment: 'left' });
+      return true;
+    }
+    if (render()) return;
+    var sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.defer = true;
+    sc.onload = function () {
+      if (!render()) {
+        var h = host.querySelector('[data-gis-host]');
+        if (h) h.innerHTML = '<a class="oauth g" href="/api/auth/google?next=' + encodeURIComponent(next) + '">Continue with Google</a>';
+      }
+    };
+    sc.onerror = function () {
+      var h = host.querySelector('[data-gis-host]');
+      if (h) h.innerHTML = '<p class="login-msg">Google sign-in could not load (a content blocker?). Email and password still work.</p>';
+    };
+    document.head.appendChild(sc);
   }
 
   /* ------------------------------------------------------------- account -- */

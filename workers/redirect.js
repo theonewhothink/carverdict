@@ -31,7 +31,7 @@ export { HubDO } from "./hub.js";
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
 import { b64urlToBytes, idTokenClaims, isJsonRequest, stateCookie,
-         validIdentityClaims } from "./oauth.mjs";
+         validIdentityClaims, verifyGoogleIdToken } from "./oauth.mjs";
 
 const REDIRECT_MAP = new Map(Object.entries(MODEL_REDIRECTS).filter(([a, b]) => a !== b));
 
@@ -87,9 +87,15 @@ async function call(env, op, payload = {}, query = "") {
 }
 
 function providers(env) {
+  // Google needs only the PUBLIC client id: the sign-in page uses Google Identity
+  // Services, which returns a signed ID token the Worker verifies against Google's JWKS
+  // (see /api/auth/google/token). The redirect code flow stays available when a client
+  // secret is also configured.
   return {
     email: true,
-    google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    google: Boolean(env.GOOGLE_CLIENT_ID),
+    google_client_id: env.GOOGLE_CLIENT_ID || null,
+    google_redirect: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
     apple: Boolean(env.APPLE_CLIENT_ID && env.APPLE_TEAM_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY),
   };
 }
@@ -118,7 +124,7 @@ async function appleClientSecret(env) {
 
 async function oauthStart(kind, url, env) {
   const p = providers(env);
-  if (!p[kind]) return Response.redirect(url.origin + "/login/?e=unconfigured", 302);
+  if (!(kind === "google" ? p.google_redirect : p[kind])) return Response.redirect(url.origin + "/login/?e=unconfigured", 302);
   const state = crypto.randomUUID();
   const next = url.searchParams.get("next") || "/account/";
   const redirect = `${url.origin}/api/auth/${kind}/callback`;
@@ -227,6 +233,21 @@ async function api(req, url, env) {
     }
   }
 
+  if (path === "/api/auth/google/token") {
+    // Google Identity Services: the browser posts the credential (a signed ID token).
+    if (req.method !== "POST" || !env.GOOGLE_CLIENT_ID) return json({ error: "Google sign-in is not switched on." }, 400);
+    let claims;
+    try {
+      claims = await verifyGoogleIdToken(body.credential, env.GOOGLE_CLIENT_ID);
+    } catch (e) {
+      return json({ error: "Google did not confirm that sign-in. Try again." }, 401);
+    }
+    const { ok, data } = await call(env, "oauth", {
+      email: claims.email, name: claims.name || "", sub: claims.sub, provider: "google",
+    });
+    if (!ok || !data.token) return json({ error: (data && data.error) || "Could not create the account." }, 400);
+    return json({ user: data.user }, 200, { "Set-Cookie": setCookie(data.token) });
+  }
   if (path === "/api/auth/google") return oauthStart("google", url, env);
   if (path === "/api/auth/apple") return oauthStart("apple", url, env);
   if (path === "/api/auth/google/callback") return oauthCallback("google", req, url, env);
@@ -246,7 +267,10 @@ async function api(req, url, env) {
 
   if (path === "/api/auth/me") {
     const { data } = await call(env, "me", { token: token || "" });
-    return json({ ...data, providers: providers(env) });
+    // Re-issue the cookie on every successful check so the browser-side expiry slides
+    // with the server-side one and a returning reader is never silently signed out.
+    const extra = data.user && token ? { "Set-Cookie": setCookie(token) } : {};
+    return json({ ...data, providers: providers(env) }, 200, extra);
   }
 
   if (path === "/api/prefs") {

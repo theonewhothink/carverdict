@@ -119,8 +119,14 @@ export class HubDO {
 
   async userForToken(token) {
     if (!token) return null;
-    const row = this.one(`SELECT user_id, expires FROM sessions WHERE token_hash=?`, await sha256(token));
+    const h = await sha256(token);
+    const row = this.one(`SELECT user_id, expires FROM sessions WHERE token_hash=?`, h);
     if (!row || row.expires < Date.now()) return null;
+    // Sliding expiry: a reader who keeps coming back stays signed in indefinitely; only
+    // 180 days of silence ends a session. The cookie is refreshed by the Worker on /me.
+    if (row.expires - Date.now() < SESSION_DAYS * 864e5 / 2) {
+      this.sql.exec(`UPDATE sessions SET expires=? WHERE token_hash=?`, Date.now() + SESSION_DAYS * 864e5, h);
+    }
     const u = this.one(`SELECT * FROM users WHERE id=?`, row.user_id);
     if (u) this.sql.exec(`UPDATE users SET last_seen=? WHERE id=?`, Date.now(), u.id);
     return u;
