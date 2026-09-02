@@ -144,12 +144,30 @@
       // Weave the strongest shots through the article first: every
       // <figure data-gal-slot> in the biography takes one photograph, the rest
       // fill the grid at the end. One sequence, one lightbox.
-      var hero = document.querySelector('[data-model-hero].noimg');
+      // The hero must never be empty while the article has photographs. Three cases:
+      // the catalogue had no photo (figure.noimg); the catalogue photo failed to load
+      // (img.naturalWidth 0 after load, or onerror already marked the .ph); or it fails
+      // later - an error listener swaps the first gallery shot in either way.
+      var hero = document.querySelector('[data-model-hero]');
       var heroFile = null;
-      if (hero && images.length) {
+      function heroBroken() {
+        if (!hero) return false;
+        if (hero.classList.contains('noimg')) return true;
+        var im = hero.querySelector('img');
+        if (!im) return true;
+        if (im.complete && im.naturalWidth === 0) return true;
+        return !!hero.querySelector('.ph.noimg');
+      }
+      function promoteHero() {
+        if (!hero || !images.length) return;
         heroFile = images[0];
         hero.classList.remove('noimg');
         hero.innerHTML = cell(heroFile, 1100, 'hero-from-gallery');
+      }
+      if (heroBroken()) promoteHero();
+      else if (hero) {
+        var him = hero.querySelector('img');
+        if (him) him.addEventListener('error', function () { if (!heroFile) promoteHero(); });
       }
       // Put motion after two stills when Commons has it: a video belongs in the story,
       // not in a disconnected media bin at the bottom of the page.

@@ -330,14 +330,25 @@ def main():
 
     # photo pool for Car of the Day / Guess the Car (needs real filenames; kept separate
     # so the search index stays small on mobile). Big brands only = recognisable cars.
+    # Car of the Day, Car of the Week and the quiz draw from the curated landmark list
+    # (data/editorial/icons.json) so the home page never leads with a fleet van; the wider
+    # photographed catalogue only tops it up if the curated set is too small for the quiz.
+    try:
+        _icons = {n.lower() for n in json.load(open(ROOT / "data" / "editorial" / "icons.json")).get("icons", [])}
+    except Exception:
+        _icons = set()
     BIG = {b for b, v in list(brands.items())[:120]}
-    pool = []
+    pool, spare = [], []
     for b, v in brands.items():
-        if b not in BIG:
-            continue
         for m in v:
             if m["p"] and len(m["n"]) < 40 and m["n"] in MODEL_INDEX.get(slug(b), {}):
-                pool.append([m["n"], b, slug(b), m["y"], m["p"]])
+                row = [m["n"], b, slug(b), m["y"], m["p"]]
+                if m["n"].lower() in _icons:
+                    pool.append(row)
+                elif b in BIG:
+                    spare.append(row)
+    if len(pool) < 60:
+        pool += spare
     pool.sort(key=lambda r: r[0])
     # A thousand recognisable cars is decades of daily rotation and many more possible
     # quiz combinations.  Shipping the entire catalogue to every /play/ visit only costs

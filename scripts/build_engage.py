@@ -201,7 +201,7 @@ def _social_queue_retired():
             "posts": {
                 "instagram": f"Car of the Day: {car['n']}\n\nEvery model ever made — with the ownership data most sites won't show you.\nLink in bio → motorjury\n\n#cars #{(car['m'] or 'auto').replace(' ', '')} #carsofinstagram #cardata",
                 "tiktok": f"POV: you're about to buy a {car['n']} — here's what NHTSA complaint data actually says. 🚗📊 #cartok #cars #cardata #usedcars",
-                "x": f"Car of the Day: {car['n']}.\n\nWe indexed 12,747 models and every NHTSA complaint we could get. Which years are traps? →",
+                "x": f"Car of the Day: {car['n']}.\n\nWe indexed every car ever made and every NHTSA complaint we could get. Which years are traps? →",
                 "linkedin": f"Car of the Day: {car['n']}.\n\nWe built an open, sourced dataset of vehicle ownership costs — NHTSA complaints, recalls, EPA economy, regional fuel and energy prices — and published the methodology. Data over opinions.",
             },
             "cta": f"{ORIGIN}/play/",

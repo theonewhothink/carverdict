@@ -30,27 +30,27 @@ SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="51
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- the gavel: one heavy head, one heavy handle, struck across the frame -->
-  <g transform="rotate(-30 256 226)">
-    <rect x="88" y="148" width="336" height="130" rx="46" fill="url(#gold)"/>
-    <rect x="210" y="268" width="92" height="144" rx="42" fill="url(#gold)"/>
+  <!-- the car is the mark: a big side profile with two heavy wheels reads as "car" at 16 px -->
+  <path d="M40 300h84l58-92c10-16 27-26 46-26h96c20 0 39 10 50 27l58 91h40c22 0 40 18 40 40v52H40c-22 0-40-18-40-40v-12c0-22 18-40 40-40z" fill="#F4F7FB"/>
+  <path d="M160 300l44-70c5-8 14-13 24-13h30v83zm120 0v-83h28c11 0 21 5 27 15l42 68z" fill="#122A4E"/>
+  <circle cx="140" cy="392" r="62" fill="#071426"/><circle cx="140" cy="392" r="26" fill="#FFB02E"/>
+  <circle cx="372" cy="392" r="62" fill="#071426"/><circle cx="372" cy="392" r="26" fill="#FFB02E"/>
+  <!-- the jury: a gold gavel about to strike, small enough to stay an accent -->
+  <g transform="rotate(-35 400 112)">
+    <rect x="322" y="86" width="156" height="58" rx="24" fill="url(#gold)"/>
+    <rect x="380" y="140" width="40" height="70" rx="18" fill="url(#gold)"/>
   </g>
-  <!-- a real car silhouette: body, glass and two wheels remain legible at 16 px -->
-  <path d="M58 386h74l48-62c10-13 25-20 42-20h92c18 0 34 8 44 23l40 59h49c23 0 41 18 41 41v13H58c-19 0-34-15-34-34s15-20 34-20z" fill="#F4F7FB"/>
-  <path d="M170 371l34-45c5-7 13-11 22-11h37v56zm108 0v-56h31c10 0 18 4 24 12l30 44z" fill="#122A4E"/>
-  <circle cx="145" cy="424" r="42" fill="#071426"/><circle cx="145" cy="424" r="17" fill="#FFB02E"/>
-  <circle cx="375" cy="424" r="42" fill="#071426"/><circle cx="375" cy="424" r="17" fill="#FFB02E"/>
 </svg>
 """
 
 MASK = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <g fill="black">
-    <g transform="rotate(-30 256 226)">
-      <rect x="88" y="148" width="336" height="130" rx="46"/>
-      <rect x="210" y="268" width="92" height="144" rx="42"/>
+    <path d="M40 300h84l58-92c10-16 27-26 46-26h96c20 0 39 10 50 27l58 91h40c22 0 40 18 40 40v52H40c-22 0-40-18-40-40v-12c0-22 18-40 40-40z"/>
+    <circle cx="140" cy="392" r="62"/><circle cx="372" cy="392" r="62"/>
+    <g transform="rotate(-35 400 112)">
+      <rect x="322" y="86" width="156" height="58" rx="24"/>
+      <rect x="380" y="140" width="40" height="70" rx="18"/>
     </g>
-    <path d="M58 386h74l48-62c10-13 25-20 42-20h92c18 0 34 8 44 23l40 59h49c23 0 41 18 41 41v13H58c-19 0-34-15-34-34s15-20 34-20z"/>
-    <circle cx="145" cy="424" r="42"/><circle cx="375" cy="424" r="42"/>
   </g>
 </svg>
 """
@@ -81,48 +81,47 @@ def draw_icon(size, maskable=False, transparent_bg=False):
         img.paste(bg, (0, 0), mask)
 
     # scale the artwork down inside a maskable icon so the platform's circular crop
-    # cannot cut the gavel's head off
+    # cannot cut the wheels or the gavel off
     k = 0.74 if maskable else 1.0
     cx = cy = S / 2
 
     def T(x, y):
         return (cx + (x - cx) * k, cy + (y - cy) * k)
 
-    # gavel, rotated -30 degrees about (256, 226), drawn as polygons so the rotation is real
+    # the car first: body, cabin, two heavy wheels. Drawn big so it survives 16 px.
+    road = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(road)
+    white = (244, 247, 251, 255)
+    rd.rounded_rectangle([0, 300, 512, 392], radius=40, fill=white)
+    rd.polygon([(124, 302), (182, 208), (328, 208), (392, 302)], fill=white)
+    rd.polygon([(160, 296), (204, 230), (258, 230), (258, 296)], fill=NAVY_TOP + (255,))
+    rd.polygon([(280, 230), (308, 230), (350, 296), (280, 296)], fill=NAVY_TOP + (255,))
+    for cxw in (140, 372):
+        rd.ellipse([cxw - 62, 330, cxw + 62, 454], fill=NAVY_BOT + (255,))
+        rd.ellipse([cxw - 26, 366, cxw + 26, 418], fill=AMBER + (255,))
+    if k != 1.0:
+        small = road.resize((int(S * k), int(S * k)), Image.LANCZOS)
+        road = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+        road.paste(small, (int((S - S * k) / 2), int((S - S * k) / 2)), small)
+    img.alpha_composite(road)
+
+    # the gavel accent, rotated -35 degrees about (400, 112)
     layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    ld = ImageDraw.Draw(layer)
     grad = Image.new("RGBA", (S, S))
     gd = ImageDraw.Draw(grad)
     for i in range(S):
         gd.line([(i, 0), (i, S)], fill=lerp(GOLD_TOP, GOLD_BOT, i / S) + (255,))
     shape = Image.new("L", (S, S), 0)
     sd = ImageDraw.Draw(shape)
-    sd.rounded_rectangle([88, 148, 424, 278], radius=46, fill=255)
-    sd.rounded_rectangle([210, 268, 302, 412], radius=42, fill=255)
-    shape = shape.rotate(30, resample=Image.BICUBIC, center=(256, 226))
+    sd.rounded_rectangle([322, 86, 478, 144], radius=24, fill=255)
+    sd.rounded_rectangle([380, 140, 420, 210], radius=18, fill=255)
+    shape = shape.rotate(35, resample=Image.BICUBIC, center=(400, 112))
     layer.paste(grad, (0, 0), shape)
-
     if k != 1.0:
         small = layer.resize((int(S * k), int(S * k)), Image.LANCZOS)
         layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
         layer.paste(small, (int((S - S * k) / 2), int((S - S * k) / 2)), small)
     img.alpha_composite(layer)
-
-    road = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    rd = ImageDraw.Draw(road)
-    # A simple roof + body is clearer after downsampling than a detailed Bezier outline.
-    rd.rounded_rectangle([24, 366, 488, 442], radius=34, fill=(244, 247, 251, 255))
-    rd.polygon([(132, 368), (184, 304), (316, 304), (382, 368)], fill=(244, 247, 251, 255))
-    rd.polygon([(169, 358), (204, 318), (255, 318), (255, 358)], fill=NAVY_TOP + (255,))
-    rd.polygon([(270, 318), (310, 318), (350, 358), (270, 358)], fill=NAVY_TOP + (255,))
-    for cxw in (145, 375):
-        rd.ellipse([cxw - 42, 382, cxw + 42, 466], fill=NAVY_BOT + (255,))
-        rd.ellipse([cxw - 17, 407, cxw + 17, 441], fill=AMBER + (255,))
-    if k != 1.0:
-        small = road.resize((int(S * k), int(S * k)), Image.LANCZOS)
-        road = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-        road.paste(small, (int((S - S * k) / 2), int((S - S * k) / 2)), small)
-    img.alpha_composite(road)
 
     return img.resize((size, size), Image.LANCZOS)
 

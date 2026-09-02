@@ -497,15 +497,28 @@ def main():
         if y2:
             year_buckets[y2].append((b2, m2, bs2, ms2, y2))
 
+    def _power_of(m2):
+        from bio_text import _num as _n, _clean as _c
+        v = _n(_c((WIKI.get(m2["q"]) or {}).get("power")))
+        return v if v and 5 < v < 2500 else None
+
     def rivals_of(b, m, ms):
+        """Contemporaries from other marques, introduced within three years. Where the
+        car's power output is known, a rival must be within roughly half to double that
+        figure - a 911 GT3 is not weighed against a Yaris, whatever the year."""
         y0 = _era_year(m)
         if not y0:
             return []
+        p0 = _power_of(m)
         cand = []
         for y in range(y0 - 3, y0 + 4):
             for b2, m2, bs2, ms2, y2 in year_buckets.get(y, ()):
                 if b2 == b:
                     continue
+                p2 = _power_of(m2)
+                if p0:
+                    if not p2 or not (p0 * 0.55 <= p2 <= p0 * 1.9):
+                        continue
                 cand.append((0 if m2["n"].lower() in FEATURED else 1,
                              0 if m2["p"] else 1, abs(y2 - y0),
                              zlib.crc32(f"{ms}:{bs2}/{ms2}".encode()) & 0xffff,
@@ -719,19 +732,7 @@ def main():
         specs_card = (f'<div class="card"><h2>Specifications</h2>'
                       f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>') if spec_html else ""
 
-        about_card = ""
-        if wk.get("about"):
-            paras = [p.strip() for p in re.split(r"\n{2,}", wk["about"]) if p.strip()]
-            if len(paras) == 1 and len(paras[0]) > 480:
-                sents = re.split(r"(?<=\.)\s+", paras[0])
-                mid = len(sents) // 2
-                paras = [" ".join(sents[:mid]), " ".join(sents[mid:])]
-            prose = "".join(f"<p>{esc(p)}</p>" for p in paras[:4])
-            wp = wk.get("wp") or m["n"]
-            wp_url = "https://en.wikipedia.org/wiki/" + wp.replace(" ", "_")
-            about_card = (f'<div class="card about-card"><h2>About the {esc(m["n"])}</h2>{prose}'
-                          f'<p class="lib-note">From the Wikipedia article '
-                          f'<a href="{esc(wp_url)}" rel="noopener">{esc(wp)}</a>, CC BY-SA.</p></div>')
+        about_card = ""   # the Wikipedia summary is woven into the article (bio_text.py)
 
         engagement_card = (f'<div class="card engagement-card">'
                            f'<div class="love-host" data-love="model:{esc(m["q"])}" '
@@ -748,8 +749,12 @@ def main():
                             f'<div class="gal-grid" data-gal></div>'
                             f'<p class="lib-note" data-gal-credits></p></div>')
 
+        try:
+            _own = ownership_summary(b, m["n"])
+        except Exception:
+            _own = None
         bio_html, bio_words, bio_facts = build_bio(
-            b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")))
+            b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")), own=_own)
         # Index gate. A library page earns a place in Google's index only when it carries
         # something a reader cannot get from the marque list: a photograph AND at least two
         # sourced facts (or a Wikipedia summary). Everything else stays online for readers and

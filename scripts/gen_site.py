@@ -6,7 +6,7 @@ Quality gate: model-year page generated ONLY if complaint_count>=30 OR recall_co
 OR (is_ev AND ev_extras present); years failing the gate (or with data gaps) merge into
 the model overview. Every page: >=8 contextual internal links, JSON-LD, data-sources box.
 """
-import hashlib, json, math, os, shutil, sqlite3, sys, re, tempfile, atexit
+import hashlib, json, math, os, shutil, sqlite3, sys, re, tempfile, atexit, urllib.parse
 from pathlib import Path
 from datetime import date, datetime
 
@@ -31,12 +31,16 @@ def _load_lib_photos():
 LIB_PHOTOS = _load_lib_photos()
 
 
+CATALOG = {}   # marque -> [models], the exact de-duplicated set /library/ renders
+
 def _catalogue_stats():
-    """Use the same normalized, de-duplicated catalogue as /library/."""
+    """Use the same normalized, de-duplicated catalogue as /library/, so the home page,
+    /cars/, /library/ and /follow/ can never disagree about how many cars there are."""
     try:
         from build_library import load_model_index, build_dataset
         load_model_index()
         brands = build_dataset()
+        CATALOG.update(brands)
         return (sum(len(v) for v in brands.values()), len(brands),
                 sum(1 for v in brands.values() for m in v if m.get("p")))
     except Exception:
@@ -1280,17 +1284,21 @@ def gen_cars_index(brands):
         # Browse must bucket models exactly as the Library does, or a tile links to a
         # brand page that was never written. brand_of prefers the marque in the model's
         # own name over the manufacturer, so the Daihatsu Altis is a Daihatsu here too.
-        counts = {}
-        for x in lib:
-            raw = (x.get("m") or "").strip()
-            if _brand_of:
-                bb = _brand_of(x.get("n") or "", raw, known)
-                if bb == "Independent & coachbuilders":
-                    continue          # a bucket, not a marque: not an A-Z tile
-            else:
-                bb = _ALIAS.get(raw, raw)
-            if bb and not _is_qid(bb):
-                counts[bb] = counts.get(bb, 0) + 1
+        # One source of truth: the de-duplicated catalogue the Library renders. Counting the
+        # raw file here showed per-marque totals that the marque page itself contradicted.
+        counts = {b: len(v) for b, v in CATALOG.items()
+                  if b != "Independent & coachbuilders" and b and not _is_qid(b)}
+        if not counts:
+            for x in lib:
+                raw = (x.get("m") or "").strip()
+                if _brand_of:
+                    bb = _brand_of(x.get("n") or "", raw, known)
+                    if bb == "Independent & coachbuilders":
+                        continue
+                else:
+                    bb = _ALIAS.get(raw, raw)
+                if bb and not _is_qid(bb):
+                    counts[bb] = counts.get(bb, 0) + 1
 
         def bslug(t):
             # must byte-match build_library.slug or these links die at the gate
@@ -1414,6 +1422,45 @@ car — founders, engineers, designers, champions and industrialists.</p>
     n_models = CATALOG_MODELS
     n_brands = CATALOG_BRANDS
 
+    # ---- the landmark cars: curated, photographed, rotating weekly ----
+    try:
+        _icons = json.load(open(ROOT / "data" / "editorial" / "icons.json"))
+    except Exception:
+        _icons = {"icons": [], "electrified": []}
+    _photo_by_name = {n: ph for n, y, ph in LIB_PHOTOS}
+
+    _used_icons = set()
+
+    def icon_cards(names, n, salt):
+        """A different, marque-diverse dozen every week: seeded shuffle, at most two cars
+        per marque, and never the same car twice on one page."""
+        import datetime as _dt, random as _rnd
+        week = _dt.date.today().isocalendar()
+        rng = _rnd.Random(f"{week[0]}-{week[1]}-{salt}")
+        avail = [(nm, _photo_by_name.get(nm.lower())) for nm in names
+                 if _photo_by_name.get(nm.lower()) and nm.lower() not in _used_icons]
+        rng.shuffle(avail)
+        out, per_marque = [], {}
+        for nm, ph in avail:
+            u = model_url(nm)
+            if u == "/library/":
+                continue
+            marque = u.split("/")[2]
+            if per_marque.get(marque, 0) >= 2:
+                continue
+            per_marque[marque] = per_marque.get(marque, 0) + 1
+            _used_icons.add(nm.lower())
+            _b = ("https://commons.wikimedia.org/wiki/Special:FilePath/"
+                  + urllib.parse.quote(ph.replace(" ", "_")))
+            out.append(f'<a class="icon-card" href="{u}"><img src="{_b}?width=640" alt="{esc(nm)}" loading="lazy" '
+                       f'referrerpolicy="no-referrer" onerror="this.closest(\'.icon-card\').style.display=\'none\'">'
+                       f'<span>{esc(nm)}</span></a>')
+            if len(out) >= n:
+                break
+        return "".join(out)
+    icon_grid = icon_cards(_icons.get("icons", []), 12, 0)
+    ev_grid = icon_cards(_icons.get("electrified", []), 6, 3)
+
     # ---- image-led hero: real photography from the library ----
     def photo_of(name):
         for n, y, ph in LIB_PHOTOS:
@@ -1469,7 +1516,8 @@ car — founders, engineers, designers, champions and industrialists.</p>
         f'</a>')
     strip_cells = "".join(
         f'<a class="st-cell" href="{murl(nm)}">'
-        f'<img src="{cimg(ph, 520)}" alt="{esc(nm)}" loading="lazy"><span>{esc(nm)}</span></a>'
+        f'<img src="{cimg(ph, 520)}" alt="{esc(nm)}" loading="lazy" referrerpolicy="no-referrer" '
+        f'onerror="this.closest(\'.st-cell\').style.display=\'none\'"><span>{esc(nm)}</span></a>'
         for nm, ph in shots[4:16])
     # The band scrolls forever, so the sequence is emitted twice: the animation travels
     # exactly -50% and lands on the duplicate, which makes the loop seamless.
@@ -1492,16 +1540,25 @@ recall campaigns and EPA data. Not opinions.</p>
 <section class="photo-strip">{strip_cells}</section>
 <div class="wrap" style="display:grid;gap:22px;padding:30px 0 20px">
 <div class="daily-grid" data-daily></div>
-<div class="card"><h2>Cars the data actually likes</h2><p style="margin-bottom:12px">The highest-scoring
-model years in the index, each one computed from a deep complaint and recall record — not a shortlist
-anyone was paid for.</p>{cardlist(best)}
-<p style="margin-top:12px;font-size:13px"><a href="/cars/">Every brand, every verdict →</a></p></div>
+<section class="card icons-home"><h2>The cars worth the detour</h2><p style="margin-bottom:12px">Landmark
+machines from the library — the ones that changed a marque, a decade or a rulebook — each with its own
+photographed story. A different dozen every week.</p>
+<div class="icon-grid">{icon_grid}</div>
+<p style="margin-top:12px;font-size:13px"><a href="/library/">The whole library →</a> · <a href="/cars/">Every brand's ownership verdicts →</a></p></section>
 <section class="card loved-home"><h2>Most loved right now</h2>
 <p style="margin-bottom:12px">Chosen by readers, one vote per account. Tap the heart on any car.</p>
 <div id="loved-app" class="loved-grid"><p class="muted">Loading…</p></div>
 <p style="margin-top:12px;font-size:13px"><a href="/loved/">The full leaderboard →</a></p></section>
 {AD.format(slot='home')}
-<div class="card"><h2>EV ownership, without the hype</h2><p style="margin-bottom:12px">Battery replacement ranges, real complaint clusters, energy cost.</p>{cardlist(evs)}</div>
+<section class="card icons-home"><h2>Electrified, and exceptional</h2><p style="margin-bottom:12px">The electric and hybrid
+cars that earned a place on this page on merit; the ownership index carries battery warranty and
+replacement cost for every electric model year sold in America.</p>
+<div class="icon-grid">{ev_grid}</div>
+<p style="margin-top:12px;font-size:13px"><a href="/search/?fuel=electric">Every electric model year, scored →</a></p></section>
+<section class="card"><h2>Scored, priced, and worth buying</h2><p style="margin-bottom:12px">The model years the
+federal record likes most, with what they cost to buy today and to run for a year.</p>
+{cardlist(best)}
+<p style="margin-top:12px;font-size:13px"><a href="/search/">Search every scored model year →</a></p></section>
 {legends_section}
 {guides_section}
 <h2 class="sec">Explore</h2>

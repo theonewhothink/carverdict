@@ -30,6 +30,7 @@ export { HubDO } from "./hub.js";
 // same JSON the generator writes is bundled here and prefix-matched per request.
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
+import { makeRecovery } from "./recover.mjs";
 import { b64urlToBytes, idTokenClaims, isJsonRequest, stateCookie,
          validIdentityClaims, verifyGoogleIdToken } from "./oauth.mjs";
 
@@ -43,6 +44,23 @@ function modelRedirect(url) {
   if (!target) return null;
   const rest = url.pathname.slice(m[1].length);
   return url.origin + target + rest + url.search;
+}
+
+
+const recoveryCandidates = makeRecovery(REDIRECT_MAP);
+
+async function serveWithRecovery(req, url, env) {
+  const res = await env.ASSETS.fetch(req);
+  if (res.status !== 404 || (req.method !== "GET" && req.method !== "HEAD")) return res;
+  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname)) return res;          // assets: no guessing
+  const p = url.pathname.endsWith("/") ? url.pathname : url.pathname + "/";
+  for (const c of recoveryCandidates(p).slice(0, 12)) {
+    const probe = await env.ASSETS.fetch(new Request(url.origin + c, { method: "HEAD" }));
+    if (probe.ok) {
+      return Response.redirect(url.origin + c + url.search, 301);
+    }
+  }
+  return res;
 }
 
 const SEC = {
@@ -377,6 +395,6 @@ export default {
       }
     }
 
-    return env.ASSETS.fetch(req);
+    return serveWithRecovery(req, url, env);
   },
 };
