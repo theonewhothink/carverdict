@@ -208,3 +208,12 @@
       fail('No additional free photographs are catalogued for this model yet.');
     });
 })();
+
+// An in-article slot that nothing filled (site not yet approved, blocked, or no demand)
+// must not sit in the story as a 280px hole. AdSense marks these data-ad-status="unfilled"
+// on approved sites; on unapproved ones it marks nothing, so the check is "no iframe yet".
+setTimeout(function () {
+  document.querySelectorAll('ins.adsbygoogle.bio-ad').forEach(function (el) {
+    if (!el.querySelector('iframe') || el.getAttribute('data-ad-status') === 'unfilled') el.style.display = 'none';
+  });
+}, 8000);
