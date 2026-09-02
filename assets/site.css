@@ -730,9 +730,9 @@ table,td{font-size:15px}
 @media (max-width:640px){.lb{padding:0}.lb-fig{border-radius:0}.lb-nav{width:38px;height:38px}}
 
 /* ---- model biography: figures woven through the article ---- */
-.bio-fig{margin:0;border:1px solid var(--line);border-radius:var(--r,10px);overflow:hidden;background:var(--wash)}
+.bio-fig{margin:14px auto;max-width:820px;border:1px solid var(--line);border-radius:var(--r,10px);overflow:hidden;background:var(--wash)}
 .bio-fig a{display:block}
-.bio-fig img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}
+.bio-fig img{width:100%;display:block;aspect-ratio:16/9;max-height:460px;object-fit:cover}
 .bio-fig video,.gallery-card video{width:100%;display:block;aspect-ratio:16/9;background:#070B12;object-fit:contain}
 .media-video{overflow:hidden;border-radius:12px;background:#070B12}
 .hero-from-gallery{display:block;width:100%;border:0;padding:0;background:transparent}
@@ -1227,6 +1227,7 @@ html,body{overflow-x:clip}
 .bio-ad{margin:6px 0}
 .bio-ad:empty{display:none}
 ins.adsbygoogle.bio-ad{display:block;min-height:0}
+ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 .bio-card p+p{margin-top:12px}
 .bio-card .lib-note{margin-top:10px}
 
