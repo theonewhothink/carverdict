@@ -62,8 +62,7 @@ def _hubs():
         return {}
 HUB_NOTES = _hubs()
 NOINDEX = '<meta name="robots" content="noindex,follow">'
-BYLINE = ('<p class="lib-note">Ranking computed from the federal record; commentary by '
-          '<a href="/about/">Adir Trabelsi</a>, editor · <a href="/editorial-policy/">editorial policy</a></p>')
+BYLINE = ''
 
 
 def shell(title, desc, canon, body, robots=""):

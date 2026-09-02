@@ -1,0 +1,147 @@
+/* app.css — the phone layer. Loaded on every page after site.css; every rule is scoped to
+   phones (or to app-only elements), so desktop is untouched. Turns the responsive site into
+   something that behaves like a contemporary mobile app: one-row header, bottom tab bar,
+   full-screen search, bottom sheets, sticky action bar on car pages, edge-to-edge media,
+   snap carousels, skeleton loaders, view transitions, app typography. */
+
+/* ---- app-only elements: hidden on desktop ---- */
+.app-tabs,.app-search,.app-sheet,.app-scrim,.app-actionbar,.app-hdr-btn{display:none}
+
+@media (max-width:767px){
+  :root{--tabs-h:58px;--hdr-h:56px}
+  html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--hdr-h) + 8px)}
+  body{font-size:17px;line-height:1.5;padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));overscroll-behavior-y:none}
+  h1{font-size:clamp(24px,7vw,30px);line-height:1.15}
+  h2{font-size:21px}
+  h2.sec{font-size:19px}
+  p,li{font-size:16.5px}
+  small,.src-note,.geo-note,.crumbs,.triad,.lib-note,figcaption{font-size:13.5px!important}
+  .rel-grid a small,.icon-card span,.st-cell span{font-size:13px!important}
+  .rel-grid a,.lib-card,.brand-tile{font-size:15.5px}
+  .card{padding:16px;border-radius:16px}
+  .wrap{padding-left:16px;padding-right:16px}
+
+  /* ---- header: one row — logo, search button, account ---- */
+  .hdr{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+  .hdr-in{flex-wrap:nowrap;gap:10px;padding:8px 0;min-height:var(--hdr-h);align-items:center}
+  .hdr-in .searchbox,.hdr-in .nav,.hdr-in .langs{display:none!important}
+  .hdr-in .logo{font-size:22px;margin-right:auto;order:1}
+  .hdr-in .app-hdr-btn{order:5}
+  .hdr-in .acct-host{order:6}
+  .app-hdr-btn svg{stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .app-hdr-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;
+    border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--text);flex:none}
+  .app-hdr-btn svg{width:20px;height:20px}
+  .acct-host .acct-chip,.acct-host a{min-height:40px}
+  .geo-bar{display:none}
+  .geo-chip{border-radius:999px;font-size:13px;padding:4px 12px}
+
+  /* ---- hero: edge to edge ---- */
+  .hero-inner{padding:18px 0 16px;gap:14px}
+  .hero-art,.hh-shot,.model-shot,.hero-img{margin-left:-16px;margin-right:-16px;border-radius:0!important;border-left:0;border-right:0}
+  .hero-art img,.hh-shot img,.model-shot img{border-radius:0}
+  .hh-cta .btn{flex:1;text-align:center;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px}
+  .btn{border-radius:14px;min-height:48px;font-size:16px}
+
+  /* ---- card grids become snap carousels ---- */
+  .icon-grid,.photo-strip-inner,.rel-grid.app-carousel,.loved-grid,.daily-grid,.lib-grid.app-carousel{
+    display:flex!important;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:2px 16px 6px;grid-template-columns:none!important}
+  .icon-grid::-webkit-scrollbar,.rel-grid.app-carousel::-webkit-scrollbar,.loved-grid::-webkit-scrollbar,.daily-grid::-webkit-scrollbar,.lib-grid.app-carousel::-webkit-scrollbar{display:none}
+  .icon-grid>*,.rel-grid.app-carousel>*,.loved-grid>*,.lib-grid.app-carousel>*{flex:0 0 78%;scroll-snap-align:start;max-width:320px}
+  .daily-grid>*{flex:0 0 86%;scroll-snap-align:start}
+  .icon-card{aspect-ratio:4/3;border-radius:16px}
+  .photo-strip{animation:none!important}
+  .photo-strip-inner{animation:none!important;width:auto!important}
+  .photo-strip .st-cell{flex:0 0 62%;scroll-snap-align:start;border-radius:14px;overflow:hidden}
+  .icons-home>p,.loved-home>p{font-size:15px;color:var(--muted)}
+  .rel-grid:not(.app-carousel){grid-template-columns:1fr;gap:10px}
+  .rel-grid a{padding:14px 16px;border-radius:14px;min-height:56px}
+
+  /* ---- tables: swipeable, never squashed ---- */
+  .table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}
+  .cost-table{font-size:14.5px}
+  .cost-table th,.cost-table td{padding:10px 8px;white-space:nowrap}
+
+  /* ---- tap feedback everywhere ---- */
+  a,button,.rel-grid a,.icon-card,.lib-card,.st-cell{-webkit-tap-highlight-color:transparent;transition:transform .12s ease,opacity .12s ease}
+  a:active,button:active,.rel-grid a:active,.icon-card:active,.lib-card:active,.st-cell:active{transform:scale(.97);opacity:.85}
+  input,select,textarea{font-size:16px;border-radius:12px;min-height:46px}
+
+  /* ---- bottom tab bar ---- */
+  .app-tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:90;height:calc(var(--tabs-h) + env(safe-area-inset-bottom));
+    padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);justify-content:space-around;align-items:stretch}
+  .app-tabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;
+    font-weight:600;color:var(--muted);text-decoration:none;letter-spacing:.01em;min-width:0}
+  .app-tabs a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .app-tabs a.on{color:var(--brand,#B8860B)}
+  .app-tabs a.on svg{stroke-width:2.4}
+  .app-tabs a:active{transform:none;opacity:.7}
+  footer{padding-bottom:16px}
+  .social-row{padding-bottom:8px}
+
+  /* ---- full-screen search ---- */
+  .app-search{position:fixed;inset:0;z-index:120;background:#fff;display:flex;flex-direction:column;
+    transform:translateY(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+  .app-search.open{transform:none;visibility:visible}
+  .app-search-bar{display:flex;gap:10px;align-items:center;padding:10px 12px calc(10px + 0px);padding-top:calc(10px + env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+  .app-search-bar input{flex:1;font-size:17px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--wash,#f5f7fa)}
+  .app-search-bar button{border:0;background:none;font-size:16px;font-weight:600;color:var(--brand,#B8860B);padding:8px}
+  .app-search-body{flex:1;overflow:auto;padding:8px 0 calc(24px + env(safe-area-inset-bottom))}
+  .app-search-body #q-out,.app-search-body .q-out{position:static!important;display:block!important;box-shadow:none!important;border:0!important;max-height:none!important;width:auto!important}
+  .app-search-body a{display:flex;align-items:center;min-height:52px;padding:8px 16px;border-bottom:1px solid var(--line);color:var(--text);text-decoration:none;font-size:16px}
+  .app-recent h4{margin:14px 16px 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .app-search-empty{padding:28px 16px;color:var(--muted);font-size:15px}
+  .app-out:has(#q-out:not([hidden]))+.app-recent{display:none}
+
+  /* ---- bottom sheets ---- */
+  .app-scrim{position:fixed;inset:0;z-index:110;background:rgba(7,20,38,.45);opacity:0;transition:opacity .2s;display:block;visibility:hidden}
+  .app-scrim.open{opacity:1;visibility:visible}
+  .app-sheet{position:fixed;left:0;right:0;bottom:0;z-index:115;background:#fff;border-radius:22px 22px 0 0;
+    padding:8px 16px calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto;display:block;
+    transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);visibility:hidden;box-shadow:0 -12px 40px rgba(0,0,0,.18)}
+  .app-sheet.open{transform:none;visibility:visible}
+  .app-sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:#d8dee6;margin:4px auto 14px}
+  .app-sheet h3{font-size:19px;margin:0 0 12px}
+  .app-sheet .geo-chip{display:grid!important;gap:10px;padding:0!important;border:0!important;background:none!important;max-width:none;overflow:visible}
+  .app-sheet .geo-chip select{width:100%!important;max-width:none;font-size:17px;padding:12px;border-radius:12px;border:1px solid var(--line);min-height:48px}
+  .app-sheet .geo-chip span,.app-sheet .geo-chip small{font-size:14px;color:var(--muted)}
+  .app-sheet .engage-row{justify-content:center;gap:18px;padding:10px 0}
+  .app-sheet .stars button,.app-sheet .love{transform:scale(1.25)}
+  .app-sheet .row{display:grid;gap:10px}
+  .app-sheet .btn{width:100%}
+
+  /* ---- sticky action bar on car pages ---- */
+  .app-actionbar{position:fixed;left:0;right:0;bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));z-index:85;
+    display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);
+    border-top:1px solid var(--line);transform:translateY(120%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .app-actionbar.show{transform:none}
+  .app-actionbar .ab-txt{flex:1;min-width:0}
+  .app-actionbar .ab-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-actionbar .ab-meta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-actionbar button{border:0;border-radius:12px;min-height:42px;padding:0 14px;font-weight:700;font-size:14px;background:var(--wash,#f2f4f7);color:var(--text)}
+  .app-actionbar button.pri{background:var(--ink,#10233F);color:#fff}
+  .app-actionbar .love{margin:0}
+
+  /* ---- skeletons ---- */
+  .app-skel,.loved-grid .muted,.daily-grid:empty{position:relative;min-height:120px;border-radius:14px;overflow:hidden;color:transparent!important;
+    background:linear-gradient(90deg,#eef1f5 25%,#f7f8fa 37%,#eef1f5 63%);background-size:400% 100%;animation:app-shimmer 1.3s ease infinite}
+  .daily-grid:empty{min-height:220px;margin-left:0;margin-right:0}
+  @keyframes app-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+
+  /* ---- images: no layout shift, soft fade-in ---- */
+  img[loading=lazy]{background:var(--wash,#f2f4f7)}
+  .icon-card img,.st-cell img,.lib-card img,.daily img{transition:opacity .3s}
+}
+
+/* ---- view transitions (all sizes; the browser ignores them where unsupported) ---- */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:app-out .18s ease both}
+::view-transition-new(root){animation:app-in .22s ease both}
+@keyframes app-out{to{opacity:0;transform:translateX(-14px)}}
+@keyframes app-in{from{opacity:0;transform:translateX(14px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
+
+/* standalone (installed) mode: no browser chrome, pad the status bar */
+@media (display-mode:standalone){.hdr{padding-top:env(safe-area-inset-top)}}

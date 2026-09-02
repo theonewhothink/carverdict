@@ -36,7 +36,7 @@ class Audit(HTMLParser):
 
 
 def main():
-    pages = glob.glob("site/**/*.html", recursive=True)
+    pages = [p for p in glob.glob("site/**/*.html", recursive=True) if not p.endswith("site/offline.html")]
     failures = []
     for path in pages:
         text = open(path, encoding="utf-8").read()

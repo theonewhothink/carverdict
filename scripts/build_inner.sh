@@ -174,6 +174,8 @@ timeout 90 "$PY" scripts/build_people.py --harvest-only || echo "WARNING: legend
 # cards, de-duplicated hreflang, and the <main>/skip-link landmarks. Nine generators each
 # have their own HTML shell, so this is the only place that can cover all of them.
 "$PY" scripts/polish.py
+# Service worker cache version: one per build, so a deploy invalidates the old shell.
+sed -i "s/__BUILD__/$(date +%Y%m%d%H%M)/" site/sw.js 2>/dev/null || true
 
 # Google AdSense + Google Analytics 4: one auto-ads loader and one gtag.js snippet in
 # every page head, plus ads.txt at the root. The AdSense loader is inert until approval

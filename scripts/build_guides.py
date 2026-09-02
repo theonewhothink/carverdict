@@ -164,10 +164,7 @@ def main():
         rel_html = ('<div class="card"><h2>More guides</h2><div class="rel-grid">' + "".join(
             f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("date", ""))}</small></a>'
             for g in rel[:6]) + "</div></div>")
-        byline = (f'<div class="triad"><b>By</b> <a href="/about/">{EDITOR}</a>, editor · '
-                  f'<b>Published</b> {esc(meta.get("date", gen_site.TODAY))} · '
-                  f'<b>Sources</b> <a href="/methodology/">NHTSA, EPA</a> · '
-                  f'<a href="/editorial-policy/">editorial policy</a> · {words:,} words</div>')
+        byline = f'<div class="triad"><b>Published</b> {esc(meta.get("date", gen_site.TODAY))}</div>'
         body_html = f"""<div class="hero"><div class="wrap hero-inner"><div class="hero-copy">
 <nav class="crumbs"><a href="/guides/">Guides</a> › {esc(meta["title"])}</nav>
 <h1>{esc(meta["title"])}</h1>
@@ -176,9 +173,7 @@ def main():
 </div></div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <article class="card prose guide">{article}
-<p class="src-note">Written by {EDITOR}. Complaint and recall figures are from NHTSA and are re-checked on
-every nightly build; the year tables above are live. If a figure here disagrees with a model page, the model
-page is newer — write to corrections@motorjury.com and the guide is revised.</p></article>
+</article>
 {model_links(con, meta["models"])}
 {rel_html}
 </div>"""
@@ -202,7 +197,7 @@ page is newer — write to corrections@motorjury.com and the guide is revised.</
     body_html = f"""<div class="hero"><div class="wrap hero-inner"><h1>Buyer's guides</h1>
 <p class="sub">Which years to buy and which to walk past — written and signed by the editor, checked against the federal record.</p></div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0">
-<div class="card prose editorial">{HUB_NOTES.get("guides", "")}<p class="src-note">Editor: <a href="/about/">{EDITOR}</a> · <a href="/editorial-policy/">editorial policy</a></p></div>
+<div class="card prose editorial">{HUB_NOTES.get("guides", "")}</div>
 <div class="card"><div class="rel-grid">{cards}</div></div>
 </div>"""
     write("guides/index.html", page(f"Used Car Buyer's Guides: Years to Avoid | {BRAND}",

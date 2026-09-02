@@ -175,9 +175,12 @@ def polish(path):
             s = s.replace("</div></footer>", SOCIAL_ROW + "</div></footer>", 1)
         else:
             s = s.replace("</footer>", SOCIAL_ROW + "</footer>", 1)
-    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js"):
+    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js", "/assets/app.js"):
         if src not in s and "</body>" in s:
             s = s.replace("</body>", f'<script src="{src}" defer></script></body>', 1)
+    # The phone layer (app.css) loads after site.css so its scoped rules win on phones.
+    if "/assets/app.css" not in s and "/assets/site.css" in s:
+        s = re.sub(r'(<link[^>]+/assets/site\.css[^>]*>)', r'\1<link rel="stylesheet" href="/assets/app.css">', s, count=1)
 
     # 6. structured data floor. Several generators emit none at all, which leaves a third of
     #    the site invisible to rich results and to the AI engines that read JSON-LD first.
@@ -208,6 +211,7 @@ def polish(path):
                        % _json.dumps(b, separators=(",", ":")) for b in blocks)
         s = s.replace("</head>", tags + "</head>", 1)
 
+    s = bust(s)   # again: the tags injected above must carry the version too
     if s != orig:
         open(path, "w", encoding="utf-8").write(s)
         return True

@@ -233,9 +233,6 @@ def build_bio(b, m, sp, wk, sib, riv, fe, brand_count, era_year, has_gallery, ow
         # a photograph between story paragraphs, so the pictures sit in the narrative
         story = ('<figure class="bio-fig" data-gal-slot hidden></figure>'.join(story_parts)
                  if has_gallery and len(story_parts) > 1 else "".join(story_parts))
-        story += (f'<p class="lib-note">Background from the Wikipedia article '
-                  f'<a href="{_esc(wp_url)}" rel="noopener">{_esc(wp)}</a>, CC BY-SA; MotorJury adds the '
-                  f'specification reading, the ownership figures and the photography.</p>')
         sections.append((_pick(["The story", "How it came about", "Where it came from", "The background"], seed, 3), story))
 
     # ---------------------------------------------------------- 3. under the skin ----

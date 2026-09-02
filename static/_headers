@@ -21,14 +21,19 @@
   Cache-Control: public, max-age=2592000, immutable
 
 /favicon.ico
-  Cache-Control: public, max-age=2592000
+  Cache-Control: public, max-age=86400
 /favicon.svg
-  Cache-Control: public, max-age=2592000
+  Cache-Control: public, max-age=86400
 /apple-touch-icon.png
-  Cache-Control: public, max-age=2592000
+  Cache-Control: public, max-age=86400
 /icon-192.png
-  Cache-Control: public, max-age=2592000
+  Cache-Control: public, max-age=86400
 /icon-512.png
   Cache-Control: public, max-age=2592000
 /site.webmanifest
   Cache-Control: public, max-age=604800
+
+# The service worker must be re-checked on every load or an old app shell outlives deploys.
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /

@@ -724,13 +724,15 @@ def main():
         # nothing and costs a scroll. Show it beside real facts, and drop the card otherwise.
         if spec_html:
             spec_html += f'<div class="fact"><span>Catalogue ID</span><b>{esc(m["q"])}</b></div>'
-        src = ('the Wikipedia infobox for this model (CC BY-SA) and the open Wikidata record'
-               if wk else 'the open Wikidata record for this model')
-        spec_note = (f'<p class="lib-note">Specifications come from {src}, and are shown only where '
-                     'a source actually carries them — nothing here is estimated. Figures are '
-                     'manufacturer specifications, not measured results.</p>')
+            # The licence attribution for the Wikipedia-derived text lives on /about/; the
+            # page itself carries only the link to the article it draws on, as a data row.
+            _wp = (wk or {}).get("wp")
+            if _wp:
+                _wu = "https://en.wikipedia.org/wiki/" + _wp.replace(" ", "_")
+                spec_html += (f'<div class="fact"><span>Source</span><b><a href="{esc(_wu)}" rel="noopener">'
+                              f'Wikipedia</a></b></div>')
         specs_card = (f'<div class="card"><h2>Specifications</h2>'
-                      f'<div class="facts spec-table">{spec_html}</div>{spec_note}</div>') if spec_html else ""
+                      f'<div class="facts spec-table">{spec_html}</div></div>') if spec_html else ""
 
         about_card = ""   # the Wikipedia summary is woven into the article (bio_text.py)
 
@@ -777,7 +779,6 @@ def main():
 <h1>{esc(m["n"])}</h1>
 <p class="sub">{esc(b)}{f' · introduced {esc(m["y"])}' if m["y"] else ''}</p>
 <div class="facts">{facts}</div>
-<p class="triad"><b>Editor</b> <a href="/about/">Adir Trabelsi</a> · sources: Wikidata, Wikipedia, Wikimedia Commons · <a href="/editorial-policy/">editorial policy</a></p>
 <div class="hh-cta"><a class="btn" href="/cars/">Ownership-cost data</a>
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
