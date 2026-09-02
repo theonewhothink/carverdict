@@ -4,6 +4,13 @@ name = "carsite"
 compatibility_date = "2026-07-19"
 main = "workers/redirect.js"
 
+# Google sign-in. The OAuth client id is public by design (it is embedded in the sign-in
+# page); the Worker verifies the ID token Google Identity Services returns against
+# Google's JWKS, so no client secret is needed. Project "motorjury" in Google Cloud,
+# client "MotorJury web sign-in", origin https://motorjury.com.
+[vars]
+GOOGLE_CLIENT_ID = "519984973200-q94tosv123gmigjvknvtmnotilhs30ak.apps.googleusercontent.com"
+
 [assets]
 directory = "./site"
 not_found_handling = "404-page"
