@@ -8,7 +8,7 @@
 .app-tabs,.app-search,.app-sheet,.app-scrim,.app-actionbar,.app-hdr-btn{display:none}
 
 @media (max-width:767px){
-  :root{--tabs-h:58px;--hdr-h:56px}
+  :root{--tabs-h:58px;--hdr-h:56px;--gutter:clamp(18px,5.5vw,32px)}
   html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--hdr-h) + 8px)}
   body{font-size:17px;line-height:1.5;padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));overscroll-behavior-y:none}
   h1{font-size:clamp(24px,7vw,30px);line-height:1.15}
@@ -19,7 +19,8 @@
   .rel-grid a small,.icon-card span,.st-cell span{font-size:13px!important}
   .rel-grid a,.lib-card,.brand-tile{font-size:15.5px}
   .card{padding:16px;border-radius:16px}
-  .wrap{padding-left:16px;padding-right:16px}
+  .wrap{padding-left:var(--gutter)!important;padding-right:var(--gutter)!important}
+  .card{padding:clamp(16px,4.5vw,24px)}
 
   /* ---- header: one row — logo, search button, account ---- */
   .hdr{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
@@ -38,15 +39,14 @@
 
   /* ---- hero: edge to edge ---- */
   .hero-inner{padding:18px 0 16px;gap:14px}
-  .hero-art,.hh-shot,.model-shot,.hero-img{margin-left:-16px;margin-right:-16px;border-radius:0!important;border-left:0;border-right:0}
-  .hero-art img,.hh-shot img,.model-shot img{border-radius:0}
+  .hero-art,.hh-shot,.model-shot,.hero-img{margin-left:0;margin-right:0;border-radius:16px;overflow:hidden}
   .hh-cta .btn{flex:1;text-align:center;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px}
   .btn{border-radius:14px;min-height:48px;font-size:16px}
 
   /* ---- card grids become snap carousels ---- */
   .icon-grid,.photo-strip-inner,.rel-grid.app-carousel,.loved-grid,.daily-grid,.lib-grid.app-carousel{
     display:flex!important;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-    scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:2px 16px 6px;grid-template-columns:none!important}
+    scrollbar-width:none;margin-left:calc(-1 * var(--gutter));margin-right:calc(-1 * var(--gutter));padding:2px var(--gutter) 6px;scroll-padding-left:var(--gutter);grid-template-columns:none!important}
   .icon-grid::-webkit-scrollbar,.rel-grid.app-carousel::-webkit-scrollbar,.loved-grid::-webkit-scrollbar,.daily-grid::-webkit-scrollbar,.lib-grid.app-carousel::-webkit-scrollbar{display:none}
   .icon-grid>*,.rel-grid.app-carousel>*,.loved-grid>*,.lib-grid.app-carousel>*{flex:0 0 78%;scroll-snap-align:start;max-width:320px}
   .daily-grid>*{flex:0 0 86%;scroll-snap-align:start}
@@ -59,7 +59,7 @@
   .rel-grid a{padding:14px 16px;border-radius:14px;min-height:56px}
 
   /* ---- tables: swipeable, never squashed ---- */
-  .table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}
+  .table-wrap{margin-left:calc(-1 * var(--gutter));margin-right:calc(-1 * var(--gutter));padding:0 var(--gutter)}
   .cost-table{font-size:14.5px}
   .cost-table th,.cost-table td{padding:10px 8px;white-space:nowrap}
 
@@ -99,7 +99,7 @@
   .app-scrim{position:fixed;inset:0;z-index:110;background:rgba(7,20,38,.45);opacity:0;transition:opacity .2s;display:block;visibility:hidden}
   .app-scrim.open{opacity:1;visibility:visible}
   .app-sheet{position:fixed;left:0;right:0;bottom:0;z-index:115;background:#fff;border-radius:22px 22px 0 0;
-    padding:8px 16px calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto;display:block;
+    padding:8px var(--gutter) calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto;display:block;
     transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);visibility:hidden;box-shadow:0 -12px 40px rgba(0,0,0,.18)}
   .app-sheet.open{transform:none;visibility:visible}
   .app-sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:#d8dee6;margin:4px auto 14px}
@@ -114,7 +114,7 @@
 
   /* ---- sticky action bar on car pages ---- */
   .app-actionbar{position:fixed;left:0;right:0;bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));z-index:85;
-    display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);
+    display:flex;align-items:center;gap:10px;padding:8px var(--gutter);background:rgba(255,255,255,.97);backdrop-filter:blur(16px);
     border-top:1px solid var(--line);transform:translateY(120%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
   .app-actionbar.show{transform:none}
   .app-actionbar .ab-txt{flex:1;min-width:0}
@@ -128,6 +128,8 @@
   .app-skel,.loved-grid .muted,.daily-grid:empty{position:relative;min-height:120px;border-radius:14px;overflow:hidden;color:transparent!important;
     background:linear-gradient(90deg,#eef1f5 25%,#f7f8fa 37%,#eef1f5 63%);background-size:400% 100%;animation:app-shimmer 1.3s ease infinite}
   .daily-grid:empty{min-height:220px;margin-left:0;margin-right:0}
+  .daily-grid{margin-left:0;margin-right:0;padding-left:0;padding-right:0}
+  .daily-grid>*{flex:0 0 100%;border-radius:16px}
   @keyframes app-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 
   /* ---- images: no layout shift, soft fade-in ---- */
@@ -145,3 +147,6 @@
 
 /* standalone (installed) mode: no browser chrome, pad the status bar */
 @media (display-mode:standalone){.hdr{padding-top:env(safe-area-inset-top)}}
+
+@media (max-width:767px){.stat-row{display:grid!important;grid-template-columns:repeat(3,1fr);gap:10px}.stat-row b{font-size:22px}.stat-row span{font-size:11px}}
+@media (min-width:768px) and (max-width:1100px){.wrap{padding-left:clamp(28px,4vw,48px);padding-right:clamp(28px,4vw,48px)}}
