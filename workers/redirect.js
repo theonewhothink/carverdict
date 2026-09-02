@@ -234,18 +234,40 @@ async function api(req, url, env) {
   }
 
   if (path === "/api/auth/google/token") {
-    // Google Identity Services: the browser posts the credential (a signed ID token).
+    // Google Identity Services. Two arrivals: (a) redirect mode - Google itself POSTs
+    // application/x-www-form-urlencoded {credential, g_csrf_token} to this login_uri and
+    // the reader lands here as a navigation, so no popup is involved (popup blockers and
+    // mobile Safari made the popup flow fail silently); (b) popup mode - our own script
+    // posts JSON {credential}. Either way the ID token is verified against Google's JWKS.
     if (req.method !== "POST" || !env.GOOGLE_CLIENT_ID) return json({ error: "Google sign-in is not switched on." }, 400);
+    let credential = body.credential, redirectMode = false, next = "/account/";
+    if (!isJson) {
+      redirectMode = true;
+      const form = await req.formData().catch(() => null);
+      credential = form && form.get("credential");
+      // Double-submit CSRF check that GIS specifies for redirect mode.
+      const csrfCookie = cookie(req, "g_csrf_token"), csrfBody = form && form.get("g_csrf_token");
+      if (!csrfCookie || !csrfBody || csrfCookie !== csrfBody) return Response.redirect(url.origin + "/login/?e=state", 302);
+      const n = cookie(req, "mj_next") || "";
+      if (n.startsWith("/") && !n.startsWith("//")) next = n;
+    }
+    const fail = (code) => redirectMode ? Response.redirect(url.origin + "/login/?e=" + code, 302)
+                                        : json({ error: code === "token" ? "Google did not confirm that sign-in. Try again." : "Could not create the account." }, code === "token" ? 401 : 400);
     let claims;
     try {
-      claims = await verifyGoogleIdToken(body.credential, env.GOOGLE_CLIENT_ID);
+      claims = await verifyGoogleIdToken(credential, env.GOOGLE_CLIENT_ID);
     } catch (e) {
-      return json({ error: "Google did not confirm that sign-in. Try again." }, 401);
+      return fail("token");
     }
     const { ok, data } = await call(env, "oauth", {
       email: claims.email, name: claims.name || "", sub: claims.sub, provider: "google",
     });
-    if (!ok || !data.token) return json({ error: (data && data.error) || "Could not create the account." }, 400);
+    if (!ok || !data.token) return fail("denied");
+    if (redirectMode) {
+      return new Response(null, { status: 302, headers: {
+        Location: url.origin + next, ...SEC,
+        "Set-Cookie": setCookie(data.token) } });
+    }
     return json({ user: data.user }, 200, { "Set-Cookie": setCookie(data.token) });
   }
   if (path === "/api/auth/google") return oauthStart("google", url, env);

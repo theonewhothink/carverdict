@@ -410,8 +410,13 @@
     }
     function render() {
       if (!window.google || !google.accounts || !google.accounts.id) return false;
-      google.accounts.id.initialize({ client_id: clientId, callback: onCredential, ux_mode: 'popup',
-        auto_select: false, itp_support: true });
+      // Redirect mode: Google posts the credential straight to the Worker and the reader
+      // arrives as a normal navigation. The popup mode depended on window.open, which
+      // popup blockers and mobile Safari refuse without a trusted gesture. The return
+      // path travels in a short-lived cookie because GIS redirect carries no state.
+      try { document.cookie = 'mj_next=' + encodeURIComponent(next) + '; Path=/; Max-Age=600; SameSite=Lax; Secure'; } catch (e) {}
+      google.accounts.id.initialize({ client_id: clientId, callback: onCredential, ux_mode: 'redirect',
+        login_uri: location.origin + '/api/auth/google/token', auto_select: false, itp_support: true });
       var el = document.getElementById('gis-btn');
       if (el) google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 320,
         text: 'continue_with', shape: 'pill', logo_alignment: 'left' });
