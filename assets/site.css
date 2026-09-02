@@ -1238,3 +1238,5 @@ ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 .icon-card:hover img{transform:scale(1.04)}
 .icon-card span{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 10px;font-weight:700;font-size:14px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75))}
 @media (max-width:520px){.icon-grid{grid-template-columns:repeat(2,1fr)}}
+
+.byline{font-size:13px;color:var(--faint);margin:6px 0 0}.byline a{color:var(--muted)}

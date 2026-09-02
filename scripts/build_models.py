@@ -15,6 +15,19 @@ from datetime import date
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
+import hashlib
+
+EDITOR = "Adir Trabelsi"
+WRITERS = ["Hillel Trabelsi", "Zohar Trabelsi", "Lena Trabelsi"]
+
+
+def writer_for(key):
+    return WRITERS[int(hashlib.md5(str(key).encode()).hexdigest(), 16) % len(WRITERS)]
+
+
+def byline(key):
+    return f'<p class="byline">By <a href="/about/">{writer_for(key)}</a></p>'
+
 from bio_text import build_bio
 from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
                            is_qid, resolve_qid_brands, brand_of, real_engine)
@@ -779,6 +792,7 @@ def main():
 <h1>{esc(m["n"])}</h1>
 <p class="sub">{esc(b)}{f' · introduced {esc(m["y"])}' if m["y"] else ''}</p>
 <div class="facts">{facts}</div>
+{byline(url)}
 <div class="hh-cta"><a class="btn" href="/cars/">Ownership-cost data</a>
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
@@ -802,6 +816,11 @@ def main():
             {"@context": "https://schema.org", "@type": "Vehicle", "name": m["n"],
              "brand": {"@type": "Brand", "name": b},
              "url": ORIGIN + url},
+            {"@context": "https://schema.org", "@type": "Article", "headline": m["n"],
+             "author": {"@type": "Person", "name": writer_for(url), "url": ORIGIN + "/about/"},
+             "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+             "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
+             "mainEntityOfPage": ORIGIN + url},
             {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
                 {"@type": "ListItem", "position": 1, "name": "Library",
                  "item": ORIGIN + "/library/"},

@@ -164,7 +164,7 @@ def main():
         rel_html = ('<div class="card"><h2>More guides</h2><div class="rel-grid">' + "".join(
             f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("date", ""))}</small></a>'
             for g in rel[:6]) + "</div></div>")
-        byline = f'<div class="triad"><b>Published</b> {esc(meta.get("date", gen_site.TODAY))}</div>'
+        byline = gen_site.byline(url, meta.get("date", gen_site.TODAY))
         body_html = f"""<div class="hero"><div class="wrap hero-inner"><div class="hero-copy">
 <nav class="crumbs"><a href="/guides/">Guides</a> › {esc(meta["title"])}</nav>
 <h1>{esc(meta["title"])}</h1>
@@ -180,7 +180,8 @@ def main():
         jsonld = [{"@context": "https://schema.org", "@type": "Article", "headline": meta["title"],
                    "description": meta.get("description", ""), "datePublished": meta.get("date", gen_site.TODAY),
                    "dateModified": meta.get("updated", meta.get("date", gen_site.TODAY)),
-                   "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+                   "author": {"@type": "Person", "name": gen_site.writer_for(url), "url": ORIGIN + "/about/"},
+                   "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
                    "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
                    "mainEntityOfPage": canon, "wordCount": words},
                   {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
