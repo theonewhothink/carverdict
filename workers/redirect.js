@@ -124,12 +124,21 @@ async function appleClientSecret(env) {
 
 async function oauthStart(kind, url, env) {
   const p = providers(env);
-  if (!(kind === "google" ? p.google_redirect : p[kind])) return Response.redirect(url.origin + "/login/?e=unconfigured", 302);
+  if (!p[kind]) return Response.redirect(url.origin + "/login/?e=unconfigured", 302);
   const state = crypto.randomUUID();
+  const nonce = crypto.randomUUID();
   const next = url.searchParams.get("next") || "/account/";
   const redirect = `${url.origin}/api/auth/${kind}/callback`;
   let go;
-  if (kind === "google") {
+  if (kind === "google" && !p.google_redirect) {
+    // OpenID Connect implicit flow with form_post: Google posts a signed ID token straight
+    // back to the callback, no client secret, no popup, no third-party iframe. The nonce
+    // binds the token to this request; the Worker verifies signature, audience and nonce.
+    go = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID, redirect_uri: redirect, response_type: "id_token",
+      response_mode: "form_post", scope: "openid email profile", state, nonce, prompt: "select_account",
+    });
+  } else if (kind === "google") {
     go = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID, redirect_uri: redirect, response_type: "code",
       scope: "openid email profile", state, prompt: "select_account",
@@ -142,17 +151,18 @@ async function oauthStart(kind, url, env) {
   }
   return new Response(null, {
     status: 302,
-    headers: { Location: go, "Set-Cookie": stateCookie(state + "|" + next), ...SEC },
+    headers: { Location: go, "Set-Cookie": stateCookie(state + "|" + next + "|" + nonce), ...SEC },
   });
 }
 
 async function oauthCallback(kind, req, url, env) {
   const saved = (cookie(req, "mj_oauth") || "").split("|");
   const next = saved[1] || "/account/";
-  let code, state, name = "";
+  const nonce = saved[2] || "";
+  let code, state, name = "", idToken = null;
   if (req.method === "POST") {
     const form = await req.formData();
-    code = form.get("code"); state = form.get("state");
+    code = form.get("code"); state = form.get("state"); idToken = form.get("id_token");
     const user = form.get("user");
     if (user) {
       try {
@@ -163,11 +173,18 @@ async function oauthCallback(kind, req, url, env) {
   } else {
     code = url.searchParams.get("code"); state = url.searchParams.get("state");
   }
-  if (!state || state !== saved[0] || !code) return Response.redirect(url.origin + "/login/?e=state", 302);
+  if (!state || state !== saved[0] || !(code || idToken)) return Response.redirect(url.origin + "/login/?e=state", 302);
 
   const redirect = `${url.origin}/api/auth/${kind}/callback`;
   let claims;
-  if (kind === "google") {
+  if (kind === "google" && idToken && !code) {
+    try {
+      claims = await verifyGoogleIdToken(idToken, env.GOOGLE_CLIENT_ID);
+    } catch (e) {
+      return Response.redirect(url.origin + "/login/?e=token", 302);
+    }
+    if (!nonce || claims.nonce !== nonce) return Response.redirect(url.origin + "/login/?e=state", 302);
+  } else if (kind === "google") {
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
