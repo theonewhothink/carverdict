@@ -25,6 +25,121 @@ def writer_for(key):
     return WRITERS[int(hashlib.md5(str(key).encode()).hexdigest(), 16) % len(WRITERS)]
 
 
+
+# ---- the side dossier: gauge, big numbers, rivals chart, jump links ----------------------
+# The model-year pages read better than the biographies because a sticky side card carries
+# the numbers and a chart while the prose scrolls. Same treatment here, from the same
+# specification record the article is written from.
+def _hp_kg(wk, sp):
+    from bio_text import _num as _n, _clean as _c, _first as _f
+    p = _n(_f(_c(wk.get("power"))))
+    if p and re.search(r"\bkW\b", str(wk.get("power") or ""), re.I) and not re.search(r"\b(hp|PS|bhp)\b", str(wk.get("power")), re.I):
+        p = p * 1.341
+    w = _n(_f(_c(wk.get("weight")))) or (float(sp["mass"]) if sp.get("mass") else None)
+    if w and w < 100:            # tonnes written as "1.2 t"
+        w = w * 1000
+    return (p if p and 5 < p < 2500 else None), (w if w and 300 < w < 6000 else None)
+
+
+def _perf_index(hp, kg):
+    """0-100 from horsepower per tonne on a log scale: 40 hp/t -> 0, 800 hp/t -> 100."""
+    if not hp or not kg:
+        return None
+    import math
+    x = hp / (kg / 1000)
+    return max(0, min(100, round(100 * (math.log(x) - math.log(40)) / (math.log(800) - math.log(40)))))
+
+
+def svg_gauge(score, label):
+    import math
+    if score is None:
+        return ""
+    pct = max(0, min(100, score)) / 100
+    color = "#0F8A5F" if score >= 70 else ("#B45309" if score >= 45 else "#3B5BDB")
+    ang = math.pi * (1 - pct)
+    x, y = 60 + 46 * math.cos(ang), 62 - 46 * math.sin(ang)
+    return (f'<svg viewBox="0 0 120 70" role="img" aria-label="{esc(label)} {score} of 100">'
+            f'<path d="M14 62 A46 46 0 0 1 106 62" fill="none" stroke="#E3E7EC" stroke-width="9" stroke-linecap="round"/>'
+            f'<path d="M14 62 A46 46 0 0 1 {x:.1f} {y:.1f}" fill="none" stroke="{color}" stroke-width="9" stroke-linecap="round"/>'
+            f'<text x="60" y="56" fill="#0E1420" font-size="24" font-weight="800" text-anchor="middle" font-family="system-ui">{score}</text>'
+            f'<text x="60" y="69" fill="#8A94A3" font-size="8" text-anchor="middle" font-family="system-ui">{esc(label.upper())} / 100</text></svg>')
+
+
+def svg_bars(items, accent="#0E7C86", hot=None):
+    if not items:
+        return ""
+    mx = max(n for _, n in items) or 1
+    h = len(items) * 34 + 6
+    rows = []
+    for i, (label, n) in enumerate(items):
+        y = i * 34
+        w = 8 + 300 * n / mx
+        col = "#B8860B" if label == hot else accent
+        rows.append(
+            f'<text x="0" y="{y+12}" fill="#5A6472" font-size="11" font-family="system-ui">{esc(label[:34])}</text>'
+            f'<rect x="0" y="{y+17}" width="{w:.0f}" height="9" rx="4" fill="{col}" opacity="0.9"/>'
+            f'<text x="{w+6:.0f}" y="{y+25}" fill="#0E1420" font-size="11" font-weight="700" font-family="system-ui">{n:,.0f} hp</text>')
+    return f'<svg viewBox="0 0 400 {h}" role="img" aria-label="Power output against rivals">{"".join(rows)}</svg>'
+
+
+def _anchor_ids(html_text):
+    """Give every <h2> in the article an id so the side card can jump to it."""
+    seen = {}
+    def rep(m):
+        t = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+        sid = re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-") or "s"
+        seen[sid] = seen.get(sid, 0) + 1
+        if seen[sid] > 1:
+            sid += f"-{seen[sid]}"
+        return f'<h2 id="{sid}"{m.group(1)}>{m.group(2)}</h2>'
+    return re.sub(r"<h2([^>]*)>(.*?)</h2>", rep, html_text, flags=re.S)
+
+
+def side_dossier(name, b, wk, sp, riv, start, end, built, power_of):
+    hp, kg = _hp_kg(wk, sp)
+    idx = _perf_index(hp, kg)
+    gauge = svg_gauge(idx, "Performance") if idx is not None else ""
+    bigs = []
+    if hp:
+        bigs.append((f"{hp:,.0f}", "horsepower"))
+    if sp.get("top_speed"):
+        bigs.append((f'{sp["top_speed"]:g}', "km/h top speed"))
+    if kg:
+        bigs.append((f"{kg:,.0f}", "kg kerb weight"))
+    if hp and kg:
+        bigs.append((f"{hp / (kg / 1000):,.0f}", "hp per tonne"))
+    if built:
+        bigs.append((f"{built:,}", "built"))
+    if start:
+        bigs.append((f"{start}–{end or 'now'}" if end != start else f"{start}", "in production"))
+    big_html = "".join(f'<div class="big-num"><b>{esc(v)}</b><span>{esc(l)}</span></div>' for v, l in bigs[:6])
+    bars = ""
+    if hp and riv:
+        items = [(name, hp)]
+        for b2, m2, bs2, ms2, y2 in riv:
+            p2 = power_of(m2)
+            if p2:
+                _fw = b2.split()[0].lower()
+                items.append((m2["n"] if m2["n"].lower().startswith(_fw) else f"{b2} {m2['n']}", p2))
+        if len(items) >= 3:
+            items = items[:6]
+            bars = f'<div class="chart" style="margin-top:14px">{svg_bars(items, hot=name)}</div><p class="lbl-sm">Power against its contemporaries</p>'
+    badge = ""
+    if idx is not None:
+        cls, word = (("v-BUY", "Serious performance") if idx >= 70 else ("v-CAUTION", "Brisk") if idx >= 45 else ("v-DATA", "Everyday pace"))
+        badge = f'<span class="badge {cls}">{word}</span>'
+    if not (gauge or big_html):
+        return ""
+    gauge_html = f'<div class="chart" style="max-width:150px;margin:0 auto">{gauge}</div>' if gauge else ""
+    return (f'<div class="card verdict sticky bio-side">'
+            f'{gauge_html}'
+            f'{badge}<div class="big-grid">{big_html}</div>{bars}'
+            f'<nav class="jump" aria-label="On this page"><b>On this page</b>'
+            f'<a href="#the-story">The story</a><a href="#photo-gallery">Photo gallery</a>'
+            f'<a href="#specifications">Specifications</a><a href="#rivals-of-its-era">Rivals</a></nav>'
+            f'</div>')
+
+
 def byline(key):
     return f'<p class="byline">By <a href="/about/">{writer_for(key)}</a></p>'
 
@@ -784,6 +899,14 @@ def main():
         if not ownership_card:
             ownership_card = ""
 
+        from bio_text import _years_of as _yo, _clean as _cl
+        _start, _end = _yo(_cl(wk.get("production")), _era_year(m))
+        side = side_dossier(m["n"], b, wk, sp, riv, _start, _end,
+                            int(sp["built"]) if sp.get("built") else None, _power_of)
+        bio_html = _anchor_ids(bio_html)
+        gallery_card = gallery_card.replace("<h2>Photo gallery</h2>", '<h2 id="photo-gallery">Photo gallery</h2>')
+        specs_card = specs_card.replace("<h2>Specifications</h2>", '<h2 id="specifications">Specifications</h2>')
+        rivals_card = rivals_card.replace("<h2>Rivals of its era</h2>", '<h2 id="rivals-of-its-era">Rivals of its era</h2>')
         body = f"""<div class="model-hero"><div class="wrap">
 <nav class="crumbs"><a href="/library/">Library</a> › <a href="/library/{bs}/">{esc(b)}</a> › {esc(m["n"])}</nav>
 <div class="model-grid">
@@ -796,7 +919,8 @@ def main():
 <div class="hh-cta"><a class="btn" href="/cars/">Ownership-cost data</a>
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
-<div class="wrap" style="display:grid;gap:22px;padding:26px 0">
+<div class="wrap grid bio-grid">
+<div style="display:grid;gap:22px;min-width:0">
 {ownership_card}
 <article class="model-story" aria-label="{esc(m['n'])} biography">
 {bio_html}
@@ -807,6 +931,8 @@ def main():
 <div class="card"><h2>More from {esc(b)}</h2><div class="rel-grid">{sib_html}</div></div>
 {family_card}
 {rivals_card}
+</div>
+<aside>{side}</aside>
 </div>"""
 
         # Vehicle plus the breadcrumb trail the page already shows visually. Google renders the

@@ -1240,3 +1240,15 @@ ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 @media (max-width:520px){.icon-grid{grid-template-columns:repeat(2,1fr)}}
 
 .byline{font-size:13px;color:var(--faint);margin:6px 0 0}.byline a{color:var(--muted)}
+/* library biography: side dossier (mirrors the model-year verdict card) */
+.bio-side .big-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;text-align:left}
+.bio-side .big-num{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--wash,#f7f8fa)}
+.bio-side .big-num b{display:block;font-size:22px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+.bio-side .big-num span{display:block;font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.bio-side .lbl-sm{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 0;text-align:left}
+.bio-side .jump{display:grid;gap:6px;margin-top:16px;text-align:left;border-top:1px solid var(--line);padding-top:12px}
+.bio-side .jump b{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.bio-side .jump a{color:var(--text);font-size:14px;padding:4px 0}
+.bio-side .badge{margin-top:8px}
+@media(min-width:1024px){.bio-grid{grid-template-columns:minmax(0,1fr) 320px}}
+@media(max-width:1023px){.bio-side{position:static}.bio-side .jump{display:none}}
