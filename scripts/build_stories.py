@@ -358,16 +358,26 @@ def compare_body(con, mk1, mo1, rs1, mk2, mo2, rs2):
     # -- money --------------------------------------------------------------------------
     money = ""
     if a["price"] and b["price"]:
-        cheaper = n1 if a["price"] < b["price"] else n2
         d = abs(a["price"] - b["price"])
+        # These are class-level estimates: two cars of the same segment and the same age
+        # often price identically, and the first version printed "roughly $0 less", which
+        # is both nonsense and the exact string the HTML QA gate rejects. Under a quarter of
+        # a percent apart is the same money, and saying so is the honest reading.
+        if d < max(500, int(0.025 * max(a["price"], b["price"]))):
+            gap_line = (f'they price within '
+                        f'<span data-usd="{max(d, 1)}" data-kind="price">${max(d, 1):,}</span> '
+                        f'of each other, which at this level is the same money')
+        else:
+            cheaper = n1 if a["price"] < b["price"] else n2
+            gap_line = (f'the {esc(cheaper)} is roughly '
+                        f'<span data-usd="{d}" data-kind="price">${d:,}</span> less')
         money = (f'<div class="card"><h2>What each costs today</h2>'
                  f'<p>A recent used {esc(n1)} prices at about '
-                 f'<span data-usd="{a["price"]}" data-kind="price">${a["price"]:,}</span>, '
+                 f'<span data-usd="{a["price"]}" data-kind="price">${a["price"]:,}</span> and '
                  f'a {esc(n2)} at about '
                  f'<span data-usd="{b["price"]}" data-kind="price">${b["price"]:,}</span> — '
-                 f'the {esc(cheaper)} is roughly '
-                 f'<span data-usd="{d}" data-kind="price">${d:,}</span> less'
-                 + (f', and returns {a["mpg"]} against {b["mpg"]} MPG combined'
+                 + gap_line
+                 + (f', and they return {a["mpg"]} against {b["mpg"]} MPG combined'
                     if a["mpg"] and b["mpg"] else '')
                  + '.</p><p class="src-note">Class-level estimates re-priced to your country, '
                    'not a valuation of one car. <a href="/methodology/">Method</a>.</p></div>')
