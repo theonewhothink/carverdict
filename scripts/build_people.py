@@ -161,9 +161,15 @@ rel="noopener">Wikipedia</a>, used under CC BY-SA. Photograph via Wikimedia Comm
 <a href="/library/">The Car Library<small>every model ever catalogued</small></a>
 <a href="/superlatives/">The extremes<small>fastest · rarest · most expensive</small></a>
 </div></div></div>"""
-    return shell(f"{p['name']} — {group} | {BRAND}",
-                 (p.get("desc") or group) + f". {p['extract'][:130]}",
-                 f"{ORIGIN}/legends/{slug(p['name'])}/", body)
+    # A legend page is one Wikipedia paragraph and a photograph. It is worth keeping for
+    # readers and for internal links, and it is not worth a place in Google's index: 99 of
+    # them read as a scraped encyclopaedia, which is what a low-value-content review looks
+    # for. The /legends/ collection page itself stays indexable.
+    html_out = shell(f"{p['name']} — {group} | {BRAND}",
+                     (p.get("desc") or group) + f". {p['extract'][:130]}",
+                     f"{ORIGIN}/legends/{slug(p['name'])}/", body)
+    return html_out.replace("</head>",
+                            '<meta name="robots" content="noindex,follow"></head>', 1)
 
 
 def main():

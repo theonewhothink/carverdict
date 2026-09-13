@@ -392,7 +392,10 @@ def main():
         # are useful and they carry links — but tell search engines not to index them.
         # Index gate: a marque page is worth indexing when it shows real photography or
         # carries an editor's note. A roster of grey placeholders is not.
-        thin = with_photos < 3 and not note
+        # Three photographs was too low a bar: it let through marque pages that are a
+        # grid of thumbnails and nothing else. A marque page earns indexing when it has a
+        # real roster with photography, or when the editor has written about the marque.
+        thin = not note and (with_photos < 8 or len(models) < 5)
         head_extra = '<meta name="robots" content="noindex,follow">' if thin else ""
         title = (f"{b} models | MotorJury" if len(b) > 26
                  else f"{b} — Complete Model Library | MotorJury")

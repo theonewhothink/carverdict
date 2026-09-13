@@ -114,20 +114,92 @@ def model_url(display):
     # A brand slug the planner never saw has no guaranteed page: link the index.
     return f"/library/{bs}/" if bs in PLANNED else "/library/"
 
+_BAD_PHOTO = re.compile(r"prototype|concept|spy[_ ]|camoufla|teaser|mule|render|clay[_ ]model",
+                        re.I)
+
+
+# Scanning all ~18,000 catalogue rows per page was already the slow path; running two
+# regexes over every row as well made the build miss its 20-minute window. The name test
+# and the filename's own year are properties of the file, so both are computed once.
+_PHOTO_META = {}
+
+
+def _photo_meta(fname):
+    m = _PHOTO_META.get(fname)
+    if m is None:
+        bad = bool(_BAD_PHOTO.search(fname)) if fname else True
+        yrs = [int(y) for y in re.findall(r"(?:19|20)\d{2}", fname or "")]
+        m = _PHOTO_META[fname] = (bad, min(yrs) if yrs else 0)
+    return m
+
+
+def _photo_ok(fname, year=None):
+    """A page about a 2019 car must not be illustrated with a 2025 show car. Reject the
+    obvious non-production files by name, and reject any file whose own filename carries a
+    model year later than the page's."""
+    if not fname:
+        return False
+    bad, first_year = _photo_meta(fname)
+    if bad:
+        return False
+    return not (year and first_year and first_year > int(year))
+
+
+# name -> its catalogue rows, built once instead of a full scan per page.
+_LIB_BY_KEY = {}
+_LIB_BY_PREFIX = {}
+for _c in LIB_PHOTOS:
+    _LIB_BY_KEY.setdefault(_c[0], []).append(_c)
+    if "(" in _c[0]:
+        _LIB_BY_PREFIX.setdefault(_c[0].split(" (", 1)[0], []).append(_c)
+
+
 def lib_photo(make, model, year=None):
-    """Exact model name, or the generation entry (\"Model (XVnn)\") whose production window
-    contains the model year. Wrong-car risk > no-photo: anything ambiguous returns None."""
+    """The photograph for this nameplate, and for a model-year page the one that actually
+    shows a car of about that age.
+
+    The catalogue's inception years are mostly empty, so the old generation-window branch
+    never fired and the function fell through to "first exact match" — which is why a 2019
+    RAV4 page carried a 2025 show car and a 2015 X5 page a 2003 one. The reliable signal is
+    the Commons filename, which almost always names the car's year. A model-year page uses
+    the newest candidate that is not newer than the page and not more than a decade older;
+    if nothing qualifies it carries no photograph, because a visibly wrong car is worse than
+    an illustration.
+    """
     key = f"{make} {model}".lower()
-    exact = [c for c in LIB_PHOTOS if c[0] == key]
-    gens = sorted([c for c in LIB_PHOTOS if c[0].startswith(key + " (") and c[1]], key=lambda c: c[1])
-    if year and gens:
+    cands = [c for c in list(_LIB_BY_KEY.get(key, ())) + list(_LIB_BY_PREFIX.get(key, ()))
+             if c[2] and not _photo_meta(c[2])[0]]
+    if not cands:
+        return None
+    if year:
+        # A model-year car is often photographed the following calendar year, so the
+        # ceiling is year + 1. There is no floor: an older photograph of the same nameplate
+        # is an honest picture of the car as long as the caption does not claim it is this
+        # model year, which is why hero_art no longer stamps the year into the alt text.
+        # What is never acceptable is a car from the future — the 2025 show car that used
+        # to illustrate the 2019 RAV4.
         y = int(year)
-        for i, (n, gy, p) in enumerate(gens):
+        dated = [(yy, c) for c in cands
+                 for yy in (_photo_meta(c[2])[1],) if yy and yy <= y + 1]
+        if dated:
+            return max(dated, key=lambda t: t[0])[1][2]
+        # A generation entry whose recorded first year contains this model year is still
+        # the best answer where the catalogue happens to carry one.
+        gens = sorted([c for c in cands if c[1]], key=lambda c: c[1])
+        for i, (n, gy, ph) in enumerate(gens):
             nxt = gens[i + 1][1] if i + 1 < len(gens) else 9999
             if gy <= y < nxt:
-                return p
-        return exact[0][2] if exact else None
-    return exact[0][2] if exact else (gens[-1][2] if gens else None)
+                return ph
+        # Most Commons filenames carry no year at all. An undated photograph of the right
+        # nameplate cannot be a car from the future, and with the year no longer claimed in
+        # the alt text it is an honest illustration — much better than an empty page.
+        undated = [c for c in cands if not _photo_meta(c[2])[1]]
+        return undated[0][2] if undated else None
+    dated = [(_photo_meta(c[2])[1], c) for c in cands if _photo_meta(c[2])[1]]
+    if dated:
+        return max(dated, key=lambda t: t[0])[1][2]
+    return cands[0][2]
+
 
 def hero_art(make, model, is_ev, year=None):
     """Real licensed photo when the library has one; signature illustration otherwise."""
@@ -139,7 +211,10 @@ def hero_art(make, model, is_ev, year=None):
             href = model_url(model)
         base = f"https://commons.wikimedia.org/wiki/Special:FilePath/{_uq(fn)}"
         srcset = ", ".join(f"{base}?width={w} {w}w" for w in (480, 720, 900, 1200))
-        alt = f"{esc(make)} {esc(model)}" + (f" ({year})" if year else "")
+        # The alt text used to read "Toyota RAV4 (2019)" over whatever photograph the
+        # catalogue happened to hold, which asserted a model year the picture could not
+        # support. It names the car, not the page.
+        alt = f"{esc(make)} {esc(model)}"
         return (f'<figure class="hero-art"><a class="photo" href="{href}">'
                 f'<img src="{base}?width=900" srcset="{srcset}" '
                 f'sizes="(max-width: 900px) 100vw, 560px" width="900" height="563" '
@@ -273,18 +348,31 @@ def _load_editorial(name):
 EDITOR_NOTES = _load_editorial("models.json")   # "make/model" -> {"note", "avoid"}
 HUB_NOTES = _load_editorial("hubs.json")
 EDITOR = "Adir Trabelsi"
-WRITERS = ["Hillel Trabelsi", "Zohar Trabelsi", "Lena Trabelsi"]
+# There are no staff writers. Every page under /cars/ and /library/ is produced by the
+# build from NHTSA, EPA and Wikidata records; putting a person's name on one would claim
+# authorship that did not happen, which is what Google's spam policy and the AdSense
+# publisher policies call misrepresentation. Computed pages carry an attribution line
+# naming the method and the publisher; only the hand-written guides carry a human name,
+# and that name is the editor's.
 
 
-def writer_for(key):
-    """One named writer per article, fixed by the article's key so it never changes
-    between builds. Bylines are name and date only; sourcing lives on /about/."""
-    import hashlib
-    return WRITERS[int(hashlib.md5(str(key).encode()).hexdigest(), 16) % len(WRITERS)]
+def attribution(_key=None, date=None):
+    """Attribution line for a computed page. No author: the publisher is the organisation
+    and the method is linked, so a reader can check how the page was made."""
+    return ('<p class="byline">Computed by '
+            f'<a href="/about/">{BRAND}</a> from NHTSA and EPA public records · '
+            '<a href="/methodology/">method</a>'
+            f'{" · updated " + esc(date) if date else ""}</p>')
 
 
-def byline(key, date=None):
-    return (f'<p class="byline">By <a href="/about/">{writer_for(key)}</a>'
+def byline(key=None, date=None):
+    """Retained name so existing call sites keep working; computed pages get no author."""
+    return attribution(key, date)
+
+
+def editor_byline(date=None):
+    """Only for the hand-written guides."""
+    return (f'<p class="byline">By <a href="/about/">{EDITOR}</a>, editor'
             f'{" · " + esc(date) if date else ""}</p>')
 NOINDEX = '<meta name="robots" content="noindex,follow">'
 
@@ -300,6 +388,40 @@ def guides_index():
             out.append(meta)
     out.sort(key=lambda m: m.get("date", ""), reverse=True)
     return out
+
+
+def _guide_map():
+    """make/model slug -> the guide that covers it. The guides are the only hand-written
+    pages on the site and the only ones that can earn a link, and until now nothing pointed
+    at them: a model page linked /guides/ and never the guide about that exact car. Each
+    guide declares the nameplates it covers in its `models:` header, so the map is exact."""
+    m = {}
+    # A nameplate can appear in a broad guide ("the first-year rule", six nameplates) and in
+    # the guide written about that car. The specific one is the useful link, so the guide
+    # naming the fewest nameplates wins, and the newer one breaks a tie.
+    for g in sorted(guides_index(),
+                    key=lambda g: (len([x for x in g.get("models", "").split(",") if x.strip()]),
+                                   "" if not g.get("date") else "-" + g["date"])):
+        for key in (x.strip() for x in g.get("models", "").split(",")):
+            if key and key not in m:
+                m[key] = g
+    return m
+
+
+GUIDE_FOR_MODEL = _guide_map()
+
+
+def guide_link_card(kslug, mslug, year=None):
+    """A card pointing at the guide that covers this nameplate, or "" if none does."""
+    g = GUIDE_FOR_MODEL.get(f"{kslug}/{mslug}")
+    if not g:
+        return ""
+    # One link, not a paragraph: the guide's own description repeated across every model
+    # year of a nameplate would be duplicated prose on a dozen pages at a time.
+    where = f", including {year}" if year else ""
+    return (f'<div class="card guide-xref"><h2>Read the guide</h2>'
+            f'<p class="src-note"><a href="/guides/{esc(g["slug"])}/"><b>{esc(g["title"])}</b></a>'
+            f'{esc(where)} — written and signed by {EDITOR}, {esc(g.get("date", ""))}.</p></div>')
 
 
 def editor_card(kslug, mslug, year=None, r=None):
@@ -414,7 +536,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
 <nav class="nav"><a href="/guides/">Guides</a><a href="/vin-check/">VIN check</a><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
 <div class="acct-host" data-account-chip></div>
-<details class="langs"><summary>EN</summary><div><a class="cur" href="/">EN</a><a href="/pt/">PT</a><a href="/es/">ES</a><a href="/fr/">FR</a><a href="/de/">DE</a><a href="/he/">HE</a></div></details>
+
 </div></header>
 <div class="geo-bar wrap" data-geo-chip></div>
 <main id="content">
@@ -444,7 +566,34 @@ def write(path, html):
 
 # Auto Ads places real units when AdSense has inventory.  Static 250–280px placeholders
 # never filled and created two large blank blocks on phones, so manual empty slots are gone.
-AD = ''
+# The ownership pages carried no ad markup at all — AD was an empty string, so the only
+# configured unit lived on the biography pages. These are the pages with buying intent and
+# the pages the traffic lands on; leaving them unmonetised means an approval earns nothing.
+# One in-article unit, placed inside the article after the first block of real content —
+# never in the hero, never in a side rail, never more than one per page.
+try:
+    _ADS = json.load(open(ROOT / "data" / "ads.json"))
+except Exception:
+    _ADS = {}
+AD_CLIENT = "ca-pub-6675837012921030"
+AD_SLOT = _ADS.get("in_article_slot", "")
+_AD_UNIT = (f'<ins class="adsbygoogle car-ad" style="display:block;text-align:center" '
+            f'data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="{AD_CLIENT}" '
+            f'data-ad-slot="{AD_SLOT}"></ins>'
+            '<script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>') if AD_SLOT else ""
+
+
+class _Ad:
+    """AD.format(slot=...) is called from six templates. Only the in-article positions get
+    a unit: a fluid in-article creative in a narrow side rail renders badly, and an ad
+    above the first paragraph pushes the content a reader came for below the fold."""
+    IN_ARTICLE = {"mid", "article"}
+
+    def format(self, slot="", **_):
+        return _AD_UNIT if slot in self.IN_ARTICLE else ""
+
+
+AD = _Ad()
 
 # ---------------- data helpers ----------------
 def rows_all(con):
@@ -634,8 +783,24 @@ def gen_model_year(con, r, all_rows):
     curve = json.loads(r["cost_curve"] or "[]")
     reasons = json.loads(r["reasons"] or "[]")
     siblings = [x for x in all_rows if x["model_id"] == r["model_id"]]
-    related = [x for x in all_rows if x["model_id"] != r["model_id"] and gate(x)][:8]
-    related = sorted(related, key=lambda x: (x["is_ev"] != r["is_ev"], abs(x["year"] - year)))[:4]
+    # "Compare with" used to take the first eight qualifying rows in table order, which is
+    # alphabetical by make — so every page on the site, whatever the car, compared itself
+    # against the Acura ILX. A comparison is only worth printing when the cars are
+    # alternatives to each other: same price segment, same fuel type, a different nameplate,
+    # and the closest model years to this one. Where the segment is unknown the block is
+    # dropped rather than filled with something irrelevant.
+    _seg = r.get("segment")
+    _pool = [x for x in all_rows
+             if x["model_id"] != r["model_id"] and gate(x)
+             and x.get("segment") and x.get("segment") == _seg
+             and bool(x["is_ev"]) == bool(r["is_ev"])
+             and abs(x["year"] - year) <= 3]
+    # One model year per nameplate: four years of the same rival is not a comparison.
+    _best = {}
+    for x in sorted(_pool, key=lambda x: (abs(x["year"] - year), -(x["score"] or 0))):
+        _best.setdefault(x["model_id"], x)
+    related = sorted(_best.values(),
+                     key=lambda x: (abs(x["year"] - year), -(x["score"] or 0)))[:4]
     partial = r["complaint_sample"] and r["complaint_count"] and r["complaint_sample"] < r["complaint_count"]
 
     # verdict card — score, the money, and how much evidence is behind the number
@@ -698,17 +863,11 @@ def gen_model_year(con, r, all_rows):
                   + "".join(f'<blockquote class="owner-q">{esc(q.lower().capitalize() if q.isupper() else q)}'
                             f'{"…" if len(q) >= 420 else ""}</blockquote>' for q in quotes)
                   + '</div>')
-    import urllib.parse as _u
-    _q = _u.quote(f'{r["make"]} {r["model"]} {year}')
-    _qr = _u.quote(f'{r["make"]} {r["model"]}')
-    conv_html = (f'<div class="card"><h2>The conversation</h2>'
-                 f'<p style="font-size:13px;color:var(--faint)">What the community is saying right now.</p>'
-                 f'<div class="rel-grid">'
-                 f'<a href="https://www.reddit.com/search/?q={_qr}" rel="nofollow noopener" target="_blank">Reddit owner threads<small>r/cars, r/whatcarshouldibuy and more</small></a>'
-                 f'<a href="https://www.youtube.com/results?search_query={_q}+review" rel="nofollow noopener" target="_blank">Video reviews<small>YouTube, long-term and road tests</small></a>'
-                 f'<a href="https://www.google.com/search?q={_qr}+owners+forum" rel="nofollow noopener" target="_blank">Owner forums<small>model-specific communities</small></a>'
-                 f'</div></div>')
-    comp_html += q_html + conv_html
+    # "The conversation" was three links to reddit.com/search, youtube.com/results and
+    # google.com/search, captioned as if they were curated owner threads. They are search
+    # boxes. A section that promises community reading and delivers a query string is
+    # padding, and on 1,700 pages it is the kind of padding a policy review notices.
+    comp_html += q_html
 
     # recalls block
     rec_rows = "".join(
@@ -892,9 +1051,13 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
     faq_html = '<div class="card"><h2>FAQ</h2>' + "".join(
         f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in faqs) + "</div>"
 
-    related_html = '<div class="card"><h2>Compare with</h2><div class="rel-grid">' + "".join(
+    _seg_label = (r.get("segment") or "").replace("_", " ")
+    related_html = ('<div class="card"><h2>Compare with</h2>'
+                    + (f'<p style="font-size:13px;color:var(--faint)">Other {esc(_seg_label)}s '
+                       f'of about the same age.</p>' if _seg_label else "")
+                    + '<div class="rel-grid">' + "".join(
         f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>score {x["score"]}/100 · {esc(x["verdict"])}</small></a>'
-        for x in related) + "</div></div>"
+        for x in related) + "</div></div>") if related else ""
 
     sources = f"""<div class="card sources"><h2 style="font-size:15px">Data sources</h2>
 <p>Complaints &amp; recalls: <a href="https://www.nhtsa.gov/vehicle/{year}/{esc(make).upper()}/{esc(model).upper().replace(' ', '%20')}" rel="noopener">NHTSA</a> ·
@@ -917,12 +1080,20 @@ Last updated: {TODAY}.</p></div>"""
 {hero_art(make, model, bool(r['is_ev']), year)}
 </div></div>"""
 
+    # The social card was /og/default.png on every one of these pages, so every share of
+    # every car looked identical. Where the library has a licensed photograph of this
+    # nameplate, that is the card and the schema image.
+    _ph = lib_photo(make, model, year)
+    _my_photo_url = (f"https://commons.wikimedia.org/wiki/Special:FilePath/"
+                     f"{_uq(_ph.replace(' ', '_'))}?width=1200") if _ph else ""
+
     body = f"""{hero}
 <div class="wrap grid">
 <div style="display:grid;gap:20px;min-width:0">
-{AD.format(slot='top')}
 {editor_card(r['kslug'], r['mslug'], year, r)}
+{guide_link_card(r['kslug'], r['mslug'], year)}
 {comp_html}
+{AD.format(slot='mid')}
 {rec_html}
 {price_html}
 {cost_html}
@@ -940,8 +1111,11 @@ Last updated: {TODAY}.</p></div>"""
     desc = (f"{name} real ownership cost, {(r['complaint_count'] or 0):,} NHTSA complaints, "
             f"{(r['recall_count'] or 0)} recalls, reliability score {r['score']}/100 — verdict: {r['verdict']}.")
     jsonld = [
+        # The photograph the page already shows belongs in the Vehicle entity too: without
+        # an image property the page is ineligible for the image-carrying result treatments.
         {"@context": "https://schema.org", "@type": "Vehicle", "name": name,
          "brand": {"@type": "Brand", "name": make}, "model": model, "vehicleModelDate": str(year),
+         **({"image": _my_photo_url} if _my_photo_url else {}),
          "url": canon},
         {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs]},
@@ -956,8 +1130,7 @@ Last updated: {TODAY}.</p></div>"""
          "license": "https://creativecommons.org/licenses/by/4.0/",
          "creator": {"@type": "Organization", "name": BRAND}, "url": canon},
         {"@context": "https://schema.org", "@type": "Article", "headline": f"{name}: True Cost, Problems & Verdict",
-         "author": {"@type": "Person", "name": writer_for(f"{r['kslug']}/{r['mslug']}/{year}"), "url": ORIGIN + "/about/"},
-         "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+         "author": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
          "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
          "dateModified": TODAY, "mainEntityOfPage": canon}]
     og_rel = f"/og/{r['kslug']}-{r['mslug']}-{year}.png"
@@ -969,13 +1142,22 @@ Last updated: {TODAY}.</p></div>"""
     indexable = ((_conf in ("high", "medium")) or bool(r["is_ev"] and r["battery_warranty"])
                  or bool(editor_card(r['kslug'], r['mslug'])))
     extra_head = "" if indexable else NOINDEX
+    # This block used to ASSIGN extra_head rather than add to it, so on any build where
+    # Pillow imported — which is every CI build — the social card silently deleted the
+    # noindex tag that the line above had just set. Every thin model year went into the
+    # index regardless of the gate. Append; never overwrite.
     if og_card is not None:
         og_card(SITE / og_rel.lstrip("/"), name, "True cost, problems & data verdict",
                 r["score"], r["verdict"] or "", bool(r["is_ev"]))
-        extra_head = (f'<meta property="og:image" content="{ORIGIN}{og_rel}">'
-                      f'<meta property="og:image:width" content="1200">'
-                      f'<meta property="og:image:height" content="630">'
-                      f'<meta name="twitter:image" content="{ORIGIN}{og_rel}">\n')
+        extra_head += (f'<meta property="og:image" content="{ORIGIN}{og_rel}">'
+                       f'<meta property="og:image:width" content="1200">'
+                       f'<meta property="og:image:height" content="630">'
+                       f'<meta name="twitter:image" content="{ORIGIN}{og_rel}">\n')
+    elif _my_photo_url:
+        # No Pillow on this build image: rather than fall back to one identical default
+        # card on every car on the site, share the photograph of the car itself.
+        extra_head += (f'<meta property="og:image" content="{esc(_my_photo_url)}">'
+                       f'<meta name="twitter:image" content="{esc(_my_photo_url)}">\n')
     return write(url.lstrip("/") + "index.html",
                  page(f"{name}: Cost, Problems & Verdict | {BRAND}", desc, canon, body, jsonld,
                       extra_head=extra_head, og_type="article"))
@@ -1034,9 +1216,22 @@ def gen_model(con, model_rows, all_rows):
         verdict_line = (f"<p>Best year in our data: <a href='{url_my(best)}'><b>{best['year']}</b></a> "
                         f"(score {best['score']}). Worst: <a href='{url_my(worst)}'><b>{worst['year']}</b></a> "
                         f"(score {worst['score']}, {esc(worst['verdict'])}).</p>")
-    related = [x for x in all_rows if x["model_id"] != r0["model_id"] and gate(x)][:4]
-    rel = '<div class="rel-grid">' + "".join(
-        f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>{esc(x["verdict"])}</small></a>' for x in related) + "</div>"
+    # Same defect as the model-year page: taking the first four qualifying rows means
+    # taking whatever sorts first alphabetically. Peers are same-segment, same fuel type,
+    # a different nameplate, and the most recent year of each.
+    _seg0 = r0.get("segment")
+    _pool0, _best0 = [], {}
+    if _seg0:
+        _pool0 = [x for x in all_rows
+                  if x["model_id"] != r0["model_id"] and gate(x)
+                  and x.get("segment") == _seg0
+                  and bool(x["is_ev"]) == bool(r0["is_ev"])]
+    for x in sorted(_pool0, key=lambda x: (-x["year"], -(x["score"] or 0))):
+        _best0.setdefault(x["model_id"], x)
+    related = list(_best0.values())[:4]
+    rel = ('<div class="rel-grid">' + "".join(
+        f'<a href="{url_my(x)}">{x["year"]} {esc(x["make"])} {esc(x["model"])}<small>{esc(x["verdict"])}</small></a>'
+        for x in related) + "</div>") if related else ""
 
     # What actually goes wrong across the whole nameplate, and what those repairs cost.
     ids = [s["my_id"] for s in model_rows]
@@ -1153,6 +1348,7 @@ complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, w
 </div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0">
 {editor_card(r0['kslug'], r0['mslug'])}
+{guide_link_card(r0['kslug'], r0['mslug'])}
 <div class="card engagement-card"><div class="love-host" data-love="nameplate:{r0['kslug']}/{r0['mslug']}" data-love-name="{esc(make)} {esc(model)}"></div>
 <div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}"><h2>Owner satisfaction</h2>
 <p class="sv-n"><b>No responses yet.</b> Own a {esc(make)} {esc(model)}? Sign in and rate it — one response per owner.</p></div></div>
@@ -1184,10 +1380,17 @@ age today, re-priced to your country. Purchase price, insurance and depreciation
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
             for q, a in m_faqs]})
     # A model overview with no scored year is a table of dashes: keep it, do not index it.
+    _head = "" if (scored or editor_card(r0['kslug'], r0['mslug'])) else NOINDEX
+    _ph0 = lib_photo(make, model)
+    if _ph0:
+        _u0 = (f"https://commons.wikimedia.org/wiki/Special:FilePath/"
+               f"{_uq(_ph0.replace(' ', '_'))}?width=1200")
+        _head += (f'<meta property="og:image" content="{esc(_u0)}">'
+                  f'<meta name="twitter:image" content="{esc(_u0)}">\n')
     return write(url.lstrip("/") + "index.html",
                  page(f"{make} {model}: Best & Worst Years | {BRAND}",
                       f"{make} {model} years ranked by NHTSA complaints and recalls — which years to buy and which to avoid.",
-                      canon, body, jsonld, extra_head="" if (scored or editor_card(r0['kslug'], r0['mslug'])) else NOINDEX))
+                      canon, body, jsonld, extra_head=_head))
 
 # ---------------- brand hub, index, static ----------------
 def gen_brand(con, kslug, make, models, all_rows):
@@ -2049,7 +2252,7 @@ year without enough data does not get a page.</p>
 <h2>Independence</h2>
 <p>{BRAND} is not affiliated with any manufacturer, dealer, insurer or parts retailer. The site is funded by
 advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p><h2>Sources and attribution</h2>
-<p>MotorJury is written by Hillel Trabelsi, Zohar Trabelsi and Lena Trabelsi and edited by Adir Trabelsi; each article carries its writer's name. Complaint, recall and fuel-economy figures are from
+<p>The buyer's guides are written and signed by Adir Trabelsi, the editor. Every other page on this site is computed by the build rather than written by a person, and says so in place of a byline. Complaint, recall and fuel-economy figures are from
 NHTSA and the EPA. Catalogue facts (marque, years, designer, production) are from Wikidata. The background
 paragraphs in car biographies and the descriptions on the events pages are adapted from the corresponding
 English Wikipedia articles, used under the Creative Commons Attribution-ShareAlike licence
@@ -2077,8 +2280,10 @@ but are marked so search engines do not index them.</p>
 
 <h2>Written pages</h2>
 <p>Buyer's guides, car biographies, editor's notes on model pages, and the introductions to each section are
-written by <b>Hillel Trabelsi</b>, <b>Zohar Trabelsi</b> and <b>Lena Trabelsi</b>, edited by <b>Adir Trabelsi</b>,
-and carry the writer's name and the date of the last revision. They draw on the same
+written and edited by <b>Adir Trabelsi</b>, and carry his name and the date of the last revision. Pages
+without a human byline — the model-year verdicts, the ownership indexes, the catalogue entries — are
+produced by the build from the public record and carry an attribution line naming the sources and the
+method instead of an author, because no person wrote them. They draw on the same
 federal record as the computed pages, on manufacturers' published recall and warranty actions, and on
 court filings where a defect has been litigated. They do not draw on anonymous forum posts, and they are
 not generated by a language model and published unread. Where a written page makes a factual claim about a
@@ -2332,7 +2537,10 @@ def dup_check(pages):
         body = re.sub(r'<div class="legend">.*?</div>', "", body, flags=re.S)
         # Fixed explainer captions are UI chrome too: they say where the data comes from and
         # are meant to read identically everywhere. Duplicating them is the point.
-        body = re.sub(r'''<p class=(?:"(?:geo-note|src-note|data-missing|sv-n)"|'(?:geo-note|src-note|data-missing|sv-n)')[^>]*>.*?</p>''',
+        # The attribution line replaced the old human byline. It is deliberately identical on
+        # every computed page — that is what makes it an honest statement of how the page was
+        # made — so it belongs with the other chrome, not in the prose measurement.
+        body = re.sub(r'''<p class=(?:"(?:geo-note|src-note|data-missing|sv-n|byline)"|'(?:geo-note|src-note|data-missing|sv-n|byline)')[^>]*>.*?</p>''',
                       "", body, flags=re.S)
         for m in re.finditer(r"<p[^>]*>(.*?)</p>", body, re.S):
             t = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()

@@ -18,11 +18,8 @@ from i18n import LANGS, RTL, t
 import hashlib
 
 EDITOR = "Adir Trabelsi"
-WRITERS = ["Hillel Trabelsi", "Zohar Trabelsi", "Lena Trabelsi"]
-
-
-def writer_for(key):
-    return WRITERS[int(hashlib.md5(str(key).encode()).hexdigest(), 16) % len(WRITERS)]
+# No staff writers: library pages are assembled by the build from Wikidata, Wikipedia and
+# Wikimedia Commons. Naming a person as their author would be a claim that did not happen.
 
 
 
@@ -140,8 +137,10 @@ def side_dossier(name, b, wk, sp, riv, start, end, built, power_of):
             f'</div>')
 
 
-def byline(key):
-    return f'<p class="byline">By <a href="/about/">{writer_for(key)}</a></p>'
+def byline(key=None):
+    return ('<p class="byline">Assembled by <a href="/about/">MotorJury</a> from Wikidata, '
+            'Wikipedia (CC BY-SA) and Wikimedia Commons · '
+            '<a href="/methodology/">method</a></p>')
 
 from bio_text import build_bio
 from build_library import (slug, norm_brand, BRAND_ALIAS, commons_thumb,
@@ -151,7 +150,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 BRAND = "MotorJury"
-MAX_MODEL_PAGES = 10000
+MAX_MODEL_PAGES = 8500
 
 
 def _load_specs():
@@ -890,7 +889,13 @@ def main():
         # sourced facts (or a Wikipedia summary). Everything else stays online for readers and
         # navigation but is noindex,follow — thousands of hollow pages are what AdSense read
         # as "low value content".
-        substantive = bool(m["p"]) and (bio_facts >= 2 or bool(wk.get("about")))
+        # The gate was photo AND (2 facts OR a Wikipedia summary). Once the nightly harvest
+        # started filling photos and summaries for nearly every nameplate, that passed 6,400
+        # catalogue entries — a 200-word stub with a picture is still a 200-word stub, and
+        # 6,400 of them is exactly the signal that got the site rejected. All four conditions
+        # now have to hold, and the page has to be long enough to be worth a reader's click.
+        substantive = (bool(m["p"]) and bool(wk.get("about"))
+                       and bio_facts >= 2 and bio_words >= 320)
         if not substantive:
             THIN_PAGES.append(url)
 
@@ -943,8 +948,7 @@ def main():
              "brand": {"@type": "Brand", "name": b},
              "url": ORIGIN + url},
             {"@context": "https://schema.org", "@type": "Article", "headline": m["n"],
-             "author": {"@type": "Person", "name": writer_for(url), "url": ORIGIN + "/about/"},
-             "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+             "author": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
              "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
              "mainEntityOfPage": ORIGIN + url},
             {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [

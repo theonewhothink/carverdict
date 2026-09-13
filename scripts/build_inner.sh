@@ -42,12 +42,17 @@ export SITE_ORIGIN="${SITE_ORIGIN:-https://motorjury.com}"
 echo "origin: $SITE_ORIGIN"
 
 # CI has no upload ceiling, but the site file cap is 20,000 and the guides + OG cards need
-# headroom: 10,000 library model pages (the rest live on their marque page and in the deep index).
+# headroom. At 10,000 library model pages the last local build produced 19,846 files — past
+# the 19,800 abort below, so the next deploy would have been refused outright as the nightly
+# dataset kept growing. 8,500 restores the headroom and costs nothing that search can see:
+# pages are planned photographed-first, and only a page with a photograph, a Wikipedia
+# summary and two sourced facts is indexable at all, so the tranche this drops is entirely
+# noindex,follow catalogue tail that still appears on its marque page and in the deep index.
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 10000", p.read_text()))
-print("MAX_MODEL_PAGES set to 10000")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 8500", p.read_text()))
+print("MAX_MODEL_PAGES set to 8500")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.
