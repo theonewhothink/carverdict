@@ -544,7 +544,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 </main>
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
-<div><a href="/guides/">Buyer's guides</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/contact/">Contact</a></div>
+<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/contact/">Contact</a></div>
 <div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/calculators/">Calculators</a><br><a href="/follow/">Follow</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
@@ -1005,7 +1005,7 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
         f'<a href="{url_my(s)}" class="{"cur" if s["year"] == year else ""}">{s["year"]} {vtag(s["verdict"]) if s["verdict"] in ("AVOID",) else ""}</a>'
         if gate(s) else f'<span class="years-strip-dead" style="padding:6px 13px;color:var(--faint);font-size:14px">{s["year"]}</span>'
         for s in siblings)
-    strip_html = f'<div class="card"><h2>Other {make} {model} years</h2><div class="years-strip">{strip}</div><p style="margin-top:8px;font-size:13px"><a href="/cars/{r["kslug"]}/{r["mslug"]}/">Best &amp; worst {model} years — full table →</a></p></div>'
+    strip_html = f'<div class="card"><h2>Other {make} {model} years</h2><div class="years-strip">{strip}</div><p class="src-note" style="margin-top:8px;font-size:13px"><a href="/cars/{r["kslug"]}/{r["mslug"]}/">{make} {model} years to avoid, and the best years to buy →</a></p></div>'
 
     # FAQ from complaint clusters
     faqs = []
@@ -1163,6 +1163,165 @@ Last updated: {TODAY}.</p></div>"""
                       extra_head=extra_head, og_type="article"))
 
 # ---------------- model overview ----------------
+# ---- the generation verdict ------------------------------------------------------------
+# "<make> <model> years to avoid" is a single question with a single right answer page, and
+# that page is the nameplate hub, not one of its fifteen year pages. Until now the hub
+# answered it with a table of numbers and left the reader to do the work. This builds the
+# answer: the record is cut into runs of years that behave alike, each run is named with the
+# component its owners actually complain about, and the years to avoid and the years to buy
+# are stated in the first screen. Every sentence is derived from the rows on the page, so no
+# two nameplates produce the same prose and nothing here is written by hand.
+def _era_breaks(rows):
+    """Split the model years into runs that behave alike.
+
+    A redesign shows up in this data as a step: the complaint rate per year of exposure
+    jumps or collapses and stays there. A break is declared where a year differs from the
+    run's mean by more than 22 points of score AND the two years after it agree with the new
+    level — one noisy year in an otherwise steady run is not a generation.
+    """
+    eras, cur = [], []
+    for i, s in enumerate(rows):
+        if not cur:
+            cur = [s]
+            continue
+        mean = sum((x["score"] or 0) for x in cur) / len(cur)
+        nxt = rows[i + 1] if i + 1 < len(rows) else None
+        step = abs((s["score"] or 0) - mean) > 22
+        gap = s["year"] - cur[-1]["year"] > 1
+        holds = nxt is None or abs((nxt["score"] or 0) - (s["score"] or 0)) <= 22
+        if (step and holds) or gap:
+            eras.append(cur)
+            cur = [s]
+        else:
+            cur.append(s)
+    if cur:
+        eras.append(cur)
+    return eras
+
+
+def _top_component(con, rows):
+    ids = [s["my_id"] for s in rows]
+    if not ids:
+        return None, 0
+    q = ("SELECT component, SUM(count) n FROM complaints WHERE component!='__quote__' "
+         "AND my_id IN (%s) GROUP BY component ORDER BY n DESC LIMIT 1" % ",".join("?" * len(ids)))
+    row = con.execute(q, ids).fetchone()
+    return (row[0], row[1]) if row else (None, 0)
+
+
+def _an(word):
+    """"a Accord" read like a machine wrote it, which on a page about trustworthiness is
+    not a small thing."""
+    return "an" if (word or "")[:1].upper() in "AEIOU" else "a"
+
+
+def _span(rows):
+    a, b = rows[0]["year"], rows[-1]["year"]
+    return str(a) if a == b else f"{a}\u2013{b}"
+
+
+def generation_verdict(con, model_rows, make, model):
+    """(headline html, era html, extra faqs). Returns ("", "", []) when the record is too
+    thin to say anything — a verdict on two model years is not a verdict."""
+    rows = sorted([s for s in model_rows if s["score"] is not None], key=lambda s: s["year"])
+    if len(rows) < 4:
+        return "", "", []
+
+    avoid = [s for s in rows if (s["verdict"] or "") == "AVOID"]
+    buy = [s for s in rows if (s["verdict"] or "") == "BUY"]
+    caution = [s for s in rows if (s["verdict"] or "") == "CAUTION"]
+
+    def yrs(ss, n=8):
+        out = ", ".join(str(s["year"]) for s in sorted(ss, key=lambda s: s["year"])[:n])
+        return out + ("\u2026" if len(ss) > n else "")
+
+    def linked(ss, n=8):
+        ss = sorted(ss, key=lambda s: s["year"])[:n]
+        return ", ".join((f'<a href="{url_my(s)}">{s["year"]}</a>' if gate(s) else str(s["year"]))
+                         for s in ss)
+
+    # the headline answer, above the fold
+    bits = []
+    if avoid:
+        bits.append(f'<p class="ga-avoid"><b>Avoid:</b> {linked(avoid)} '
+                    f'&mdash; scored below 45 on the complaint and recall record.</p>')
+    if buy:
+        bits.append(f'<p class="ga-buy"><b>Safest years:</b> {linked(buy)} '
+                    f'&mdash; scored 70 or better.</p>')
+    if caution and not avoid:
+        bits.append(f'<p class="ga-caution"><b>Check carefully:</b> {linked(caution)}.</p>')
+    if not bits:
+        return "", "", []
+
+    worst = min(rows, key=lambda s: s["score"])
+    best = max(rows, key=lambda s: s["score"])
+    wc, wn = _top_component(con, [worst])
+    spread = best["score"] - worst["score"]
+    lede = (f'Across {len(rows)} scored model years the {esc(make)} {esc(model)} ranges from '
+            f'{worst["score"]}/100 in {worst["year"]} to {best["score"]}/100 in {best["year"]}'
+            f' \u2014 a {spread}-point spread, so which year you buy matters'
+            + (f' more than whether you buy {_an(model)} {esc(model)} at all.'
+               if spread >= 35 else '.'))
+    if wc and wn:
+        lede += (f' The weakest year\u2019s complaints concentrate in {esc(wc.title())} '
+                 f'({wn:,} of them).')
+
+    headline = (f'<div class="card gen-verdict"><h2 id="years-to-avoid">'
+                f'{esc(make)} {esc(model)}: which years to avoid</h2>'
+                f'<p>{lede}</p>{"".join(bits)}'
+                f'<p class="src-note">Scored from NHTSA complaints per year of exposure and '
+                f'recall campaigns. <a href="/methodology/">How the score works</a> · '
+                f'<a href="/years-to-avoid/">every car\u2019s years to avoid</a>.</p></div>')
+
+    # the run-by-run reading
+    eras = [e for e in _era_breaks(rows) if len(e) >= 2]
+    era_html, faqs = "", []
+    if len(eras) >= 2:
+        blocks = []
+        prev_mean = None
+        for e in eras:
+            mean = round(sum(s["score"] for s in e) / len(e))
+            comp, n = _top_component(con, e)
+            rate = [s["complaints_per_year"] for s in e if s["complaints_per_year"]]
+            rate = round(sum(rate) / len(rate)) if rate else None
+            move = ""
+            if prev_mean is not None:
+                d = mean - prev_mean
+                if d >= 15:
+                    move = f" The record improves by {d} points against the years before it."
+                elif d <= -15:
+                    move = f" The record falls {abs(d)} points against the years before it."
+            sev = sum(s["severe_recalls"] or 0 for s in e)
+            blocks.append(
+                f'<h3>{_span(e)}</h3><p>Mean score {mean}/100'
+                + (f', about {rate:,} complaints per year on the road' if rate else '')
+                + (f'. Owners of these years complain about {esc(comp.title())} more than anything '
+                   f'else ({n:,} complaints)' if comp and n else '')
+                + f'.{move}'
+                + (f' {sev} recall campaign(s) in this run touch fire, crash or stall risk.'
+                   if sev else '')
+                + '</p>')
+            prev_mean = mean
+        era_html = (f'<div class="card gen-eras"><h2>How the {esc(model)} changed, run by run</h2>'
+                    f'<p class="src-note">The federal record falls into {len(eras)} stretches of '
+                    f'years that behave alike. A redesign shows up here as a step in the complaint '
+                    f'rate that then holds.</p>' + "".join(blocks) + '</div>')
+
+    if avoid:
+        faqs.append((f"Which {make} {model} years should I avoid?",
+                     f"On the NHTSA record the years to avoid are {yrs(avoid)} — each scores below "
+                     f"45 out of 100 on complaints per year of exposure and recall campaigns."
+                     + (f" The {worst['year']} is the weakest at {worst['score']}/100"
+                        + (f", with its complaints concentrated in {wc.title()}." if wc else ".")
+                        if worst else "")))
+    if buy:
+        faqs.append((f"What are the best {make} {model} years to buy?",
+                     f"{yrs(buy)} all score 70 or better. The strongest is the {best['year']} at "
+                     f"{best['score']}/100, on {(best['complaint_count'] or 0):,} complaints and "
+                     f"{best['recall_count'] or 0} recall campaigns."))
+    return headline, era_html, faqs
+
+
 def gen_model(con, model_rows, all_rows):
     r0 = model_rows[0]
     make, model = r0["make"], r0["model"]
@@ -1263,14 +1422,18 @@ def gen_model(con, model_rows, all_rows):
                         'An estimate of what this class of failure costs, not a quote. '
                         '<a href="/methodology/">Formula</a>.</p></div>')
 
-    m_faqs = []
+    gv_head, gv_eras, gv_faqs = generation_verdict(con, model_rows, make, model)
+
+    m_faqs = list(gv_faqs)
     _have_bw = bool(best) and bool(worst) and str(best["year"]) != "n/a" and str(worst["year"]) != "n/a" \
         and best["my_id"] != worst["my_id"]
-    if _have_bw:
+    _asked = {q for q, _ in m_faqs}
+    if _have_bw and f"What are the best {make} {model} years to buy?" not in _asked:
         m_faqs.append((f"What is the best year for the {make} {model}?",
                        f"On our data the {best['year']} {make} {model} scores {best['score']}/100 — the highest "
                        f"of the {len(rows_r)} model years we hold, with {(best['complaint_count'] or 0):,} NHTSA "
                        f"complaints and {best['recall_count'] or 0} recall campaigns on record."))
+    if _have_bw and f"Which {make} {model} years should I avoid?" not in _asked:
         m_faqs.append((f"Which {make} {model} years should I avoid?",
                        f"The {worst['year']} is the weakest year we score, at {worst['score']}/100 "
                        f"({worst['verdict']}), on {(worst['complaint_count'] or 0):,} complaints and "
@@ -1336,19 +1499,29 @@ def gen_model(con, model_rows, all_rows):
         gallery_link = (f'<p style="margin-top:8px"><a href="{_lib}">Photographs and every '
                         f'generation of the {esc(model)}, through the years →</a></p>')
 
+    if str(best["year"]) == "n/a" or str(worst["year"]) == "n/a":
+        _sub_line = (f"The {esc(make)} {esc(model)} has {len(rows_r)} model year(s) in the federal "
+                     f"index and no scored complaint record yet, so this page carries the catalogue "
+                     f"entry and the years we hold rather than a verdict.")
+    else:
+        _sub_line = (f"{esc(make)} {esc(model)}: {len(rows_r)} model years scored from "
+                     f"{tot_comp:,} NHTSA owner complaints and {tot_rec} recall campaigns. "
+                     f"Worst year {worst['year']}, best year {best['year']}.")
     body = f"""<div class="hero"><div class="wrap hero-inner hero-flex">
 <div class="hero-copy">
 <nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/cars/{r0['kslug']}/">{esc(make)}</a> › {esc(model)}</nav>
-<h1>{esc(make)} {esc(model)}: Best &amp; Worst Years</h1>
-<p class="sub">{esc(make)} {esc(model)}: {len(rows_r)} model years indexed, {tot_comp:,} NHTSA owner
-complaints and {tot_rec} recall campaigns on record. Best year {best['year']}, worst {worst['year']}.</p>
+<h1>{esc(make)} {esc(model)}: Years to Avoid and Best Years to Buy</h1>
+<p class="sub">{_sub_line}</p>
 {byline(f"{r0['kslug']}/{r0['mslug']}", TODAY)}
 </div>
 {hero_art(make, model, bool(r0['is_ev']))}
 </div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0">
+{gv_head}
 {editor_card(r0['kslug'], r0['mslug'])}
 {guide_link_card(r0['kslug'], r0['mslug'])}
+{gv_eras}
+{AD.format(slot='mid')}
 <div class="card engagement-card"><div class="love-host" data-love="nameplate:{r0['kslug']}/{r0['mslug']}" data-love-name="{esc(make)} {esc(model)}"></div>
 <div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}"><h2>Owner satisfaction</h2>
 <p class="sv-n"><b>No responses yet.</b> Own a {esc(make)} {esc(model)}? Sign in and rate it — one response per owner.</p></div></div>
@@ -1388,8 +1561,9 @@ age today, re-priced to your country. Purchase price, insurance and depreciation
         _head += (f'<meta property="og:image" content="{esc(_u0)}">'
                   f'<meta name="twitter:image" content="{esc(_u0)}">\n')
     return write(url.lstrip("/") + "index.html",
-                 page(f"{make} {model}: Best & Worst Years | {BRAND}",
-                      f"{make} {model} years ranked by NHTSA complaints and recalls — which years to buy and which to avoid.",
+                 page(f"{make} {model} Years to Avoid — and the Best Years | {BRAND}",
+                      (f"{make} {model}: the model years to avoid and the years to buy, ranked from "
+                       f"{tot_comp:,} NHTSA complaints and {tot_rec} recall campaigns."),
                       canon, body, jsonld, extra_head=_head))
 
 # ---------------- brand hub, index, static ----------------
@@ -1464,6 +1638,95 @@ def gen_brand(con, kslug, make, models, all_rows):
                       f"Every {make} model ranked by NHTSA complaints and recalls — best and worst "
                       f"years, scores and running costs from public data.",
                       ORIGIN + url, body, jsonld))
+
+def gen_years_to_avoid(con, all_rows):
+    """/years-to-avoid/ — the category page above the 360 nameplate verdicts.
+
+    Every nameplate page now answers "which years of this car should I avoid". Nothing
+    answered the question one level up, which is both a query in its own right and the page
+    that passes authority down to all 360 of them. Ranked by the size of the gap between a
+    nameplate's worst year and its best, because that gap is exactly what makes the question
+    worth asking: a car whose years are all alike does not need this page.
+    """
+    from collections import defaultdict
+    by = defaultdict(list)
+    for r in all_rows:
+        if r["score"] is not None and gate(r):
+            by[r["model_id"]].append(r)
+
+    items = []
+    for rs in by.values():
+        rs = sorted(rs, key=lambda x: x["year"])
+        if len(rs) < 5:
+            continue
+        avoid = [x for x in rs if (x["verdict"] or "") == "AVOID"]
+        if not avoid:
+            continue
+        best = max(rs, key=lambda x: x["score"])
+        worst = min(rs, key=lambda x: x["score"])
+        spread = best["score"] - worst["score"]
+        if spread < 25:
+            continue
+        items.append((spread, rs[0], avoid, best, worst))
+    items.sort(key=lambda t: -t[0])
+
+    rows_html = "".join(
+        f'<tr><td><a href="/cars/{r0["kslug"]}/{r0["mslug"]}/">{esc(r0["make"])} {esc(r0["model"])}</a></td>'
+        f'<td>{", ".join(str(a["year"]) for a in sorted(avoid, key=lambda x: x["year"])[:6])}</td>'
+        f'<td class="num">{worst["score"]}</td>'
+        f'<td>{best["year"]}</td><td class="num">{best["score"]}</td>'
+        f'<td class="num">{spread}</td></tr>'
+        for spread, r0, avoid, best, worst in items[:250])
+
+    body = f"""<div class="hero"><div class="wrap hero-inner">
+<nav class="crumbs"><a href="/cars/">Cars</a> › Years to avoid</nav>
+<h1>Car Years to Avoid: {len(items)} Nameplates Where the Model Year Decides</h1>
+<p class="sub">Ranked by how far apart a nameplate's worst and best model years sit on the
+federal complaint and recall record. The wider the gap, the more the year you buy matters.</p>
+{byline("years-to-avoid", TODAY)}
+</div></div>
+<div class="wrap" style="display:grid;gap:20px;padding:28px 0">
+<div class="card"><h2>Why one model year can be worth thousands more than the next</h2>
+<p>A nameplate is not one car. A redesign changes the engine, the transmission and the
+supplier list in a single model year, and the complaint record moves with it — sometimes by
+sixty points inside two years of the same badge. Every row below is a car whose worst year
+and best year are at least 25 points apart on our score, which means the question "which
+year" is worth more to a buyer than the question "which car".</p>
+<p>Every figure comes from NHTSA owner complaints, normalised by years of exposure, and
+from recall campaigns. Follow any nameplate for its run-by-run reading.</p></div>
+{AD.format(slot='mid')}
+<div class="card"><h2>Ranked by the gap between the worst year and the best</h2>
+<div class="table-wrap"><table class="cost-table">
+<thead><tr><th>Car</th><th>Years to avoid</th><th class="num">Worst score</th>
+<th>Best year</th><th class="num">Best score</th><th class="num">Gap</th></tr></thead>
+<tbody>{rows_html}</tbody></table></div>
+<p class="src-note">Scored from NHTSA complaints and recalls. <a href="/methodology/">Method</a>.
+Showing the {min(len(items), 250)} widest gaps of {len(items)}.</p></div>
+<div class="card"><h2>Keep reading</h2><div class="rel-grid">
+<a href="/guides/">Buyer's guides<small>written and signed, year by year</small></a>
+<a href="/guides/first-model-year-rule/">The first-year rule<small>why a launch year is the one to skip</small></a>
+<a href="/cars/">Every marque<small>browse the ownership data</small></a>
+</div></div>
+</div>"""
+    jsonld = [
+        {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Cars", "item": ORIGIN + "/cars/"},
+            {"@type": "ListItem", "position": 2, "name": "Years to avoid",
+             "item": ORIGIN + "/years-to-avoid/"}]},
+        {"@context": "https://schema.org", "@type": "ItemList",
+         "name": "Car model years to avoid, ranked by the gap to the same car's best year",
+         "numberOfItems": min(len(items), 250),
+         "itemListElement": [
+             {"@type": "ListItem", "position": i + 1,
+              "name": f'{t[1]["make"]} {t[1]["model"]}',
+              "url": f'{ORIGIN}/cars/{t[1]["kslug"]}/{t[1]["mslug"]}/'}
+             for i, t in enumerate(items[:250])]}]
+    return write("years-to-avoid/index.html",
+                 page("Car Years to Avoid — Every Nameplate, Ranked | " + BRAND,
+                      ("The model years to avoid on every car we score, ranked by how far the worst "
+                       "year sits from the best. From NHTSA complaints and recall campaigns."),
+                      ORIGIN + "/years-to-avoid/", body, jsonld))
+
 
 def gen_cars_index(brands):
     """Two layers: the marques with deep NHTSA/EPA verdict data on top, then every marque
@@ -2578,6 +2841,7 @@ def main():
     for k, b in brands.items():
         pages.append(gen_brand(con, k, b["make"], b["models"], all_rows))
     pages.append(gen_cars_index(sorted((k, b["make"], sum(n for _, _, n in b["models"])) for k, b in brands.items())))
+    pages.append(gen_years_to_avoid(con, all_rows))
     pages.append(gen_home(con, all_rows))
     pages.append(gen_search(con, all_rows))
     pages.append(gen_calculators(con, all_rows))

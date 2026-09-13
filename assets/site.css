@@ -1252,3 +1252,15 @@ ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 .bio-side .badge{margin-top:8px}
 @media(min-width:1024px){.bio-grid{grid-template-columns:minmax(0,1fr) 320px}}
 @media(max-width:1023px){.bio-side{position:static}.bio-side .jump{display:none}}
+
+/* The generation verdict: the answer to "which years to avoid", stated before anything
+   else on a nameplate page. Colour-coded to the same verdict palette as the score tags. */
+.gen-verdict p.ga-avoid,.gen-verdict p.ga-buy,.gen-verdict p.ga-caution{
+  margin:10px 0;padding:11px 14px;border-radius:10px;border-left:4px solid;line-height:1.55}
+.gen-verdict p.ga-avoid{background:#fdf3f3;border-color:#b3261e}
+.gen-verdict p.ga-buy{background:#f1f8f3;border-color:#1e7d47}
+.gen-verdict p.ga-caution{background:#fdf8ee;border-color:#9a6b00}
+.gen-verdict a,.gen-eras a{border-bottom:1px solid currentColor}
+.gen-eras h3{font-size:16px;margin:18px 0 4px}
+.gen-eras h3:first-of-type{margin-top:10px}
+.gen-eras p{margin:0 0 6px}
