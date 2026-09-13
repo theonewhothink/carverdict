@@ -1264,3 +1264,11 @@ ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 .gen-eras h3{font-size:16px;margin:18px 0 4px}
 .gen-eras h3:first-of-type{margin-top:10px}
 .gen-eras p{margin:0 0 6px}
+
+/* Head-to-head: two records beside each other, stacking on a phone. */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:700px){.cmp-grid{grid-template-columns:1fr}}
+.cmp-side h3{font-size:16px;margin:0 0 6px}
+.cmp-side ul{margin:8px 0 0;padding-left:18px;line-height:1.7;font-size:14px}
+.cmp-score{font-size:34px;font-weight:800;line-height:1}
+.cmp-score small{font-size:13px;font-weight:600;color:var(--muted);margin-left:6px}

@@ -87,12 +87,23 @@ records on the day this site was last built. · <a href="/methodology/">Methodol
 def load():
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
-    rows = con.execute("""SELECT mk.name make, mo.name model, mo.slug mslug, mk.slug kslug,
+    # price_estimates is written by price_model.py earlier in the build; an empty table keeps
+    # the join valid so a partial local run still produces pages.
+    con.execute("""CREATE TABLE IF NOT EXISTS price_estimates(
+        my_id INT PRIMARY KEY, segment TEXT, brand_tier TEXT, anchor TEXT,
+        price_new INT, price_new_low INT, price_new_high INT,
+        price_today INT, price_today_low INT, price_today_high INT,
+        price_in5 INT, price_in5_low INT, price_in5_high INT,
+        depreciation_5y INT, depreciation_per_year INT,
+        insurance_low INT, insurance_high INT)""")
+    rows = con.execute("""SELECT my.id my_id, mk.name make, mo.name model, mo.slug mslug,
+        mk.slug kslug, mo.id model_id,
         my.year, my.complaint_count, my.recall_count, my.severe_recalls, my.is_ev,
         cs.reliability_score score, cs.verdict, cs.complaints_per_year cpy,
-        f.mpg_comb, f.fuel_type
+        f.mpg_comb, f.fuel_type, pe.segment, pe.price_today
         FROM model_years my
         LEFT JOIN fuel f ON f.my_id = my.id
+        LEFT JOIN price_estimates pe ON pe.my_id = my.id
         JOIN models mo ON mo.id = my.model_id
         JOIN makes mk ON mk.id = mo.make_id
         LEFT JOIN computed_scores cs ON cs.my_id = my.id""").fetchall()
@@ -202,84 +213,336 @@ def side(r):
 </ul></div>"""
 
 
+# ---------------------------------------------------------------------------------------
+# Head to head. "X vs Y" is the highest-intent query family in car search and the one the
+# buff books built franchises on. The old pages here were two score cards and a sentence,
+# and they were noindexed for good reason: nothing on them answered the question. They now
+# carry the one comparison nobody else publishes — both nameplates' full model-year records
+# side by side, what each one's owners actually complain about, the years to avoid on each,
+# and what each costs to run — all of it computed, so it stays true on the next build.
+
+MIN_YEARS_TO_INDEX = 5       # a nameplate with three scored years cannot anchor a comparison
+MIN_COMPLAINTS_TO_INDEX = 150
+
+
+def nameplate(rows, make, model):
+    """Every scored year of one nameplate, newest first."""
+    rs = [r for r in rows if r["make"].lower() == make.lower()
+          and r["model"].lower() == model.lower() and r["score"] is not None]
+    return sorted(rs, key=lambda r: -r["year"])
+
+
+def np_stats(rs):
+    recent = [r for r in rs if r["year"] >= 2013] or rs
+    scores = [r["score"] for r in recent]
+    return {
+        "n": len(rs),
+        "mean": round(sum(scores) / len(scores)) if scores else 0,
+        "best": max(rs, key=lambda r: r["score"]),
+        "worst": min(rs, key=lambda r: r["score"]),
+        "complaints": sum(r["complaint_count"] or 0 for r in rs),
+        "cpy": round(sum(r["cpy"] or 0 for r in recent) / max(1, len(recent))),
+        "recalls": sum(r["recall_count"] or 0 for r in rs),
+        "severe": sum(r["severe_recalls"] or 0 for r in rs),
+        "avoid": sorted([r for r in rs if r["verdict"] == "AVOID"], key=lambda r: r["year"]),
+        "buy": sorted([r for r in rs if r["verdict"] == "BUY"], key=lambda r: r["year"]),
+        "price": next((r["price_today"] for r in rs if r["price_today"]), None),
+        "mpg": next((r["mpg_comb"] for r in rs if r["mpg_comb"]), None),
+        "segment": next((r["segment"] for r in rs if r["segment"]), None),
+    }
+
+
+def top_components(con, rs, limit=3):
+    ids = [r["my_id"] for r in rs]
+    if not ids:
+        return []
+    q = ("SELECT component, SUM(count) n FROM complaints WHERE component!='__quote__' "
+         "AND my_id IN (%s) GROUP BY component ORDER BY n DESC LIMIT ?" % ",".join("?" * len(ids)))
+    return con.execute(q, ids + [limit]).fetchall()
+
+
+def _yearlist(rs, n=6):
+    out = ", ".join(f'<a href="{url(r)}">{r["year"]}</a>' if exists(url(r)) else str(r["year"])
+                    for r in rs[:n])
+    return out + ("…" if len(rs) > n else "")
+
+
+def compare_body(con, mk1, mo1, rs1, mk2, mo2, rs2):
+    """Returns (body html, title, description, faqs, indexable)."""
+    a, b = np_stats(rs1), np_stats(rs2)
+    n1, n2 = f"{mk1} {mo1}", f"{mk2} {mo2}"
+    gap = a["mean"] - b["mean"]
+    lead, trail = (n1, n2) if gap >= 0 else (n2, n1)
+    la, ta = (a, b) if gap >= 0 else (b, a)
+    g = abs(gap)
+
+    if g <= 3:
+        headline = (f"The {n1} and the {n2} are level on the federal record — "
+                    f"{a['mean']}/100 against {b['mean']}/100 across the years we score. "
+                    f"Which one to buy is decided by the model year, not the badge.")
+    elif g <= 10:
+        headline = (f"The {lead} is ahead of the {trail} on the federal record, "
+                    f"{la['mean']}/100 against {ta['mean']}/100 — a real but narrow gap that "
+                    f"a bad model year on either side closes.")
+    else:
+        headline = (f"The {lead} is clearly ahead of the {trail} on the federal record: "
+                    f"{la['mean']}/100 against {ta['mean']}/100 across every model year "
+                    f"we score.")
+
+    # -- side-by-side headline numbers ----------------------------------------------
+    def card(nm, st, rs):
+        return f"""<div class="cmp-side">
+<h3><a href="/cars/{rs[0]['kslug']}/{rs[0]['mslug']}/">{esc(nm)}</a></h3>
+<div class="cmp-score">{st['mean']}<small>/100 mean</small></div>
+<ul>
+<li>{st['n']} model years scored</li>
+<li>{st['complaints']:,} owner complaints on record</li>
+<li>about {st['cpy']:,} complaints per year on the road</li>
+<li>{st['recalls']} recall campaigns, {st['severe']} safety-critical</li>
+<li>best year {st['best']['year']} ({st['best']['score']}/100) · worst {st['worst']['year']} ({st['worst']['score']}/100)</li>
+</ul></div>"""
+
+    # -- year by year ----------------------------------------------------------------
+    years = sorted({r["year"] for r in rs1} | {r["year"] for r in rs2}, reverse=True)[:16]
+    m1 = {r["year"]: r for r in rs1}
+    m2 = {r["year"]: r for r in rs2}
+
+    def cell(r):
+        if not r:
+            return '<td class="num">—</td>'
+        v = r["verdict"] if r["verdict"] in ("BUY", "CAUTION", "AVOID") else "DATA"
+        link = f'<a href="{url(r)}">{r["score"]}</a>' if exists(url(r)) else str(r["score"])
+        return f'<td class="num">{link} <span class="tag v-{v}">{esc(r["verdict"] or "—")}</span></td>'
+
+    yrows = "".join(
+        f"<tr><td>{y}</td>{cell(m1.get(y))}{cell(m2.get(y))}"
+        f'<td class="num">{(m1[y]["score"] - m2[y]["score"]):+d}</td></tr>'
+        if y in m1 and y in m2 else
+        f'<tr><td>{y}</td>{cell(m1.get(y))}{cell(m2.get(y))}<td class="num">—</td></tr>'
+        for y in years)
+
+    # -- what actually goes wrong -----------------------------------------------------
+    c1, c2 = top_components(con, rs1), top_components(con, rs2)
+
+    def comp_list(cs, nm):
+        if not cs:
+            return ""
+        items = "".join(f"<li><b>{esc(c[0].title())}</b> — {c[1]:,} complaints</li>" for c in cs)
+        return f"<div class=\"cmp-side\"><h3>{esc(nm)}</h3><ul>{items}</ul></div>"
+
+    diff = ""
+    if c1 and c2 and c1[0][0] != c2[0][0]:
+        diff = (f"<p>They do not fail the same way: the {esc(mo1)}'s complaints concentrate in "
+                f"{esc(c1[0][0].title())}, the {esc(mo2)}'s in {esc(c2[0][0].title())}. "
+                f"That difference matters more to a buyer than the score gap, because it says "
+                f"which repair bill you are taking on.</p>")
+    elif c1 and c2:
+        diff = (f"<p>Both nameplates have {esc(c1[0][0].title())} as their largest complaint "
+                f"group, so the choice between them is about how often, not about what.</p>")
+
+    # -- years to avoid ----------------------------------------------------------------
+    av = []
+    for nm, st in ((n1, a), (n2, b)):
+        if st["avoid"]:
+            av.append(f"<p><b>{esc(nm)} — avoid:</b> {_yearlist(st['avoid'])}.</p>")
+        elif st["buy"]:
+            av.append(f"<p><b>{esc(nm)}:</b> no model year scores below 45; the strongest are "
+                      f"{_yearlist(st['buy'])}.</p>")
+    avoid_html = ""
+    if av:
+        avoid_html = ('<div class="card"><h2>Years to avoid on each</h2>' + "".join(av)
+                      + '<p class="src-note">A year scores below 45 on complaints per year of '
+                        'exposure and recall campaigns. '
+                        '<a href="/years-to-avoid/">Every car’s years to avoid</a>.</p></div>')
+
+    # -- money --------------------------------------------------------------------------
+    money = ""
+    if a["price"] and b["price"]:
+        cheaper = n1 if a["price"] < b["price"] else n2
+        d = abs(a["price"] - b["price"])
+        money = (f'<div class="card"><h2>What each costs today</h2>'
+                 f'<p>A recent used {esc(n1)} prices at about '
+                 f'<span data-usd="{a["price"]}" data-kind="price">${a["price"]:,}</span>, '
+                 f'a {esc(n2)} at about '
+                 f'<span data-usd="{b["price"]}" data-kind="price">${b["price"]:,}</span> — '
+                 f'the {esc(cheaper)} is roughly '
+                 f'<span data-usd="{d}" data-kind="price">${d:,}</span> less'
+                 + (f', and returns {a["mpg"]} against {b["mpg"]} MPG combined'
+                    if a["mpg"] and b["mpg"] else '')
+                 + '.</p><p class="src-note">Class-level estimates re-priced to your country, '
+                   'not a valuation of one car. <a href="/methodology/">Method</a>.</p></div>')
+
+    faqs = [
+        (f"Is the {n1} or the {n2} more reliable?",
+         f"On the NHTSA record the {lead} scores {la['mean']}/100 against the {trail}'s "
+         f"{ta['mean']}/100, averaged across every model year we hold. "
+         + (f"The gap is small enough that the model year matters more than the badge."
+            if g <= 10 else
+            f"The {lead} carries about {la['cpy']:,} complaints per year on the road against "
+            f"{ta['cpy']:,} for the {trail}.")),
+        (f"Which {n1} and {n2} years should I avoid?",
+         (f"{n1}: " + (", ".join(str(r['year']) for r in a['avoid'][:6]) if a['avoid'] else "no year scores below 45")
+          + f". {n2}: " + (", ".join(str(r['year']) for r in b['avoid'][:6]) if b['avoid'] else "no year scores below 45")
+          + ". Each of those scores under 45 out of 100 on complaints per year of exposure and recall campaigns.")),
+    ]
+    if c1 and c2:
+        faqs.append((f"What goes wrong on the {n1} and the {n2}?",
+                     f"The largest complaint group on the {n1} is {c1[0][0].title()} "
+                     f"({c1[0][1]:,} complaints); on the {n2} it is {c2[0][0].title()} "
+                     f"({c2[0][1]:,})."))
+    if a["price"] and b["price"]:
+        faqs.append((f"Is the {n1} or the {n2} cheaper to own?",
+                     f"A recent used {n1} prices at about ${a['price']:,} and a {n2} at about "
+                     f"${b['price']:,}, before insurance and the maintenance band. "
+                     f"Both pages carry the five-year running-cost figure."))
+
+    indexable = (a["n"] >= MIN_YEARS_TO_INDEX and b["n"] >= MIN_YEARS_TO_INDEX
+                 and a["complaints"] >= MIN_COMPLAINTS_TO_INDEX
+                 and b["complaints"] >= MIN_COMPLAINTS_TO_INDEX)
+
+    faq_html = ('<div class="card"><h2>FAQ</h2>' + "".join(
+        f"<details><summary>{esc(q)}</summary><p>{esc(ans)}</p></details>"
+        for q, ans in faqs) + "</div>")
+
+    title = f"{n1} vs {n2}: Which Is More Reliable? | {BRAND}"
+    desc = (f"{n1} or {n2}? Mean score {a['mean']}/100 against {b['mean']}/100 across "
+            f"{a['n']} and {b['n']} model years of NHTSA complaint and recall data, with the "
+            f"years to avoid on each.")
+
+    body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
+<nav class="crumbs"><a href="/cars/">Cars</a> › <a href="/compare/">Head to head</a> › {esc(mo1)} vs {esc(mo2)}</nav>
+<h1>{esc(n1)} <em>vs</em> {esc(n2)}: which is more reliable?</h1>
+<p class="sub">{esc(headline)}</p>
+<p class="byline">Computed by <a href="/about/">{BRAND}</a> from NHTSA and EPA public records ·
+<a href="/methodology/">method</a></p></div></div>
+<div class="wrap" style="display:grid;gap:20px;padding:20px 16px 40px">
+<div class="card"><h2>The record, side by side</h2>
+<div class="cmp-grid">{card(n1, a, rs1)}{card(n2, b, rs2)}</div>
+<p class="src-note">Mean score is the average across model years from 2013 on, where both
+records are comparable. <a href="/methodology/">How the score works</a>.</p></div>
+<div class="card"><h2>Year by year: {esc(mo1)} against {esc(mo2)}</h2>
+<p>The comparison that decides the purchase. A nameplate is not one car — a redesign can move
+the record sixty points inside two years, and the two nameplates rarely move together.</p>
+<div class="table-wrap"><table class="cost-table">
+<thead><tr><th>Year</th><th class="num">{esc(mo1)}</th><th class="num">{esc(mo2)}</th>
+<th class="num">Gap</th></tr></thead><tbody>{yrows}</tbody></table></div></div>
+<div class="card"><h2>What owners actually complain about</h2>
+<div class="cmp-grid">{comp_list(c1, n1)}{comp_list(c2, n2)}</div>{diff}</div>
+{avoid_html}
+{money}
+{faq_html}
+<div class="card"><h2>Both nameplates in full</h2><div class="rel-grid">
+<a href="/cars/{rs1[0]['kslug']}/{rs1[0]['mslug']}/">{esc(n1)} years to avoid<small>every model year scored</small></a>
+<a href="/cars/{rs2[0]['kslug']}/{rs2[0]['mslug']}/">{esc(n2)} years to avoid<small>every model year scored</small></a>
+<a href="/years-to-avoid/">Every car's years to avoid<small>ranked by the gap</small></a>
+</div></div>
+<h2 class="sec">More head-to-heads</h2><div class="rel-grid" id="more-cmp"></div></div>"""
+    return body, title, desc, faqs, indexable
+
+
 MAX_COMPARES = int(os.environ.get("MAX_COMPARES", "600"))
 MIN_COMPLAINTS = 60        # a nameplate nobody complains about is a nameplate nobody owns
 
 
 def auto_rivals(rows):
-    """Pair nameplates the way a buyer would shop them, from data we actually hold.
+    """Pair nameplates the way a buyer shops them.
 
-    "X vs Y" is the highest-intent query family in car search and the one Car and Driver
-    built a franchise on. Twenty hand-written pairs cannot cover it; the pairing has to come
-    out of the database. There is no segment column, so the proxy is combined fuel economy
-    plus powertrain: a truck and a compact saloon are never within 15% of each other on MPG,
-    while a Camry, an Accord and an Altima are within a point or two. Popularity is proxied
-    by complaint volume - the federal record is thin for cars nobody bought.
+    The first version had no segment column to work with, so it used combined fuel economy
+    within 15% as a proxy — which puts a sports car next to a hybrid saloon and misses the
+    pairs a buyer actually cross-shops. price_model.py now writes a real segment on every
+    model year, so pairs are same-segment, same powertrain type, and ranked by how close the
+    two nameplates are in size of record: a comparison is only worth publishing when both
+    sides have enough history to carry it.
 
-    Hand-written RIVALS still run first and are never displaced; this only fills the rest of
-    the page budget.
+    Hand-written RIVALS still run first and are never displaced.
     """
-    best = {}
+    by_np = {}
     for r in rows:
-        if r["score"] is None or not exists(url(r)):
+        if r["score"] is None:
             continue
         k = (r["make"], r["model"])
-        if k not in best or (r["score"] or 0) > (best[k]["score"] or 0):
-            best[k] = r
-    pool = [r for r in best.values()
-            if (r["complaint_count"] or 0) >= MIN_COMPLAINTS and (r["mpg_comb"] or 0) > 0]
-    pool.sort(key=lambda r: -(r["complaint_count"] or 0))
+        by_np.setdefault(k, []).append(r)
+
+    cand = []
+    for k, rs in by_np.items():
+        if len(rs) < 4:
+            continue
+        total = sum(x["complaint_count"] or 0 for x in rs)
+        if total < MIN_COMPLAINTS:
+            continue
+        seg = next((x["segment"] for x in rs if x["segment"]), None)
+        if not seg:
+            continue
+        if not any(exists(url(x)) for x in rs):
+            continue
+        cand.append({"make": k[0], "model": k[1], "seg": seg,
+                     "ev": bool(rs[0]["is_ev"]), "n": len(rs), "total": total})
+    cand.sort(key=lambda c: -c["total"])
+
     pairs = []
-    for i, a in enumerate(pool):
-        for b in pool[i + 1:]:
+    for i, a in enumerate(cand):
+        for b in cand[i + 1:]:
+            if a["seg"] != b["seg"] or a["ev"] != b["ev"]:
+                continue
             if a["make"] == b["make"] and a["model"] == b["model"]:
                 continue
-            if bool(a["is_ev"]) != bool(b["is_ev"]):
-                continue
-            lo, hi = sorted((a["mpg_comb"], b["mpg_comb"]))
-            if hi > lo * 1.15:                      # different kind of car; not a shopping pair
+            # both records within a factor of four of each other: a nameplate with 8,000
+            # complaints against one with 200 is not a comparison, it is a mismatch.
+            lo, hi = sorted((a["total"], b["total"]))
+            if hi > lo * 4:
                 continue
             pairs.append((a["make"], a["model"], b["make"], b["model"]))
     return pairs
 
 
 def build_compares(rows):
-    made = []
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    made, indexed = [], 0
     seen_pairs = {tuple(sorted((f"{a} {b}".lower(), f"{c} {d}".lower())))
                   for a, b, c, d in RIVALS}
     auto = [q for q in auto_rivals(rows)
             if tuple(sorted((f"{q[0]} {q[1]}".lower(), f"{q[2]} {q[3]}".lower()))) not in seen_pairs]
     budget = max(0, MAX_COMPARES - len(RIVALS))
     if len(auto) > budget:
-        print(f"COMPARES: {len(auto)} data-matched pairs available, publishing {budget} "
+        print(f"COMPARES: {len(auto)} same-segment pairs available, publishing {budget} "
               f"(MAX_COMPARES={MAX_COMPARES}); {len(auto) - budget} held back")
         auto = auto[:budget]
+
     for mk1, mo1, mk2, mo2 in list(RIVALS) + auto:
-        a, b = best_year(rows, mk1, mo1), best_year(rows, mk2, mo2)
-        if not a or not b:
+        rs1, rs2 = nameplate(rows, mk1, mo1), nameplate(rows, mk2, mo2)
+        if len(rs1) < 3 or len(rs2) < 3:
             continue
-        win = a if (a["score"] or 0) >= (b["score"] or 0) else b
-        s = f"{slug(mk1 + '-' + mo1)}-vs-{slug(mk2 + '-' + mo2)}"
-        title = f"{mk1} {mo1} vs {mk2} {mo2}: What the Data Says"
-        verdict_line = (f"On the federal record, the {win['year']} {win['make']} {win['model']} "
-                        f"takes it: {win['score']}/100 against "
-                        f"{(a if win is b else b)['score']}/100.")
-        body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
-<h1>{esc(mk1)} {esc(mo1)} <em>vs</em> {esc(mk2)} {esc(mo2)}</h1>
-<p class="sub">{esc(verdict_line)} Best-scoring model year of each, judged only on complaints
-and recalls filed with the United States safety regulator.</p></div></div>
-<div class="wrap" style="padding:8px 16px 40px">
-<div class="cmp-grid">{side(a)}{side(b)}</div>
-<p class="lib-note">Scores compare the best data-year of each nameplate. Click through for
-every model year, owner narratives and running costs.</p>
-<h2 class="sec">More head-to-heads</h2><div class="rel-grid" id="more-cmp"></div></div>"""
-        (SITE / "compare" / s).mkdir(parents=True, exist_ok=True)
-        (SITE / "compare" / s / "index.html").write_text(
-            shell(robots=NOINDEX, title=title + f" | {BRAND}", desc=
-                  f"{mk1} {mo1} or {mk2} {mo2}? Complaint and recall records compared, "
-                  f"with a data verdict.", canon=f"{ORIGIN}/compare/{s}/", body=body))
-        made.append((s, f"{mk1} {mo1} vs {mk2} {mo2}",
-                     f"{win['make']} {win['model']} wins on data, {win['score']}/100"))
+        body, title, desc, faqs, indexable = compare_body(con, mk1, mo1, rs1, mk2, mo2, rs2)
+        sl = f"{slug(mk1 + '-' + mo1)}-vs-{slug(mk2 + '-' + mo2)}"
+        canon = f"{ORIGIN}/compare/{sl}/"
+        ld = json.dumps([
+            {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+                {"@type": "Question", "name": q,
+                 "acceptedAnswer": {"@type": "Answer", "text": ans}} for q, ans in faqs]},
+            {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Cars", "item": ORIGIN + "/cars/"},
+                {"@type": "ListItem", "position": 2, "name": "Head to head",
+                 "item": ORIGIN + "/compare/"},
+                {"@type": "ListItem", "position": 3,
+                 "name": f"{mk1} {mo1} vs {mk2} {mo2}", "item": canon}]},
+            {"@context": "https://schema.org", "@type": "Article",
+             "headline": f"{mk1} {mo1} vs {mk2} {mo2}: which is more reliable?",
+             "author": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
+             "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
+             "mainEntityOfPage": canon}], separators=(",", ":"))
+        head = ("" if indexable else NOINDEX) + \
+            f'<script type="application/ld+json">{ld}</script>'
+        if indexable:
+            indexed += 1
+        (SITE / "compare" / sl).mkdir(parents=True, exist_ok=True)
+        (SITE / "compare" / sl / "index.html").write_text(
+            shell(title, desc, canon, body, robots=head))
+        a, b = np_stats(rs1), np_stats(rs2)
+        lead = f"{mk1} {mo1}" if a["mean"] >= b["mean"] else f"{mk2} {mo2}"
+        made.append((sl, f"{mk1} {mo1} vs {mk2} {mo2}",
+                     f"{lead} ahead on the record, {max(a['mean'], b['mean'])}/100"))
+    con.close()
 
     # Cross-link the head-to-heads, but bounded. Pasting every comparison into every
     # comparison was fine at twenty pages and is a footer-link farm at six hundred: it
@@ -299,14 +562,17 @@ every model year, owner narratives and running costs.</p>
             '<div class="rel-grid">' + "".join(anchor(x) for x in near) + '</div>'))
     links = "".join(anchor(x) for x in made)
     body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
-<h1>Head to head</h1><p class="sub">The classic rivalries, settled by the federal complaint
-record instead of a comments section.</p></div></div>
+<h1>Car comparisons: {len(made)} rivalries settled by the federal record</h1>
+<p class="sub">Every pair below is two cars of the same class, compared model year by model
+year on complaints filed with the United States safety regulator and on recall campaigns —
+not on a comments section and not on a road test.</p></div></div>
 <div class="wrap" style="padding:8px 16px 40px"><div class="card prose editorial">{HUB_NOTES.get("compare", "")}</div><div class="rel-grid">{links}</div></div>"""
     (SITE / "compare").mkdir(parents=True, exist_ok=True)
     (SITE / "compare" / "index.html").write_text(
         shell(f"Car Comparisons - Rivalries Settled by Data | {BRAND}",
               "Camry vs Accord, F-150 vs Silverado and more - complaint and recall records "
-              "compared head to head.", f"{ORIGIN}/compare/", body))
+              "compared model year by model year.", f"{ORIGIN}/compare/", body))
+    print(f"COMPARES OK: {len(made)} head-to-heads, {indexed} indexable")
     return len(made)
 
 
