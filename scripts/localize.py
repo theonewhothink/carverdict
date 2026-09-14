@@ -153,25 +153,87 @@ def main():
             out.write_text(localize_html(src, lang, urls, rel))
             made += 1
     # rebuild sitemap from the final tree
-    import datetime
+    import datetime, hashlib, json as _json, os, pathlib, re as _re, urllib.request
     today = datetime.date.today().isoformat()
-    urls = []
+
+    # ---- lastmod that means something ---------------------------------------------------
+    # Every URL used to carry the build date, and the whole site is rebuilt nightly, so the
+    # sitemap told Google that all 4,000 pages changed every single day. Google states
+    # plainly that it ignores lastmod when the value is not trustworthy, and "everything
+    # changed today, again" is the textbook untrustworthy value — so the one signal that
+    # could pull the rewritten pages to the front of the recrawl queue was being thrown away.
+    #
+    # A page's date now advances only when its own content actually changes. The hash
+    # ignores the parts that differ on every build by construction — the printed build date,
+    # the asset cache-busting query strings, the ad markup and the nonce-ish bits — so a page
+    # whose words and numbers are identical keeps the date it already had.
+    VOLATILE = [
+        (_re.compile(r'<script\b[^>]*>.*?</script>', _re.S), ""),
+        (_re.compile(r'\?v=[0-9a-f]{6,}'), ""),
+        (_re.compile(r'Last updated:\s*\d{4}-\d{2}-\d{2}'), ""),
+        (_re.compile(r'updated \d{4}-\d{2}-\d{2}'), ""),
+        (_re.compile(r'<ins\b[^>]*></ins>'), ""),
+        (_re.compile(r'\d{4}-\d{2}-\d{2}'), ""),
+    ]
+
+    def content_hash(html):
+        body = html.split("<body", 1)[-1].rsplit("</body>", 1)[0]
+        for rx, rep in VOLATILE:
+            body = rx.sub(rep, body)
+        body = _re.sub(r"\s+", " ", body)
+        return hashlib.sha1(body.encode("utf-8", "ignore")).hexdigest()[:16]
+
+    def previous_manifest():
+        """Last build's hashes, published with the site itself. Advisory: on any failure
+        every page simply gets today's date, which is where this started."""
+        local = os.environ.get("LASTMOD_MANIFEST")
+        if local and pathlib.Path(local).exists():
+            try:
+                return _json.loads(pathlib.Path(local).read_text())
+            except Exception:
+                return {}
+        try:
+            req = urllib.request.Request(ORIGIN + "/assets/lastmod.json",
+                                         headers={"User-Agent": "motorjury-build"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return _json.loads(r.read().decode())
+        except Exception as exc:
+            print(f"  lastmod: no published manifest ({exc.__class__.__name__}); "
+                  f"every page dated today")
+            return {}
+
+    prev = previous_manifest()
+    manifest, urls, carried = {}, [], 0
     for p in sorted(SITE.rglob("index.html")):
         u = "/" + p.relative_to(SITE).as_posix().replace("index.html", "")
         if u == "/404.html":
             continue
-        # A page we ask search engines not to index has no business in the sitemap.
         try:
-            if 'name="robots" content="noindex' in p.read_text():
-                continue
+            html = p.read_text()
         except Exception:
-            pass
-        urls.append(ORIGIN + u)
-    shard = "".join(f"<url><loc>{u}</loc><lastmod>{today}</lastmod></url>" for u in urls)
+            continue
+        # A page we ask search engines not to index has no business in the sitemap.
+        if 'name="robots" content="noindex' in html:
+            continue
+        h = content_hash(html)
+        was = prev.get(u)
+        if was and was[0] == h:
+            when = was[1]
+            carried += 1
+        else:
+            when = today
+        manifest[u] = [h, when]
+        urls.append((ORIGIN + u, when))
+
+    (SITE / "assets").mkdir(parents=True, exist_ok=True)
+    (SITE / "assets" / "lastmod.json").write_text(
+        _json.dumps(manifest, separators=(",", ":")))
+    shard = "".join(f"<url><loc>{u}</loc><lastmod>{w}</lastmod></url>" for u, w in urls)
     (SITE / "sitemap-0.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         + shard + "</urlset>")
-    print(f"LOCALIZED: {made} pages across {len(LANGS) - 1} languages; sitemap {len(urls)} URLs")
+    print(f"LOCALIZED: {made} pages across {len(LANGS) - 1} languages; sitemap {len(urls)} URLs "
+          f"({carried} keeping an earlier lastmod, {len(urls) - carried} dated today)")
 
 
 if __name__ == "__main__":
