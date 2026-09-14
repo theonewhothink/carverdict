@@ -1275,3 +1275,6 @@ ins.adsbygoogle.bio-ad[data-ad-status="unfilled"]{display:none!important}
 .cmp-shot{margin:0 0 10px}
 .cmp-shot img{width:100%;height:auto;border-radius:10px;display:block;background:var(--bg2)}
 .cmp-shot figcaption{font-size:11px;color:var(--faint);margin-top:5px}
+.game-grid{font-size:26px;letter-spacing:3px;margin:6px 0 2px}
+.love-hero{margin:10px 0 4px}
+.love-hero .love-btn{font-size:14px;padding:8px 14px}

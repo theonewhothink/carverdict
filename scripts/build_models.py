@@ -864,8 +864,6 @@ def main():
         about_card = ""   # the Wikipedia summary is woven into the article (bio_text.py)
 
         engagement_card = (f'<div class="card engagement-card">'
-                           f'<div class="love-host" data-love="model:{esc(m["q"])}" '
-                           f'data-love-name="{esc(m["n"])}"></div>'
                            f'<div class="survey-card" data-survey="model:{esc(m["q"])}" '
                            f'data-survey-name="{esc(m["n"])}"><h2>Owner satisfaction</h2>'
                            f'<p class="sv-n"><b>No responses yet.</b> Own one? Sign in and leave an '
@@ -930,6 +928,7 @@ def main():
 <div class="model-side">
 <h1>{esc(m["n"])}</h1>
 <p class="sub">{esc(b)}{f' · introduced {esc(m["y"])}' if m["y"] else ''}</p>
+<div class="love-host love-hero" data-love="model:{esc(m["q"])}" data-love-name="{esc(m["n"])}"></div>
 <div class="facts">{facts}</div>
 {byline(url)}
 <div class="hh-cta">{_own_cta}

@@ -120,7 +120,7 @@
       }
       var st = prefs.game || {};
       if (st.day === d && st.done) return renderDone(host, st);
-      var idx = 0, score = 0;
+      var idx = 0, score = 0, marks = [];
       draw();
 
       function draw() {
@@ -137,6 +137,7 @@
           b.addEventListener('click', function () {
             var ok = r.o[+b.dataset.i].n === r.a.n;
             b.classList.add(ok ? 'ok' : 'no');
+            marks.push(ok);
             if (ok) score++;
             else host.querySelectorAll('button').forEach(function (x) {
               if (r.o[+x.dataset.i].n === r.a.n) x.classList.add('ok');
@@ -152,21 +153,34 @@
       function finish() {
         var yesterday = (prefs.game && prefs.game.day) === d - 1;
         prefs.streak = (score >= 3) ? ((yesterday ? (prefs.streak || 0) : 0) + 1) : 0;
-        prefs.game = { day: d, done: true, score: score };
+        prefs.game = { day: d, done: true, score: score, marks: marks.slice() };
         save();
         renderDone(host, prefs.game);
       }
       function renderDone(h, st) {
-        var share = 'I scored ' + st.score + '/5 on today\'s Guess the Car 🚗 streak ' + (prefs.streak || 0) + '🔥';
+        // Wordle did not spread because people posted their score. It spread because the
+        // result was a spoiler-free picture anyone could paste anywhere, and because every
+        // player that day had the same puzzle to argue about. A bare "I scored 4/5" gives a
+        // reader nothing to react to and nothing to click. This gives them a grid, the
+        // puzzle number so two people can compare the same one, and a URL.
+        var grid = (st.marks || []).map(function (ok) { return ok ? '🟩' : '🟥'; }).join('');
+        if (!grid) grid = new Array(st.score + 1).join('🟩') + new Array(5 - st.score + 1).join('🟥');
+        var url = location.origin + '/play/';
+        var share = 'Guess the Car #' + d + '\n' + grid + '  ' + st.score + '/5'
+          + ((prefs.streak || 0) > 1 ? '  · ' + prefs.streak + ' day streak 🔥' : '')
+          + '\n' + url;
         h.innerHTML = '<div class="game-done"><b>' + st.score + ' / 5</b>' +
-          '<p>Streak: ' + (prefs.streak || 0) + ' 🔥 — new cars tomorrow.</p>' +
+          '<p class="game-grid">' + grid + '</p>' +
+          '<p>Puzzle #' + d + ' · streak ' + (prefs.streak || 0) + ' 🔥 — five new cars tomorrow.</p>' +
           '<div class="share-row">' +
-          sbtn('X', 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(share + ' ' + location.origin + '/play/')) +
-          sbtn('LinkedIn', 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(location.origin + '/play/')) +
+          sbtn('X', 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(share)) +
+          sbtn('WhatsApp', 'https://wa.me/?text=' + encodeURIComponent(share)) +
+          sbtn('LinkedIn', 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url)) +
           '<button id="cp">Copy result</button></div></div>';
         var cp = h.querySelector('#cp');
         if (cp) cp.addEventListener('click', function () {
-          navigator.clipboard && navigator.clipboard.writeText(share + ' ' + location.origin + '/play/');
+          if (navigator.share) { navigator.share({ text: share }).catch(function () {}); return; }
+          navigator.clipboard && navigator.clipboard.writeText(share);
           cp.textContent = 'Copied ✓';
         });
       }
