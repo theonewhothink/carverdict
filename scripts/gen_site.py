@@ -943,7 +943,19 @@ def gen_model_year(con, r, all_rows):
     fuel_line = ""
     _src = r.get("fuel_src") or ""
     _kind = 'energy' if r['is_ev'] else 'fuel'
-    if _src == "epa":
+    # Every branch below formats annual_fuel_cost with a thousands separator, which raises
+    # on None. fill_fuel.py guarantees a figure for every model year — but it is a separate
+    # step, and the GitHub pre-flight workflow never ran it, so that workflow has been dying
+    # here on `unsupported format string passed to NoneType` while the Cloudflare build
+    # (which does run fill_fuel) deployed happily. A missing figure is a fact to state, not
+    # a reason to fail a build.
+    if r["annual_fuel_cost"] is None:
+        _src = "__none__"
+        fuel_line = (f"<p class='data-missing'>No EPA {_kind}-economy record matches this "
+                     f"model year, and no estimate is carried for it, so this page states no "
+                     f"annual {_kind} cost. <a href='/methodology/#prices'>How estimates are "
+                     f"labelled</a>.</p>")
+    elif _src == "epa":
         _unit = 'MPGe' if r['is_ev'] else 'MPG'
         fuel_line = (f"<p>EPA combined <span class='num' data-mpg=\"{r['mpg_comb']:.1f}\" data-mpg-unit=\"{_unit}\">"
                      f"{r['mpg_comb']:.0f} {_unit}</span>"
