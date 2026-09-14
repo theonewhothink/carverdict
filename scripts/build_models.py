@@ -383,7 +383,7 @@ def _library_ownership_card(brand, model):
             repair_hi = int(round(labour + spec["parts_high"]))
             repair_row = (f'<div class="fact"><span>Most-reported repair group</span>'
                           f'<b>{esc(component.title())} · {money(repair_lo, "maint")}–{money(repair_hi, "maint")}</b></div>')
-    return f'''<div class="card model-money"><h2>Ownership costs across indexed model years</h2>
+    return f'''<div class="card model-money" id="ownership-costs"><h2>Ownership costs across indexed model years</h2>
 <p class="src-note">Model-year estimates from the same NHTSA, EPA and published cost model used on the detailed verdict pages. The wide range reflects different years and trims; choose a year for the precise breakdown.</p>
 <div class="facts"><div class="fact"><span>Typical used-price range</span><b>{money(price_lo, "car")}–{money(price_hi, "car")}</b></div>
 {dep_row}{insurance_row}{fuel_row}{maint_row}{repair_row}</div>
@@ -903,6 +903,17 @@ def main():
         ownership_card = _library_ownership_card(b, m["n"])
         if not ownership_card:
             ownership_card = ""
+        if _own:
+            # The costs are on this page. Jump to them rather than leaving the page, and
+            # offer the year-by-year breakdown as the second step.
+            _own_cta = (f'<a class="btn" href="#ownership-costs">Ownership costs</a>'
+                        f'<a class="btn ghost" href="{_own["url"]}">'
+                        f'{_own["years"]} model years scored</a>')
+        elif (SITE / "cars" / bs / "index.html").exists():
+            _own_cta = (f'<a class="btn ghost" href="/cars/{bs}/">'
+                        f'{esc(b)} ownership data</a>')
+        else:
+            _own_cta = ""
 
         from bio_text import _years_of as _yo, _clean as _cl
         _start, _end = _yo(_cl(wk.get("production")), _era_year(m))
@@ -921,7 +932,7 @@ def main():
 <p class="sub">{esc(b)}{f' · introduced {esc(m["y"])}' if m["y"] else ''}</p>
 <div class="facts">{facts}</div>
 {byline(url)}
-<div class="hh-cta"><a class="btn" href="/cars/">Ownership-cost data</a>
+<div class="hh-cta">{_own_cta}
 <a class="btn ghost" href="/library/{bs}/">All {esc(b)} models</a></div>
 </div></div></div></div>
 <div class="wrap grid bio-grid">
