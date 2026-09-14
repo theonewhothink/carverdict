@@ -559,6 +559,13 @@ SOCIAL_ROW = (
 
 
 def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"):
+    # A caller that hands this a pre-serialised JSON string instead of a list of objects
+    # used to get one <script> tag per CHARACTER of that string — 747 of them on the author
+    # page, and nothing in the build noticed. Fail loudly instead.
+    if isinstance(jsonld, str):
+        raise TypeError("page(jsonld=...) takes a list of objects, not a JSON string")
+    if isinstance(jsonld, dict):
+        jsonld = [jsonld]
     blocks = list(jsonld or []) + [_org_ld()]
     ld = "".join(f'<script type="application/ld+json">{json.dumps(x, separators=(",", ":"))}</script>' for x in blocks)
     return f"""<!doctype html>
@@ -2466,7 +2473,7 @@ and the <a href="/methodology/">methodology</a> is the formula itself, in full.<
 <p class="src-note">Contact: <a href="mailto:hello@motorjury.com">hello@motorjury.com</a> ·
 <a href="/contact/">contact page</a> · <a href="/about/">about {BRAND}</a></p>
 </div>"""
-    ld = json.dumps([
+    ld = [
         {"@context": "https://schema.org", "@type": "ProfilePage",
          "mainEntity": {
              "@type": "Person", "name": EDITOR,
@@ -2481,7 +2488,7 @@ and the <a href="/methodology/">methodology</a> is the formula itself, in full.<
             {"@type": "ListItem", "position": 1, "name": "About",
              "item": ORIGIN + "/about/"},
             {"@type": "ListItem", "position": 2, "name": EDITOR,
-             "item": ORIGIN + "/about/adir-trabelsi/"}]}], separators=(",", ":"))
+             "item": ORIGIN + "/about/adir-trabelsi/"}]}]
     return write("about/adir-trabelsi/index.html",
                  page(f"{EDITOR} — Editor, {BRAND} | {BRAND}",
                       (f"{EDITOR} built and edits {BRAND}: who is accountable for the "
