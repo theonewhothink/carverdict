@@ -44,15 +44,20 @@ echo "origin: $SITE_ORIGIN"
 # CI has no upload ceiling, but the site file cap is 20,000 and the guides + OG cards need
 # headroom. At 10,000 library model pages the last local build produced 19,846 files — past
 # the 19,800 abort below, so the next deploy would have been refused outright as the nightly
-# dataset kept growing. 8,500 restores the headroom and costs nothing that search can see:
+# dataset kept growing. The budget now goes where it earns: 6,500 library pages instead of
+# 8,500 gives back 2,000 files, and they buy 500 more head-to-head comparisons. The library
+# tranche this drops is entirely noindex,follow catalogue tail — pages are planned
+# photographed-first and only a page with a photograph, a Wikipedia summary and two sourced
+# facts is indexable at all — while a comparison is indexable the moment both nameplates
+# have a real record. Trading pages Google is told to ignore for pages built to rank:
 # pages are planned photographed-first, and only a page with a photograph, a Wikipedia
 # summary and two sourced facts is indexable at all, so the tranche this drops is entirely
 # noindex,follow catalogue tail that still appears on its marque page and in the deep index.
 "$PY" - <<'PY_EOF'
 import os, re, pathlib
 p = pathlib.Path("scripts/build_models.py")
-p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 8500", p.read_text()))
-print("MAX_MODEL_PAGES set to 8500")
+p.write_text(re.sub(r"(?m)^MAX_MODEL_PAGES = .*", "MAX_MODEL_PAGES = 6500", p.read_text()))
+print("MAX_MODEL_PAGES set to 6500")
 
 # Some generators still carry the old placeholder origin as a literal. Rewrite it in place so
 # every emitted URL agrees with SITE_ORIGIN. No-op once the generators read the variable.

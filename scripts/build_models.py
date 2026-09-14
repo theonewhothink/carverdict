@@ -150,7 +150,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 BRAND = "MotorJury"
-MAX_MODEL_PAGES = 8500
+MAX_MODEL_PAGES = 6500
 
 
 def _load_specs():

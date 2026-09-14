@@ -180,8 +180,8 @@ def main():
         jsonld = [{"@context": "https://schema.org", "@type": "Article", "headline": meta["title"],
                    "description": meta.get("description", ""), "datePublished": meta.get("date", gen_site.TODAY),
                    "dateModified": meta.get("updated", meta.get("date", gen_site.TODAY)),
-                   "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
-                   "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/"},
+                   "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
+                   "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
                    "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
                    "mainEntityOfPage": canon, "wordCount": words},
                   {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [

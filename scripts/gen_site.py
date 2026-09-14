@@ -18,14 +18,47 @@ except Exception:  # Pillow unavailable -> skip og images gracefully
     og_card = None
 
 # library photos: best Commons photo per (brand-ish, model) for real-photo heroes
+def _production_windows():
+    """Wikidata QID -> (first year, last year) from the Wikipedia infobox production line.
+
+    The catalogue's own inception year is empty for most nameplates, which is why the
+    photograph on a model-year page had to be chosen from the filename alone. The infobox
+    production string carries the real window for about half the photographed catalogue
+    ("2007-2008 (GT9) / 2011 (GT9-CS)", "1988-1996"), and a window is a far better answer
+    than a filename: it says which generation was on sale in the year the page is about.
+    """
+    p = Path(__file__).resolve().parent.parent / "data" / "wiki_specs.json"
+    out = {}
+    if not p.exists():
+        return out
+    try:
+        wiki = json.loads(p.read_text())
+    except Exception:
+        return out
+    for qid, rec in wiki.items():
+        txt = re.sub(r"&[a-z]+;", "-", str(rec.get("production") or ""))
+        ys = [int(y) for y in re.findall(r"\b(?:19|20)\d{2}\b", txt)]
+        if not ys:
+            continue
+        hi = date.today().year if re.search(r"present|current|\bnow\b", txt, re.I) else max(ys)
+        out[qid] = (min(ys), hi)
+    return out
+
+
 def _load_lib_photos():
     p = Path(__file__).resolve().parent.parent / "data" / "car_library.json"
+    windows = _production_windows()
     out = []
     if p.exists():
         for x in json.loads(p.read_text()):
             if x.get("p"):
                 y = int(x["y"]) if (x.get("y") or "").isdigit() else None
-                out.append((x["n"].strip().lower(), y, x["p"]))
+                w = windows.get(x.get("q"))
+                # The recorded inception year is the window's start when we have one: that
+                # is what the generation-window branch of lib_photo reads.
+                if w and not y:
+                    y = w[0]
+                out.append((x["n"].strip().lower(), y, x["p"], w))
     return out
 
 LIB_PHOTOS = _load_lib_photos()
@@ -172,21 +205,39 @@ def lib_photo(make, model, year=None):
     if not cands:
         return None
     if year:
-        # A model-year car is often photographed the following calendar year, so the
-        # ceiling is year + 1. There is no floor: an older photograph of the same nameplate
-        # is an honest picture of the car as long as the caption does not claim it is this
-        # model year, which is why hero_art no longer stamps the year into the alt text.
-        # What is never acceptable is a car from the future — the 2025 show car that used
-        # to illustrate the 2019 RAV4.
         y = int(year)
+        # First choice, and the only one that is actually right: the generation whose
+        # recorded production window contains this model year. The window comes from the
+        # Wikipedia infobox and covers about half the photographed catalogue.
+        # The window alone is not enough: a nameplate-level entry reading "1990-present"
+        # contains every year, and its photograph is whatever Commons happens to hold —
+        # which is how a 2025 Explorer ended up on the 2016 page. The filename's own year
+        # is the stronger evidence about what the picture shows, so a candidate whose file
+        # is newer than the page is rejected even when its window matches.
+        inwindow = [c for c in cands
+                    if c[3] and c[3][0] <= y <= c[3][1] and _photo_ok(c[2], y)]
+        if inwindow:
+            # Prefer the narrowest window: a "1994-present" entry should lose to the
+            # generation entry that names four years.
+            return min(inwindow, key=lambda c: c[3][1] - c[3][0])[2]
+        # Otherwise fall back to the filename's own year. A model-year car is often
+        # photographed the following calendar year, so the ceiling is year + 1. There is no
+        # floor: an older photograph of the same nameplate is an honest picture as long as
+        # the caption does not claim it is this model year, which is why hero_art no longer
+        # stamps the year into the alt text. What is never acceptable is a car from the
+        # future — the 2025 show car that used to illustrate the 2019 RAV4.
         dated = [(yy, c) for c in cands
                  for yy in (_photo_meta(c[2])[1],) if yy and yy <= y + 1]
         if dated:
             return max(dated, key=lambda t: t[0])[1][2]
         # A generation entry whose recorded first year contains this model year is still
         # the best answer where the catalogue happens to carry one.
-        gens = sorted([c for c in cands if c[1]], key=lambda c: c[1])
-        for i, (n, gy, ph) in enumerate(gens):
+        # The inception-year branch had no filename guard, which is how a 2025 Explorer
+        # still reached the 2016 page: the nameplate's window starts in 1990, so every year
+        # matched. Guard it the same way as the branches above.
+        gens = sorted([c for c in cands if c[1] and _photo_ok(c[2], y)], key=lambda c: c[1])
+        for i, g in enumerate(gens):
+            gy, ph = g[1], g[2]
             nxt = gens[i + 1][1] if i + 1 < len(gens) else 9999
             if gy <= y < nxt:
                 return ph
@@ -371,9 +422,11 @@ def byline(key=None, date=None):
 
 
 def editor_byline(date=None):
-    """Only for the hand-written guides."""
-    return (f'<p class="byline">By <a href="/about/">{EDITOR}</a>, editor'
-            f'{" · " + esc(date) if date else ""}</p>')
+    """Only for the hand-written guides. Points at the author page rather than the company
+    About page: a byline that links to "about us" tells a reader nothing about who wrote it.
+    """
+    return (f'<p class="byline">By <a href="/about/adir-trabelsi/" rel="author">{EDITOR}</a>, '
+            f'editor{" · " + esc(date) if date else ""}</p>')
 NOINDEX = '<meta name="robots" content="noindex,follow">'
 
 
@@ -544,7 +597,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 </main>
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
-<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/contact/">Contact</a></div>
+<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/adir-trabelsi/">The editor</a><br><a href="/contact/">Contact</a></div>
 <div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/calculators/">Calculators</a><br><a href="/follow/">Follow</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
@@ -1906,7 +1959,7 @@ car — founders, engineers, designers, champions and industrialists.</p>
         _icons = json.load(open(ROOT / "data" / "editorial" / "icons.json"))
     except Exception:
         _icons = {"icons": [], "electrified": []}
-    _photo_by_name = {n: ph for n, y, ph in LIB_PHOTOS}
+    _photo_by_name = {c[0]: c[2] for c in LIB_PHOTOS}
 
     _used_icons = set()
 
@@ -1944,7 +1997,7 @@ car — founders, engineers, designers, champions and industrialists.</p>
 
     # ---- image-led hero: real photography from the library ----
     def photo_of(name):
-        for n, y, ph in LIB_PHOTOS:
+        for n, y, ph, _w in LIB_PHOTOS:
             if n == name.lower():
                 return ph
         return None
@@ -2361,6 +2414,82 @@ def prose_page(path, title, paras):
     return write(path, page(f"{title} | {BRAND}", desc,
                             ORIGIN + "/" + path.replace("index.html", ""), body))
 
+def gen_author_page():
+    """/about/adir-trabelsi/ — a real author page for the one person who actually owns the
+    editorial on this site.
+
+    Google's quality raters are told to look for who is responsible for a page and what
+    makes them qualified, and the answer here was a name in a byline with nothing behind it.
+    The honest fix is not more bylines — it is one page that says who the editor is, what he
+    does and does not do, what he is accountable for, and every piece he has signed, with
+    Person and ProfilePage markup so it can be read as an entity rather than a string.
+    """
+    gs = guides_index()
+    signed = "".join(
+        f'<li><a href="/guides/{esc(g["slug"])}/">{esc(g["title"])}</a>'
+        f'<span class="src-note"> · {esc(g.get("date", ""))}</span></li>' for g in gs)
+    body = f"""<div class="wrap prose">
+<nav class="crumbs"><a href="/about/">About</a> › {EDITOR}</nav>
+<h1>{EDITOR}</h1>
+<p class="sub">Editor and publisher, {BRAND}.</p>
+
+<h2>What I do here</h2>
+<p>I built {BRAND} and I run it. I designed the scoring model that turns NHTSA complaint and
+recall records into a per-model-year verdict, I decide what the site publishes and what it
+refuses to publish, and I write and sign the buyer's guides. Corrections come to me.</p>
+
+<h2>What I am not</h2>
+<p>I am not a mechanic, a dealer or a manufacturer's representative, and nothing here is a
+road test. I have never been paid by a manufacturer, a dealer, an insurer or a parts
+retailer, and no advertiser has ever seen a verdict before it was published or been able to
+change one afterwards. Where this site knows something it is because a federal record says
+so, and where it does not know, it says so instead of guessing.</p>
+
+<h2>How the site divides the work</h2>
+<p>Most of {BRAND} is not written by anyone. The model-year verdicts, the nameplate pages,
+the comparisons and the catalogue are produced by a build that reads the public record and
+applies a published formula, and they carry a line saying exactly that in place of a byline,
+because claiming a human author for a computed page would be a lie. The
+<a href="/guides/">buyer's guides</a> are the written layer, and those carry my name.</p>
+
+<h2>Accountability</h2>
+<p>If a number on this site is wrong, it is wrong because the formula or the data is wrong,
+and the fix goes into the formula so it reaches every affected page on the next nightly
+build — not into one page quietly. Write to
+<a href="mailto:corrections@motorjury.com">corrections@motorjury.com</a> and I will answer.
+The <a href="/editorial-policy/">editorial policy</a> sets out the rules I hold the site to
+and the <a href="/methodology/">methodology</a> is the formula itself, in full.</p>
+
+<h2>Everything I have signed</h2>
+<ol class="story-list">{signed}</ol>
+
+<p class="src-note">Contact: <a href="mailto:hello@motorjury.com">hello@motorjury.com</a> ·
+<a href="/contact/">contact page</a> · <a href="/about/">about {BRAND}</a></p>
+</div>"""
+    ld = json.dumps([
+        {"@context": "https://schema.org", "@type": "ProfilePage",
+         "mainEntity": {
+             "@type": "Person", "name": EDITOR,
+             "url": ORIGIN + "/about/adir-trabelsi/",
+             "jobTitle": "Editor and publisher",
+             "email": "mailto:hello@motorjury.com",
+             "worksFor": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
+             "knowsAbout": ["Used car reliability", "NHTSA complaint data",
+                            "Vehicle recalls", "Car ownership costs"]},
+         "url": ORIGIN + "/about/adir-trabelsi/"},
+        {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "About",
+             "item": ORIGIN + "/about/"},
+            {"@type": "ListItem", "position": 2, "name": EDITOR,
+             "item": ORIGIN + "/about/adir-trabelsi/"}]}], separators=(",", ":"))
+    return write("about/adir-trabelsi/index.html",
+                 page(f"{EDITOR} — Editor, {BRAND} | {BRAND}",
+                      (f"{EDITOR} built and edits {BRAND}: who is accountable for the "
+                       f"verdicts, what the scoring model does, and every guide he has "
+                       f"signed."),
+                      ORIGIN + "/about/adir-trabelsi/", body, ld))
+
+
 def gen_static():
     gen = []
     gen.append(prose_page("methodology/index.html", "Methodology", f"""
@@ -2491,7 +2620,7 @@ publishes every complaint an owner files and every recall a manufacturer issues 
 free, and almost unreadable in raw form. This site turns them into a verdict per model year.</p>
 
 <h2>Who runs it</h2>
-<p>Operated and edited by <b>Adir Trabelsi</b>. Data engineering and publication are automated; the
+<p>Operated and edited by <b><a href="/about/adir-trabelsi/">Adir Trabelsi</a></b>. Data engineering and publication are automated; the
 methodology, the source selection and the editorial standards are human decisions, documented in full on
 the <a href="/methodology/">methodology page</a>. Nobody pays for a verdict, and no verdict is written by
 hand. The <a href="/guides/">buyer's guides</a> and the editor's notes on model pages are the written layer:
@@ -2848,6 +2977,7 @@ def main():
     pages.append(gen_recalls_feed(con, all_rows))
     pages.append(gen_vin_check())
     pages += gen_static()
+    pages.append(gen_author_page())
     urls = ["/" + p.replace("index.html", "") for p in pages]
     gen_meta(urls)
     gen_redirects()

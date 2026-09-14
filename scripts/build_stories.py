@@ -45,8 +45,37 @@ RIVALS = [
 ]
 
 
+sys.path.insert(0, str(ROOT / "scripts"))
+try:
+    from gen_site import lib_photo as _lib_photo
+except Exception:            # a partial local run must still produce pages
+    _lib_photo = lambda *a, **k: None
+
+
 def esc(s):
     return html.escape(str(s), quote=True)
+
+
+def car_figure(make, model):
+    """A photograph of the nameplate for a comparison page. No year is claimed, so the
+    nameplate-level match is the right one: these pages compare badges across their whole
+    record, not one model year."""
+    ph = _lib_photo(make, model)
+    if not ph:
+        return ""
+    import urllib.parse as _u
+    fn = _u.quote(ph.replace(" ", "_"))
+    base = f"https://commons.wikimedia.org/wiki/Special:FilePath/{fn}"
+    src = f"{base}?width=720"
+    srcset = ", ".join(f"{base}?width={w} {w}w" for w in (360, 540, 720, 960))
+    page = f"https://commons.wikimedia.org/wiki/File:{fn}"
+    return (f'<figure class="cmp-shot"><img src="{src}" srcset="{srcset}" '
+            f'sizes="(max-width:700px) 100vw, 46vw" alt="{esc(make)} {esc(model)}" '
+            f'width="720" height="405" loading="lazy" decoding="async" '
+            f'referrerpolicy="no-referrer" '
+            f'onerror="this.closest(\'figure\').remove()">'
+            f'<figcaption>{esc(make)} {esc(model)} · '
+            f'<a href="{page}" rel="noopener">Wikimedia Commons</a></figcaption></figure>')
 
 
 def slug(s):
@@ -292,6 +321,7 @@ def compare_body(con, mk1, mo1, rs1, mk2, mo2, rs2):
     # -- side-by-side headline numbers ----------------------------------------------
     def card(nm, st, rs):
         return f"""<div class="cmp-side">
+{car_figure(rs[0]['make'], rs[0]['model'])}
 <h3><a href="/cars/{rs[0]['kslug']}/{rs[0]['mslug']}/">{esc(nm)}</a></h3>
 <div class="cmp-score">{st['mean']}<small>/100 mean</small></div>
 <ul>
@@ -450,7 +480,10 @@ the record sixty points inside two years, and the two nameplates rarely move tog
     return body, title, desc, faqs, indexable
 
 
-MAX_COMPARES = int(os.environ.get("MAX_COMPARES", "600"))
+# Raised from 600 once the library page budget was cut: 1,791 same-segment pairs are
+# available and each one is a page built to rank, against a catalogue tail that is
+# noindexed by design.
+MAX_COMPARES = int(os.environ.get("MAX_COMPARES", "1100"))
 MIN_COMPLAINTS = 60        # a nameplate nobody complains about is a nameplate nobody owns
 
 
