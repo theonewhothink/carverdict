@@ -1909,7 +1909,12 @@ A-Z of every marque ever catalogued below.</p></div></div>
 def gen_home(con, all_rows):
     gated = [r for r in all_rows if gate(r)]
     _gall = guides_index()
-    _g = _gall[:9]
+    # The front door shows the guides with the widest reach first: the cross-nameplate
+    # comparisons and the how-to pieces, then the newest single-nameplate guides.
+    def _reach(m):
+        t = m.get("title", "").lower()
+        return 0 if any(w in t for w in ("compared", "hybrid or", "how to", "first-year", "most dependable", "battery")) else 1
+    _g = [m for m in _gall if _reach(m) == 0][:5] + [m for m in _gall if _reach(m) == 1][:4]
     guides_section = ""
     if _g:
         guides_section = ('<section class="card"><h2>Buyer\'s guides</h2>'

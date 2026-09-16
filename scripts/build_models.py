@@ -866,11 +866,11 @@ def main():
 
         about_card = ""   # the Wikipedia summary is woven into the article (bio_text.py)
 
+        # Quiet until an owner has answered (account.js renders the card from the API);
+        # the static "No responses yet" read as an unfinished site on every library page.
         engagement_card = (f'<div class="card engagement-card">'
                            f'<div class="survey-card" data-survey="model:{esc(m["q"])}" '
-                           f'data-survey-name="{esc(m["n"])}"><h2>Owner satisfaction</h2>'
-                           f'<p class="sv-n"><b>No responses yet.</b> Own one? Sign in and leave an '
-                           f'account-backed rating.</p></div></div>')
+                           f'data-survey-name="{esc(m["n"])}" data-survey-quiet="1"></div></div>')
 
         gallery_card = ""
         if sp.get("commons"):
