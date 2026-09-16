@@ -610,7 +610,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 </main>
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
-<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/adir-trabelsi/">The editor</a><br><a href="/contact/">Contact</a></div>
+<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/reports/used-car-trap-years-{CURRENT_YEAR}/">Trap Years {CURRENT_YEAR} report</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/adir-trabelsi/">The editor</a><br><a href="/contact/">Contact</a></div>
 <div><a href="/privacy/">Privacy</a><br><a href="/privacy/" onclick="if(window.googlefc&&googlefc.showRevocationMessage){{googlefc.showRevocationMessage();return false}}">Privacy settings</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Advertising disclosure</a><br><a href="/compare/">Head-to-head</a><br><a href="/recalls/">Recalls</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
@@ -2173,6 +2173,7 @@ federal record likes most, with what they cost to buy today and to run for a yea
 <div class="rel-grid"><a href="/guides/">Buyer's guides<small>signed, dated, checked against the record</small></a>
 <a href="/years-to-avoid/">Years to avoid<small>every nameplate ranked by its best-to-worst gap</small></a>
 <a href="/compare/">Head-to-head<small>two nameplates, year by year, on the same record</small></a>
+<a href="/reports/used-car-trap-years-{CURRENT_YEAR}/">Trap Years {CURRENT_YEAR} report<small>the steepest cliffs, brands ranked, free dataset</small></a>
 <a href="/vin-check/">Free VIN & recall check<small>decode the exact car before you buy</small></a>
 <a href="/recalls/">Recall campaigns<small>the newest campaigns on record, by car</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>

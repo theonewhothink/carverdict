@@ -171,6 +171,9 @@ timeout 90 "$PY" scripts/build_people.py --harvest-only || echo "WARNING: legend
 # build failure, not a warning: these pages are the site's answer to AdSense's
 # "low value content" finding and must never silently drop out of a deploy.
 "$PY" scripts/build_guides.py
+# The linkable asset: the trap-years report and its CC BY dataset. A failure here is a
+# failure of the page the outreach points at, so it stops the deploy.
+"$PY" scripts/build_report.py
 "$PY" scripts/build_people.py --from-cache || echo "WARNING: legends section skipped"
 
 # The social factory: seven days of data-backed packages, the /studio/ page they are posted
