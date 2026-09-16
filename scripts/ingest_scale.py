@@ -496,7 +496,13 @@ def _trigger_site_rebuild():
     """The dataset is only visible once the site rebuilds, and Cloudflare Workers Builds
     only builds on a push — so a nightly harvest that never pushes never reaches readers.
     An empty commit from the Action (checkout persists a repo-scoped credential) is the
-    push. Guarded to CI so a local run of this script cannot touch the repository."""
+    push. Guarded to CI so a local run of this script cannot touch the repository.
+
+    The commit message used to carry "[skip ci]" to keep GitHub's own (broken) build
+    workflow quiet. Cloudflare honours the same marker, so every nightly push since the
+    hook was written was skipped by the deploy it existed to trigger: production stayed on
+    the last hand-pushed build (stamp 202609141043 on 2026-09-16, two nightly commits
+    later). "[skip actions]" is understood by GitHub Actions only."""
     if not os.environ.get("GITHUB_ACTIONS"):
         return
     import subprocess
@@ -504,7 +510,7 @@ def _trigger_site_rebuild():
         subprocess.run(["git", "-c", "user.name=Ownership data",
                         "-c", "user.email=actions@github.com",
                         "commit", "--allow-empty", "-q", "-m",
-                        "nightly: rebuild the site with tonight's dataset [skip ci]"],
+                        "nightly: rebuild the site with tonight's dataset [skip actions]"],
                        check=True, timeout=60)
         subprocess.run(["git", "push", "origin", "HEAD:main"], check=True, timeout=120)
         print("NIGHTLY REBUILD: empty commit pushed; Cloudflare will rebuild and deploy")

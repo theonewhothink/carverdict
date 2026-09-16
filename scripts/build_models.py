@@ -27,6 +27,9 @@ EDITOR = "Adir Trabelsi"
 # The model-year pages read better than the biographies because a sticky side card carries
 # the numbers and a chart while the prose scrolls. Same treatment here, from the same
 # specification record the article is written from.
+LIBRARY_INDEXABLE = os.environ.get("LIBRARY_INDEXABLE", "0") == "1"
+
+
 def _hp_kg(wk, sp):
     from bio_text import _num as _n, _clean as _c, _first as _f
     p = _n(_f(_c(wk.get("power"))))
@@ -894,7 +897,7 @@ def main():
         # now have to hold, and the page has to be long enough to be worth a reader's click.
         substantive = (bool(m["p"]) and bool(wk.get("about"))
                        and bio_facts >= 2 and bio_words >= 320)
-        if not substantive:
+        if not (substantive and LIBRARY_INDEXABLE):
             THIN_PAGES.append(url)
 
 
@@ -969,7 +972,10 @@ def main():
                 {"@type": "ListItem", "position": 3, "name": m["n"],
                  "item": ORIGIN + url}]},
         ], separators=(",", ":"))
-        robots = '' if substantive else '<meta name="robots" content="noindex,follow">'
+        # 2026-09-16: held out of the index until AdSense approval (see build_library.py);
+        # the biography is a Wikipedia summary (CC BY-SA) with a specification table, which
+        # is exactly the copied content the review names. LIBRARY_INDEXABLE=1 re-opens it.
+        robots = '' if (substantive and LIBRARY_INDEXABLE) else '<meta name="robots" content="noindex,follow">'
         page = shell(f"{m['n']} — {b} | {BRAND}",
                      f"{m['n']} by {b}: photograph, catalogue facts and ownership-cost context.",
                      ORIGIN + url, body).replace("</head>",

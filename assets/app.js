@@ -10,6 +10,7 @@
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     library: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>',
     heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a4.5 4.5 0 0 1 8-3.5A4.5 4.5 0 0 1 21 11c-2 4.6-9 9-9 9z"/></svg>',
+    book: '<svg viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
     globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>'
@@ -27,8 +28,8 @@
     var items = [
       ['/', 'Home', I.home, function () { return path === '/' || path === pre + '/'; }],
       ['#search', 'Search', I.search, function () { return path.indexOf('/search/') === 0; }],
-      ['/library/', 'Library', I.library, function () { return /^\/(cars|library|compare|problems)\//.test(path); }],
-      ['/loved/', 'Loved', I.heart, function () { return path.indexOf('/loved/') === 0; }],
+      ['/guides/', 'Guides', I.book, function () { return path.indexOf('/guides/') === 0; }],
+      ['/cars/', 'Cars', I.library, function () { return /^\/(cars|library|compare|problems|years-to-avoid)\//.test(path); }],
       ['/account/', 'Account', I.user, function () { return /^\/(account|login|garage)\//.test(path); }]
     ];
     var bar = el('<nav class="app-tabs" aria-label="App navigation">' + items.map(function (t) {

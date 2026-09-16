@@ -287,11 +287,11 @@ def follow_page(model_count, brand_count):
     """The link-in-bio page every social profile points at. One screen, thumb-sized targets,
     no hero image to wait for."""
     links = [
-        ("Every car ever made", f"The library — {model_count:,} models from {brand_count:,} marques", "/library/"),
+        ("Which years to avoid", "Every nameplate ranked on the federal complaint record", "/years-to-avoid/"),
+        ("Buyer's guides", "Signed, dated, checked against the record", "/guides/"),
+        ("Head-to-head", "Two nameplates, year by year", "/compare/"),
         ("What will it cost me?", "Price, depreciation, insurance and running cost", "/calculators/"),
-        ("Today's car quiz", "One car a day, guess it in three clues", "/play/"),
-        ("The most-loved cars", "Voted by readers, one vote per account", "/loved/"),
-        ("Trap years to avoid", "Ranked on the federal complaint record", "/cars/"),
+        ("Every car ever made", f"The library — {model_count:,} models from {brand_count:,} marques", "/library/"),
         ("How the numbers work", "Every formula, published", "/methodology/"),
     ]
     rows_html = "".join(
@@ -361,7 +361,10 @@ def main():
         brand_count = len(catalogue)
     except Exception:
         model_count, brand_count = 0, 0
-    (SITE / "follow" / "index.html").write_text(follow_page(model_count, brand_count))
+    # A link-in-bio page is navigation for people arriving from a social profile, not a
+    # page for the index.
+    (SITE / "follow" / "index.html").write_text(follow_page(model_count, brand_count).replace(
+        "</head>", '<meta name="robots" content="noindex,follow"></head>', 1))
     print(f"SOCIAL OK: {len(items)} packages over 7 days -> /studio/ (noindex) + /follow/")
     return 0
 

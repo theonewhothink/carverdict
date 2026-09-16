@@ -169,8 +169,11 @@ this list updates itself as new data lands. Sources: NHTSA, EPA.</p>{BYLINE}
 <a href="/compare/">Head to head<small>the classic rivalries, settled by data</small></a>
 <a href="/cars/">Browse by brand<small>every marque A-Z</small></a></div></div>"""
     (SITE / "stories" / slug_).mkdir(parents=True, exist_ok=True)
+    # A ranked list of fifteen links is navigation, not an article: 75 to 240 words of
+    # prose around a list. Useful to readers, but not a page to put in front of Google or
+    # an AdSense reviewer as content. noindex,follow keeps the links flowing.
     (SITE / "stories" / slug_ / "index.html").write_text(
-        shell(f"{title} | {BRAND}", desc, f"{ORIGIN}/stories/{slug_}/", body))
+        shell(f"{title} | {BRAND}", desc, f"{ORIGIN}/stories/{slug_}/", body, robots=NOINDEX))
     return (slug_, title, desc)
 
 
@@ -219,7 +222,7 @@ and recall record every time this site is built.</p></div></div>
     (SITE / "stories" / "index.html").write_text(
         shell(f"Data Stories - Rankings from the Federal Record | {BRAND}",
               "Most complained-about, most recalled, safest bets and the EV reality check - "
-              "computed from NHTSA and EPA records.", f"{ORIGIN}/stories/", body))
+              "computed from NHTSA and EPA records.", f"{ORIGIN}/stories/", body, robots=NOINDEX))
     return len(made)
 
 

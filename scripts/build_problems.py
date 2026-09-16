@@ -210,7 +210,7 @@ the road. Computed from the federal record on every build - nobody edits this li
     (SITE / "problems" / "index.html").write_text(shell(
         f"Car Problems Ranked: The Most Complained-About Cars | {BRAND}",
         "The most complained-about model years in America, ranked from NHTSA owner "
-        "complaints. Updated on every build.", ORIGIN + url, body))
+        "complaints. Updated on every build.", ORIGIN + url, body, robots=NOINDEX))
 
 
 CSS_EXTRA = """

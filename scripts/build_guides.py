@@ -151,6 +151,15 @@ def main():
         canon = ORIGIN + url
         words = len(re.sub(r"\{\{.*?\}\}", "", body).split())
         article = md(body, tables)
+        # A guide may name a year that has no page of its own (the year fell under the
+        # model-year gate). Point that link at the nameplate hub, which lists every year,
+        # instead of shipping a dead link.
+        def _fix_link(m):
+            href = m.group(1)
+            if re.match(r"^/cars/[\w-]+/[\w-]+/\d{4}/$", href) and not (SITE / href.strip("/") / "index.html").exists():
+                return f'href="{href.rsplit("/", 2)[0]}/"'
+            return m.group(0)
+        article = re.sub(r'href="(/cars/[^"]+)"', _fix_link, article)
         others = ""  # filled after all guides are parsed
         guides.append((meta, body, url, canon, words, article))
 
@@ -165,12 +174,41 @@ def main():
             f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("date", ""))}</small></a>'
             for g in rel[:6]) + "</div></div>")
         byline = gen_site.editor_byline(meta.get("date", gen_site.TODAY))
-        body_html = f"""<div class="hero"><div class="wrap hero-inner"><div class="hero-copy">
+        # A photograph of the car the guide is about. Guides carried no image at all —
+        # the one page type a reviewer reads end to end was the one with nothing to look
+        # at. The photograph comes from the same licensed catalogue as the car pages, for
+        # the first nameplate the guide names, never a car newer than the guide's subject.
+        hero_img, image_url = "", None
+        for key in meta["models"]:
+            try:
+                kslug, mslug = key.split("/")
+            except ValueError:
+                continue
+            r = con.execute("""SELECT mk.name, mo.name FROM models mo JOIN makes mk ON mk.id=mo.make_id
+                WHERE mk.slug=? AND mo.slug=?""", (kslug, mslug)).fetchone()
+            if not r:
+                continue
+            ph = gen_site.lib_photo(r[0], r[1])
+            if ph:
+                fn = ph.replace(" ", "_")
+                base = f"https://commons.wikimedia.org/wiki/Special:FilePath/{gen_site._uq(fn)}"
+                image_url = f"{base}?width=1200"
+                srcset = ", ".join(f"{base}?width={w} {w}w" for w in (480, 720, 900, 1200))
+                hero_img = (f'<figure class="hero-art guide-art"><a class="photo" href="/cars/{kslug}/{mslug}/">'
+                            f'<img src="{base}?width=900" srcset="{srcset}" sizes="(max-width: 900px) 100vw, 560px" '
+                            f'width="900" height="563" referrerpolicy="no-referrer" decoding="async" '
+                            f'alt="{esc(r[0])} {esc(r[1])}" fetchpriority="high"></a>'
+                            f'<figcaption>{esc(r[0])} {esc(r[1])} · photograph via Wikimedia Commons, '
+                            f'<a href="/about/#attribution">licence and credit</a></figcaption></figure>')
+                break
+        minutes = max(1, round(words / 220))
+        body_html = f"""<div class="hero"><div class="wrap hero-inner{' hero-flex' if hero_img else ''}"><div class="hero-copy">
 <nav class="crumbs"><a href="/guides/">Guides</a> › {esc(meta["title"])}</nav>
 <h1>{esc(meta["title"])}</h1>
 <p class="sub">{esc(meta.get("description", ""))}</p>
 {byline}
-</div></div></div>
+<p class="src-note">{words:,} words · about {minutes} minutes · every figure checked against the federal record on {gen_site.TODAY}</p>
+</div>{hero_img}</div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <article class="card prose guide">{article}
 </article>
@@ -183,28 +221,56 @@ def main():
                    "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
                    "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
                    "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
-                   "mainEntityOfPage": canon, "wordCount": words},
+                   "mainEntityOfPage": canon, "wordCount": words,
+                   **({"image": image_url} if image_url else {})},
                   {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
                       {"@type": "ListItem", "position": 1, "name": "Guides", "item": ORIGIN + "/guides/"},
                       {"@type": "ListItem", "position": 2, "name": meta["title"], "item": canon}]}]
+        og = (f'<meta property="og:image" content="{esc(image_url)}"><meta name="twitter:image" content="{esc(image_url)}">'
+              if image_url else "")
         write(url.lstrip("/") + "index.html",
               page(f"{meta['title']} | {BRAND}", meta.get("description", meta["title"]), canon, body_html,
-                   jsonld, og_type="article"))
+                   jsonld, extra_head=og, og_type="article"))
 
-    guides.sort(key=lambda g: g[0].get("date", ""), reverse=True)
-    cards = "".join(
-        f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("description", ""))[:120]} · {esc(g[0].get("date", ""))}</small></a>'
-        for g in guides)
-    body_html = f"""<div class="hero"><div class="wrap hero-inner"><h1>Buyer's guides</h1>
-<p class="sub">Which years to buy and which to walk past — written and signed by the editor, checked against the federal record.</p></div></div>
-<div class="wrap" style="display:grid;gap:20px;padding:28px 0">
-<div class="card prose editorial">{HUB_NOTES.get("guides", "")}</div>
-<div class="card"><div class="rel-grid">{cards}</div></div>
-</div>"""
-    write("guides/index.html", page(f"Used Car Buyer's Guides: Years to Avoid | {BRAND}",
-                                    "Signed, dated buyer's guides for the most-searched nameplates: which model years to buy and which to avoid, from the federal complaint and recall record.",
-                                    ORIGIN + "/guides/", body_html))
+    guides.sort(key=lambda g: (g[0].get("date", ""), g[0]["title"]), reverse=True)
     total = sum(g[4] for g in guides)
+
+    def _card(g):
+        return (f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("description", ""))[:150]}'
+                f' · {esc(g[0].get("date", ""))} · {g[4]:,} words</small></a>')
+
+    # Grouped so the page reads as a table of contents rather than a wall of cards:
+    # cross-nameplate comparisons and how-to guides first, then one nameplate at a time.
+    def _kind(g):
+        t = g[0]["title"].lower()
+        if any(w in t for w in ("compared", "hybrid or", "side by side", "how to", "how the", "rule", "most dependable", "battery")):
+            return "compare"
+        return "nameplate"
+    comp = [g for g in guides if _kind(g) == "compare"]
+    name = [g for g in guides if _kind(g) == "nameplate"]
+    sections = ""
+    if comp:
+        sections += ('<div class="card"><h2>Comparisons and how-to guides</h2><div class="rel-grid">'
+                     + "".join(_card(g) for g in comp) + '</div></div>')
+    if name:
+        sections += ('<div class="card"><h2>One nameplate at a time</h2><div class="rel-grid">'
+                     + "".join(_card(g) for g in name) + '</div></div>')
+    body_html = f"""<div class="hero"><div class="wrap hero-inner"><h1>Buyer's guides</h1>
+<p class="sub">{len(guides)} guides, {total:,} words — which years to buy and which to walk past, written and
+signed by the editor and checked line by line against the federal complaint and recall record.</p></div></div>
+<div class="wrap" style="display:grid;gap:20px;padding:28px 0">
+<div class="card prose editorial">{HUB_NOTES.get("guides", "")}
+<p>Every guide opens with its verdict — the years to avoid and the years to buy — then shows what the
+complaint components and recall campaigns say went wrong, which years escaped it, and what to check on the
+car in front of you before you pay. The year tables inside each guide are live: they are drawn from the
+same database as the model pages on the day the site was last built, so a guide written in September
+is still right in March. Guides are signed by <a href="/about/adir-trabelsi/">the editor</a>, dated, and
+corrected under the <a href="/editorial-policy/">editorial policy</a>.</p></div>
+{sections}
+</div>"""
+    write("guides/index.html", page(f"Used Car Buyer's Guides: Years to Avoid, by Nameplate | {BRAND}",
+                                    f"{len(guides)} signed, dated buyer's guides: which model years to buy and which to avoid, from the federal complaint and recall record.",
+                                    ORIGIN + "/guides/", body_html))
     print(f"GUIDES OK: {len(guides)} guides, {total:,} words -> /guides/")
 
 

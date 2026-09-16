@@ -20,6 +20,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
+NAV = ('<nav class="nav"><a href="/guides/">Guides</a><a href="/years-to-avoid/">Years to avoid</a>'
+       '<a href="/compare/">Compare</a><a href="/cars/">Cars</a><a href="/library/">Library</a>'
+       '<a href="/vin-check/">VIN check</a><a href="/calculators/">Calculators</a></nav>')
 
 ICONS = (
     '<link rel="icon" href="/favicon.ico" sizes="32x32">'
@@ -166,9 +169,17 @@ def polish(path):
     # The VIN check is the site's highest-intent utility. Put it in every generator's
     # navigation, not only gen_site's shell, so all 10,000+ library pages pass authority
     # and real users can reach it without returning home.
-    header = s.split("</header>", 1)[0] if "</header>" in s else ""
-    if 'href="/vin-check/"' not in header and '<nav class="nav">' in s:
-        s = s.replace('<nav class="nav">', '<nav class="nav"><a href="/vin-check/">VIN check</a>', 1)
+    # One navigation for every shell. Nine generators each wrote their own header, so the
+    # nav changed from section to section — "Loved · Events · Play · Recalls" on one page,
+    # "Browse · Library" on the next. A reviewer reads that as several half-finished sites.
+    # The canonical nav leads with the written layer and the pages built to rank.
+    if '<nav class="nav">' in s and "</header>" in s:
+        head_part, rest = s.split("</header>", 1)
+        head_part = re.sub(r'<nav class="nav">.*?</nav>', NAV, head_part, count=1, flags=re.S)
+        # The language switcher advertises five noindexed copies of the site; the main
+        # shell dropped it on 2026-09-13 and the other shells kept it.
+        head_part = re.sub(r'<details class="langs">.*?</details>', "", head_part, count=1, flags=re.S)
+        s = head_part + "</header>" + rest
     if "social-row" not in s and "</footer>" in s:
         # inside the footer's own wrapper where there is one, so it inherits the padding
         if "</div></footer>" in s:

@@ -199,6 +199,9 @@ E = [
 ]
 
 
+NOINDEX = '<meta name="robots" content="noindex,follow">'
+
+
 def esc(s):
     return html.escape(str(s), quote=True)
 
@@ -382,7 +385,8 @@ site is always the last word.</p></div>
                  f"A searchable calendar of {len(rows)} motoring events worldwide: Formula 1, Le Mans, "
                  "MotoGP, rallies, concours d'elegance, collector car auctions and motor shows, with "
                  "dates, venues and official ticket links.",
-                 f"{ORIGIN}/events/", body, extra_js='<script src="/assets/events.js" defer></script>')
+                 f"{ORIGIN}/events/", body, extra_head=NOINDEX,
+                 extra_js='<script src="/assets/events.js" defer></script>')
 
 
 def event_page(r, rows):

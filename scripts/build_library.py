@@ -24,6 +24,9 @@ for _x in DATA:  # low-precision Wikidata inceptions harvested as literal 1950 /
         _x["y"] = ""
 
 
+LIBRARY_INDEXABLE = os.environ.get("LIBRARY_INDEXABLE", "0") == "1"
+
+
 def _load_logos():
     p = ROOT / "data" / "brand_logos.json"
     try:
@@ -396,6 +399,13 @@ def main():
         # grid of thumbnails and nothing else. A marque page earns indexing when it has a
         # real roster with photography, or when the editor has written about the marque.
         thin = not note and (with_photos < 8 or len(models) < 5)
+        # 2026-09-16: the whole library is held out of the index until AdSense approval.
+        # A marque page is 40 to 60 words around a photo grid and a model page is a
+        # Wikipedia summary with a specification table — both are the "copied" and
+        # "thin" content the policy review names, and 1,500 of them were a third of the
+        # sitemap. The pages stay online and linked; LIBRARY_INDEXABLE=1 re-opens them.
+        if not LIBRARY_INDEXABLE:
+            thin = True
         head_extra = '<meta name="robots" content="noindex,follow">' if thin else ""
         title = (f"{b} models | MotorJury" if len(b) > 26
                  else f"{b} — Complete Model Library | MotorJury")

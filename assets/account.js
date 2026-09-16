@@ -112,7 +112,7 @@
     return '<button class="love' + (mine ? ' on' : '') + '" data-love-btn' +
       ' aria-pressed="' + (mine ? 'true' : 'false') + '" title="Love this car">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.7-9.5-9C1 8.6 2.6 5 6.2 5 8.4 5 10 6.3 12 8.6 14 6.3 15.6 5 17.8 5c3.6 0 5.2 3.6 3.7 7-2 4.3-9.5 9-9.5 9z"/></svg>' +
-      '<span class="love-n" data-love-n>' + (n || 0) + '</span>' +
+      (n ? '<span class="love-n" data-love-n>' + n + '</span>' : '') +
       '<span class="love-lbl">' + (mine ? 'Loved' : 'Love it') + '</span></button>';
   }
 
@@ -221,9 +221,17 @@
         head = '<p class="sv-n">' + r.n + ' owner' + (r.n > 1 ? 's have' : ' has') +
           ' answered so far. Averages appear once ' + MIN_RESPONSES +
           ' owners have answered — below that an average is noise.</p>';
+      } else if (host.hasAttribute('data-survey-quiet')) {
+        // Quiet hosts (every computed car page) show nothing until an owner has answered:
+        // "No responses yet" on 1,900 pages read as a site under construction. The love
+        // row beside this host already carries the stars that open the rating, and a
+        // signed-in owner still gets the full form below.
+        if (!ME) { host.innerHTML = ''; host.hidden = true; return; }
+        head = '';
       } else {
         head = '<p class="sv-n"><b>No responses yet.</b> Own this car? Your account-backed rating can start the evidence.</p>';
       }
+      host.hidden = false;
       var comments = (j.comments || []).length
         ? '<div class="sv-comments"><h4>What owners wrote</h4>' + j.comments.map(function (c) {
             return '<blockquote>' + esc(c.comment) +
@@ -309,6 +317,7 @@
     function load() {
       fetch('/api/survey?item=' + encodeURIComponent(item), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); }).then(render).catch(function () {
+          if (host.hasAttribute('data-survey-quiet')) { host.innerHTML = ''; host.hidden = true; return; }
           host.innerHTML = '<h2>Owner satisfaction</h2><p class="sv-n"><b>No responses yet.</b> ' +
             'Ratings could not be loaded right now; the form returns when the connection does.</p>';
         });

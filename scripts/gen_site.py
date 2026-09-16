@@ -504,8 +504,14 @@ def editor_card(kslug, mslug, year=None, r=None):
             year_line = (f"<p><b>{year} specifically:</b> {cc:,} complaints on record, score "
                          f"{r['score'] if r['score'] is not None else '—'}/100 — read the year table on the "
                          f"<a href='/cars/{kslug}/{mslug}/'>model page</a> to see where it sits among its siblings.</p>")
-    return (f'<div class="card editorial"><h2>Editor\'s note</h2><p>{note}</p>{year_line}'
-            f'</div>')
+    if year_line:
+        # One paragraph, not two: the two-sentence excerpt is by design the same on every
+        # year page of the nameplate, and as its own <p> it counted as a duplicate on each
+        # of them (123 nameplates × ~15 years pushed the prose measure over budget). Fused
+        # with the year's own line it is a paragraph that exists on exactly one page.
+        return (f'<div class="card editorial"><h2>Editor\'s note</h2>'
+                f'<p>{note} {year_line[3:-4]}</p></div>')
+    return f'<div class="card editorial"><h2>Editor\'s note</h2><p>{note}</p></div>'
 
 
 def _org_ld():
@@ -594,7 +600,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <header class="hdr"><div class="wrap hdr-in">
 <a class="logo" href="/">Motor<em>Jury</em></a>
 <div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/guides/">Guides</a><a href="/vin-check/">VIN check</a><a href="/search/">Search</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/loved/">Loved</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a><a href="/recalls/">Recalls</a></nav>
+<nav class="nav"><a href="/guides/">Guides</a><a href="/years-to-avoid/">Years to avoid</a><a href="/compare/">Compare</a><a href="/cars/">Cars</a><a href="/library/">Library</a><a href="/vin-check/">VIN check</a><a href="/calculators/">Calculators</a></nav>
 <div class="acct-host" data-account-chip></div>
 
 </div></header>
@@ -605,7 +611,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
 <div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/adir-trabelsi/">The editor</a><br><a href="/contact/">Contact</a></div>
-<div><a href="/privacy/">Privacy</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Affiliate disclosure</a><br><a href="/calculators/">Calculators</a><br><a href="/follow/">Follow</a></div>
+<div><a href="/privacy/">Privacy</a><br><a href="/privacy/" onclick="if(window.googlefc&&googlefc.showRevocationMessage){{googlefc.showRevocationMessage();return false}}">Privacy settings</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Advertising disclosure</a><br><a href="/compare/">Head-to-head</a><br><a href="/recalls/">Recalls</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
 <script src="/assets/site.js" defer></script>
@@ -930,9 +936,19 @@ def gen_model_year(con, r, all_rows):
     comp_html += q_html
 
     # recalls block
+    # The summary used to be chopped at 140 characters mid-word ("…2017 Sienna and Tac…"),
+    # which reads as a broken page to a reviewer and hides the one sentence that says what
+    # the defect is. Show the whole first two sentences, cut only at a word boundary.
+    def _summ(s):
+        s = re.sub(r"\s+", " ", (s or "").strip())
+        parts = re.split(r"(?<=[.!?])\s+", s)
+        out = " ".join(parts[:2])
+        if len(out) > 360:
+            out = out[:360].rsplit(" ", 1)[0] + "…"
+        return out
     rec_rows = "".join(
-        f"<tr><td>{esc(x['campaign'] or '—')}</td><td>{esc((x['component'] or '').title()[:40])}</td>"
-        f"<td>{esc((x['summary'] or '')[:140])}…</td></tr>" for x in recalls[:8])
+        f"<tr><td>{esc(x['campaign'] or '—')}</td><td>{esc((x['component'] or '').title())}</td>"
+        f"<td>{esc(_summ(x['summary']))}</td></tr>" for x in recalls[:8])
     gap_rec = r["data_gap"] and "recalls" in (r["data_gap"] or "")
     rec_html = f"""<div class="card"><h2>Recalls: {'data unavailable' if gap_rec else f"{(r['recall_count'] or 0)} campaigns"}{'' if gap_rec or not r['severe_recalls'] else f" ({r['severe_recalls']} severe)"}</h2>
 <div class="chart">{svg_timeline(recalls)}</div>
@@ -1054,13 +1070,14 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
     price_html = price_block(r, five_run, _fuel)
 
     # Owner satisfaction. NHTSA tells us what broke; only owners can tell us whether they
-    # would do it again. The block renders from the API, so it is empty markup at build
-    # time and never a stale number baked into a page.
+    # would do it again. Until real responses exist the survey card said "No responses yet"
+    # on 1,900 pages — a site-wide empty section, which is what an AdSense reviewer reads as
+    # a site under construction. The survey now lives behind the love button (account.js
+    # opens it) and the card returns to the page only when the API has responses to show.
     survey_html = (f'<div class="card engagement-card">'
                    f'<div class="love-host" data-love="my:{r["my_id"]}" data-love-name="{esc(name)}"></div>'
-                   f'<div class="survey-card" data-survey="my:{r["my_id"]}" data-survey-name="{esc(name)}">'
-                   f'<h2>Owner satisfaction</h2><p class="sv-n"><b>No responses yet.</b> '
-                   f'Own this exact model year? Sign in and leave an account-backed rating.</p></div></div>')
+                   f'<div class="survey-card" data-survey="my:{r["my_id"]}" data-survey-name="{esc(name)}" '
+                   f'data-survey-quiet="1"></div></div>')
 
     running_curve = [{**p, "total_low": p["total_low"] + _fuel,
                       "total_high": p["total_high"] + _fuel} for p in curve]
@@ -1595,8 +1612,7 @@ def gen_model(con, model_rows, all_rows):
 {gv_eras}
 {AD.format(slot='mid')}
 <div class="card engagement-card"><div class="love-host" data-love="nameplate:{r0['kslug']}/{r0['mslug']}" data-love-name="{esc(make)} {esc(model)}"></div>
-<div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}"><h2>Owner satisfaction</h2>
-<p class="sv-n"><b>No responses yet.</b> Own a {esc(make)} {esc(model)}? Sign in and rate it — one response per owner.</p></div></div>
+<div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}" data-survey-quiet="1"></div></div>
 <div class="card"><h2>Year-by-year data table</h2>{verdict_line}
 <div class="table-wrap"><table class="cost-table"><thead><tr><th>Year</th><th>Score</th><th>Verdict</th>
 <th>Running cost / yr</th><th>NHTSA complaints</th><th>Recalls</th></tr></thead>
@@ -1625,7 +1641,10 @@ age today, re-priced to your country. Purchase price, insurance and depreciation
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
             for q, a in m_faqs]})
     # A model overview with no scored year is a table of dashes: keep it, do not index it.
-    _head = "" if (scored or editor_card(r0['kslug'], r0['mslug'])) else NOINDEX
+    # One or two scored years is not much better — a 320-word hub whose first screen says
+    # DATA PENDING is the thin page a policy reviewer samples. Indexable on three scored
+    # years, or on the editor's note, or when the run-by-run verdict could be written.
+    _head = "" if (len(scored) >= 3 or gv_head or editor_card(r0['kslug'], r0['mslug'])) else NOINDEX
     _ph0 = lib_photo(make, model)
     if _ph0:
         _u0 = (f"https://commons.wikimedia.org/wiki/Special:FilePath/"
@@ -1889,16 +1908,51 @@ A-Z of every marque ever catalogued below.</p></div></div>
 
 def gen_home(con, all_rows):
     gated = [r for r in all_rows if gate(r)]
-    _g = guides_index()[:6]
+    _gall = guides_index()
+    _g = _gall[:9]
     guides_section = ""
     if _g:
         guides_section = ('<section class="card"><h2>Buyer\'s guides</h2>'
-                          '<p style="margin-bottom:12px">Written and signed by the editor, built on the same '
-                          'federal record as the verdicts: which years of each nameplate to buy and which to walk past.</p>'
+                          f'<p style="margin-bottom:12px">{len(_gall)} guides written and signed by the editor, built on the same '
+                          'federal record as the verdicts: which years of each nameplate to buy, which to walk past, '
+                          'and what to check before you hand over the money.</p>'
                           '<div class="rel-grid">' + "".join(
-                              f'<a href="/guides/{esc(m["slug"])}/">{esc(m["title"])}<small>{esc(m.get("date", ""))}</small></a>'
+                              f'<a href="/guides/{esc(m["slug"])}/">{esc(m["title"])}'
+                              f'<small>{esc((m.get("description") or "")[:110])} · {esc(m.get("date", ""))}</small></a>'
                               for m in _g) + '</div>'
                           '<p style="margin-top:12px;font-size:13px"><a href="/guides/">All guides →</a></p></section>')
+
+    # The "years to avoid" block: the same ranking as /years-to-avoid/, eight nameplates
+    # with the widest gap between their best and worst year — the question the site
+    # answers better than anyone, on the front door.
+    from collections import defaultdict as _dd
+    _by = _dd(list)
+    for _r in gated:
+        if _r["score"] is not None:
+            _by[_r["model_id"]].append(_r)
+    _yta = []
+    for _rs in _by.values():
+        _rs = sorted(_rs, key=lambda x: x["year"])
+        _av = [x for x in _rs if (x["verdict"] or "") == "AVOID"]
+        if len(_rs) < 5 or not _av:
+            continue
+        _b = max(_rs, key=lambda x: x["score"]); _w = min(_rs, key=lambda x: x["score"])
+        if _b["score"] - _w["score"] >= 25 and sum(x["complaint_count"] or 0 for x in _rs) >= 1500:
+            _yta.append((sum(x["complaint_count"] or 0 for x in _rs), _rs[0], _av, _b, _w))
+    _yta.sort(key=lambda t: -t[0])
+    yta_section = ""
+    if _yta:
+        yta_section = ('<section class="card"><h2>Years to avoid</h2>'
+                       '<p style="margin-bottom:12px">Where one model year of the same car is worth thousands more '
+                       'than the next. The nameplates with the deepest records and the widest gap between their best '
+                       'and worst year, each with the years the federal record says to walk past.</p>'
+                       '<div class="rel-grid">' + "".join(
+                           f'<a href="/cars/{esc(r0["kslug"])}/{esc(r0["mslug"])}/">{esc(r0["make"])} {esc(r0["model"])} years to avoid'
+                           f'<small>avoid {", ".join(str(a["year"]) for a in sorted(av, key=lambda x: x["year"])[:4])}'
+                           f' · best {b["year"]} ({b["score"]}/100) · worst {w["year"]} ({w["score"]}/100)</small></a>'
+                           for _, r0, av, b, w in _yta[:8]) + '</div>'
+                       '<p style="margin-top:12px;font-size:13px"><a href="/years-to-avoid/">Every nameplate ranked →</a>'
+                       ' · <a href="/compare/">Head-to-head comparisons →</a></p></section>')
     n_complaints = sum(r["complaint_count"] or 0 for r in all_rows)
     # The home page shows cars worth wanting. "Years to avoid" was the second data block on
     # it, which meant the first impression of the site was four Chrysler Pacificas scoring
@@ -2080,10 +2134,10 @@ car — founders, engineers, designers, champions and industrialists.</p>
 <div class="hh-copy">
 <span class="hh-kicker">{n_models:,} models · {CATALOG_PHOTOS:,} photographs · {N_GEO} countries</span>
 <h1>What does that car <em>really</em> cost to own?</h1>
-<p class="hh-sub">Every car ever made, priced for <b>your</b> country — from NHTSA complaints,
-recall campaigns and EPA data. Not opinions.</p>
-<div class="hh-cta"><a class="btn" href="/library/">Explore every car ever made</a>
-<a class="btn ghost" href="/vin-check/">Check a VIN before you buy</a></div>
+<p class="hh-sub">Every model year scored from NHTSA complaints, recall campaigns and EPA data,
+priced for <b>your</b> country — and {len(_gall)} signed buyer's guides on which years to buy and which to avoid.</p>
+<div class="hh-cta"><a class="btn" href="/years-to-avoid/">Which years to avoid</a>
+<a class="btn ghost" href="/guides/">Read the buyer's guides</a></div>
 <div class="stat-row"><div><b>{n_models:,}</b><span>models in the library</span></div>
 <div><b>{n_complaints:,}</b><span>complaints indexed</span></div>
 <div><b>{N_GEO}</b><span>countries auto-priced</span></div></div>
@@ -2092,17 +2146,15 @@ recall campaigns and EPA data. Not opinions.</p>
 </div></section>
 <section class="photo-strip">{strip_cells}</section>
 <div class="wrap" style="display:grid;gap:22px;padding:30px 0 20px">
+{guides_section}
+{yta_section}
+{AD.format(slot='home')}
 <div class="daily-grid" data-daily></div>
 <section class="card icons-home"><h2>The cars worth the detour</h2><p style="margin-bottom:12px">Landmark
 machines from the library — the ones that changed a marque, a decade or a rulebook — each with its own
 photographed story. A different dozen every week.</p>
 <div class="icon-grid">{icon_grid}</div>
 <p style="margin-top:12px;font-size:13px"><a href="/library/">The whole library →</a> · <a href="/cars/">Every brand's ownership verdicts →</a></p></section>
-<section class="card loved-home"><h2>Most loved right now</h2>
-<p style="margin-bottom:12px">Chosen by readers, one vote per account. Tap the heart on any car.</p>
-<div id="loved-app" class="loved-grid"><p class="muted">Loading…</p></div>
-<p style="margin-top:12px;font-size:13px"><a href="/loved/">The full leaderboard →</a></p></section>
-{AD.format(slot='home')}
 <section class="card icons-home"><h2>Electrified, and exceptional</h2><p style="margin-bottom:12px">The electric and hybrid
 cars that earned a place on this page on merit; the ownership index carries battery warranty and
 replacement cost for every electric model year sold in America.</p>
@@ -2112,19 +2164,17 @@ replacement cost for every electric model year sold in America.</p>
 federal record likes most, with what they cost to buy today and to run for a year.</p>
 {cardlist(best)}
 <p style="margin-top:12px;font-size:13px"><a href="/search/">Search every scored model year →</a></p></section>
-{legends_section}
-{guides_section}
 <h2 class="sec">Explore</h2>
-<div class="rel-grid"><a href="/events/">The motoring calendar<small>races · concours · auctions worldwide</small></a>
+<div class="rel-grid"><a href="/guides/">Buyer's guides<small>signed, dated, checked against the record</small></a>
+<a href="/years-to-avoid/">Years to avoid<small>every nameplate ranked by its best-to-worst gap</small></a>
+<a href="/compare/">Head-to-head<small>two nameplates, year by year, on the same record</small></a>
 <a href="/vin-check/">Free VIN & recall check<small>decode the exact car before you buy</small></a>
-<a href="/superlatives/">The extremes<small>most expensive · rarest · era-defining</small></a>
+<a href="/recalls/">Recall campaigns<small>the newest campaigns on record, by car</small></a>
 <a href="/library/">The Car Library<small>{n_models:,} models, {n_brands:,} marques</small></a>
 <a href="/calculators/">True-cost calculator<small>priced for your country</small></a>
-<a href="/garage/">My Garage<small>your saved cars</small></a>
-<a href="/loved/">Most loved<small>voted by readers</small></a></div>
+<a href="/methodology/">How the verdicts are computed<small>the formula, the sources, the limits</small></a></div>
 <div class="cta-band"><h2>True-cost calculator</h2><p style="color:var(--muted);margin:8px 0 14px">Fuel + maintenance + battery risk, by model year.</p><a class="btn" href="/calculators/">Calculate</a></div>
-</div>
-<script src="/assets/loved.js" defer></script>"""
+</div>"""
     jsonld = [{"@context": "https://schema.org", "@type": "WebSite", "name": BRAND, "url": ORIGIN,
                "potentialAction": {"@type": "SearchAction", "target": f"{ORIGIN}/cars/?q={{search_term_string}}",
                                    "query-input": "required name=search_term_string"}}]
@@ -2263,7 +2313,7 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
     return write("search/index.html", page(
         f"Find Your Car — Filter by Year, Fuel, Price & Verdict | {BRAND}",
         "Filter every scored model year by year, fuel type, category, price and data verdict.",
-        ORIGIN + "/search/", body))
+        ORIGIN + "/search/", body, extra_head=NOINDEX))
 
 
 def gen_calculators(con, all_rows):
@@ -2299,7 +2349,22 @@ biggest line of the four, which is why most "running cost" calculators — inclu
 this one — flatter every car by leaving it out. EV packs add a labeled out-of-warranty battery-replacement
 risk. Price, depreciation and insurance are class-level estimates; the
 <a href="/methodology/#prices">formula and constants are published</a>. Browse verdicts in
-<a href="/cars/">the data index</a>.</p></div>
+<a href="/cars/">the data index</a>.</p>
+<h3>What the number is good for, and what it is not</h3>
+<p>The calculator answers one question: over the next few years, what will this model year cost to
+keep, compared with another? It is built for comparison — a 2015 against a 2018 of the same car, or
+a hybrid against the petrol version — because the inputs are class-level averages that cancel out
+when two cars of the same class are set side by side. It is not a quote for one specific car: condition,
+mileage, options and where you live move every line. The fuel figure is the EPA's, the maintenance band
+is an industry average indexed to the car's age, and the price, depreciation and insurance lines are
+estimates with a stated ±18% band. If you have been quoted a price, type it in on the model-year page
+and the whole panel recomputes from that number instead.</p>
+<h3>Where the inputs come from</h3>
+<p>Fuel economy comes from fueleconomy.gov (EPA). Maintenance bands are drawn from published
+industry cost-of-ownership surveys, indexed by vehicle age. The reliability score behind each verdict
+is computed from NHTSA complaint and recall records by the published method. Prices are re-priced
+to your country from retail fuel, electricity and parts indices; change the country in the bar at the
+top of the page and every figure follows.</p></div>
 </div><div class="col-side">{AD.format(slot='calc')}</div></div>
 <script>
 let P=[];
@@ -2344,29 +2409,74 @@ fetch('/assets/calculator-data.json').then(r=>{{if(!r.ok)throw new Error(r.statu
                  ORIGIN + "/calculators/", body))
 
 def gen_recalls_feed(con, all_rows):
+    """/recalls/ — the newest campaigns on record across every nameplate the site scores.
+
+    This page was a 60-row table under a 13-word subtitle. It now says what a recall is,
+    how to read the campaign number, why the safety-critical flag matters, and how to
+    check the one car in front of you — and lists 120 campaigns with their summaries.
+    """
     recs = con.execute("""SELECT r.*, my.year, mo.name model, mk.name make, mk.slug kslug, mo.slug mslug
         FROM recalls r JOIN model_years my ON my.id=r.my_id
         JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
-        ORDER BY r.date DESC LIMIT 60""").fetchall()
-    sev_badge = '<span class="tag v-AVOID">severe</span>'
-    # A recall can exist for a model-year that never earned its own page. Link the model
-    # overview in that case — a dead link is worse than a less specific one.
+        ORDER BY substr(r.date,7,4) DESC, substr(r.date,4,2) DESC, substr(r.date,1,2) DESC LIMIT 400""").fetchall()
+    n_all = con.execute("SELECT COUNT(DISTINCT campaign) FROM recalls").fetchone()[0]
+    n_sev = con.execute("SELECT COUNT(DISTINCT campaign) FROM recalls WHERE severe=1").fetchone()[0]
+    sev_badge = '<span class="tag v-AVOID">safety-critical</span>'
     live = {url_my(x) for x in all_rows if gate(x)}
 
     def _target(x):
         my = f"/cars/{x['kslug']}/{x['mslug']}/{x['year']}/"
         return my if my in live else f"/cars/{x['kslug']}/{x['mslug']}/"
 
-    rows = "".join(
-        f"<tr><td><a href=\"{_target(x)}\">{x['year']} {esc(x['make'])} {esc(x['model'])}</a></td>"
-        f"<td>{esc(x['campaign'] or '—')}</td><td>{esc((x['component'] or '').title()[:36])}</td>"
-        f"<td>{sev_badge if x['severe'] else ''}</td></tr>" for x in recs)
-    body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Recall index</h1>
-<p class="sub">Latest NHTSA recall campaigns across indexed vehicles. Always VIN-check at <a href="https://www.nhtsa.gov/recalls" rel="noopener">nhtsa.gov/recalls</a>.</p></div></div>
-<div class="wrap" style="padding:28px 0;display:grid;gap:20px">
-<div class="card"><div class="table-wrap"><table class="cost-table recall-feed-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table></div></div></div>"""
-    return write("recalls/index.html", page(f"Car Recall Index | {BRAND}",
-                 "NHTSA recall campaigns for indexed vehicles.", ORIGIN + "/recalls/", body))
+    def _summ(t):
+        t = re.sub(r"\s+", " ", (t or "").strip())
+        t = " ".join(re.split(r"(?<=[.!?])\s+", t)[:2])
+        return t if len(t) <= 300 else t[:300].rsplit(" ", 1)[0] + "…"
+
+    seen, rows, shown = set(), [], 0
+    for x in recs:
+        key = (x["campaign"], x["kslug"], x["mslug"])
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(
+            f"<tr><td><a href=\"{_target(x)}\">{x['year']} {esc(x['make'])} {esc(x['model'])}</a></td>"
+            f"<td>{esc(x['campaign'] or '—')}<br><small>{esc(x['date'] or '')}</small></td>"
+            f"<td>{esc((x['component'] or '').title())}<br><small>{esc(_summ(x['summary']))}</small></td>"
+            f"<td>{sev_badge if x['severe'] else ''}</td></tr>")
+        shown += 1
+        if shown >= 120:
+            break
+    body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Recall campaigns on record</h1>
+<p class="sub">{n_all:,} distinct campaigns across the model years this site scores, {n_sev:,} of them
+touching a safety-critical system. The newest 120 are below; every model-year page carries its own.</p></div></div>
+<div class="wrap" style="padding:28px 0;display:grid;gap:20px;max-width:1100px">
+<div class="card prose"><h2>How to read a recall</h2>
+<p>A recall is a manufacturer telling the United States safety regulator, in writing, that a batch of
+cars left the factory with a defect that affects safety or breaks a federal standard, and that it will
+fix it at no cost to the owner. The campaign number is NHTSA's identifier: the first two digits are the
+year the campaign was filed, the letter V marks a vehicle campaign (E marks equipment, such as a
+replacement part), and the remaining digits are the sequence. The date is the filing date, not the date
+the defect appeared — a 2021 campaign can cover a 2011 car, as the air bag inflator recalls did.</p>
+<p>The safety-critical flag is ours. It marks campaigns whose component is one where failure means a
+fire, a crash, a stall in traffic or an air bag that does not deploy — brakes, steering, fuel system,
+air bags, seat belts, engine stall, electrical fire. A campaign for a label or a floor mat is a
+recall; it is not the same risk, and the flag is how the reliability score tells them apart.</p>
+<p>A recall on this page tells you the defect exists in the batch. It does not tell you whether the
+car you are looking at was repaired. Dealers complete recall work free of charge for the life of the
+car, but a used car changes hands and the work is often never done. Before buying, run the VIN through
+<a href="/vin-check/">the VIN check</a> or NHTSA's own lookup at
+<a href="https://www.nhtsa.gov/recalls" rel="noopener">nhtsa.gov/recalls</a>, and ask the seller for
+the dealer invoice for every open campaign. <a href="/guides/how-to-check-a-vin-and-recalls/">The guide
+to checking a VIN and its recalls</a> walks through it step by step.</p></div>
+<div class="card"><h2>The newest campaigns on record</h2>
+<div class="table-wrap"><table class="cost-table recall-feed-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component and summary</th><th></th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+<p class="src-note">Source: NHTSA recall campaigns, as held in the site's dataset on {TODAY}. Each vehicle links to the
+model-year page with its full recall list and complaint record.</p></div></div>"""
+    return write("recalls/index.html", page(f"Car Recall Campaigns: The Newest on Record, and How to Read Them | {BRAND}",
+                 f"{n_all:,} NHTSA recall campaigns across the model years MotorJury scores — how to read a campaign, "
+                 "which ones are safety-critical, and how to check the car in front of you.",
+                 ORIGIN + "/recalls/", body))
 
 
 def gen_vin_check():
@@ -2418,7 +2528,7 @@ DESCRIPTIONS = {
     "Privacy Policy": "What MotorJury collects, what advertising partners may set, and how to make a "
                       "privacy request.",
     "Terms of Use": "Terms covering the use, citation and licensing of MotorJury data and verdicts.",
-    "Affiliate Disclosure": "How MotorJury is funded, and why advertising and affiliate links never "
+    "Advertising and Affiliate Disclosure": "How MotorJury is funded, and why advertising and affiliate links never "
                             "touch a score or a verdict.",
     "Editorial Policy": "How MotorJury decides what to publish, who writes it, how errors are corrected "
                         "and how advertising is kept away from verdicts.",
@@ -2662,7 +2772,7 @@ year without enough data does not get a page.</p>
 
 <h2>Independence</h2>
 <p>{BRAND} is not affiliated with any manufacturer, dealer, insurer or parts retailer. The site is funded by
-advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p><h2>Sources and attribution</h2>
+advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p><h2 id="attribution">Sources and attribution</h2>
 <p>The buyer's guides are written and signed by Adir Trabelsi, the editor. Every other page on this site is computed by the build rather than written by a person, and says so in place of a byline. Complaint, recall and fuel-economy figures are from
 NHTSA and the EPA. Catalogue facts (marque, years, designer, production) are from Wikidata. The background
 paragraphs in car biographies and the descriptions on the events pages are adapted from the corresponding
@@ -2786,7 +2896,7 @@ no editors, no sponsorship, no algorithm.</p></div></div>
 <p class="muted">Loading…</p></div>
 <p class="lib-note" style="margin-top:18px">Signed in? Every heart you tap lands in
 <a href="/account/">your account</a>.</p></div>
-<script src="/assets/loved.js" defer></script>""")))
+<script src="/assets/loved.js" defer></script>""", extra_head=NOINDEX)))
 
     # Fallback /follow/: the footer of every page links it, so it must exist even when
     # build_social.py (which writes the full link-in-bio page) does not run. That script
@@ -2800,32 +2910,175 @@ verdict, computed from public data.</p></div></div>
 <div class="wrap" style="padding:24px 0"><div class="rel-grid">
 <a href="/library/">Every car ever made<small>the library</small></a>
 <a href="/calculators/">What will it cost me?<small>the true-cost calculator</small></a>
-<a href="/play/">Today's quiz<small>guess the car</small></a>
-<a href="/loved/">Most loved<small>voted by readers</small></a></div></div>""")))
+<a href="/guides/">Buyer's guides<small>which years to avoid</small></a>
+<a href="/years-to-avoid/">Years to avoid<small>every nameplate ranked</small></a></div></div>""", extra_head=NOINDEX)))
 
     gen.append(prose_page("privacy/index.html", "Privacy Policy", f"""
-<p>Effective {TODAY}.</p>
-<p><b>If you do not have an account</b> we collect no personal data beyond what you submit (e.g. a newsletter
-email) and standard analytics (Google Analytics 4, Cloudflare Web Analytics). Update-list emails are stored
-only after you submit the form, used solely for MotorJury product and editorial updates, and never sold.
-Write to privacy@ this domain to remove the address before self-service unsubscribe is available.</p>
-<p><b>If you use the VIN checker</b> the VIN is sent to the public NHTSA APIs to decode the vehicle and find
-matching recall campaigns. MotorJury does not persist the VIN in an account or database.</p>
-<p><b>If you create an account</b> we store your email address, a display name, the cars you love, your
-garage, your site preferences and any owner-survey answers you submit. Passwords are stored only as a
-PBKDF2-SHA256 hash — we cannot read yours. Session tokens are stored hashed, so a copy of our database
-cannot be replayed as a login. If you sign in with Google or Apple we receive your email address and name
-from them and nothing else. We do not sell, rent or share account data, and we do not use it to target
-advertising. Write to privacy@ this domain to export or delete your account and we will action it.</p>
-<p>Advertising is served by third parties (e.g. Google AdSense) which may use cookies subject to your consent choices in the consent banner. See Google's <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">partner policy</a>.</p>
-<p>Requests: privacy@ this domain.</p>"""))
+<p class="lib-note">Effective {TODAY}. This policy covers motorjury.com, published by MotorJury and
+operated by its editor, Adir Trabelsi, from Porto, Portugal. Questions and requests:
+<a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a>, or the addresses on the
+<a href="/contact/">contact page</a>.</p>
+
+<h2>The short version</h2>
+<p>You can read every page on this site without an account and without telling us who you are.
+We use analytics to count visits, a consent banner to ask European visitors before any advertising
+cookie is set, and Google AdSense to show advertising. If you create an account we keep the
+minimum needed to run it, and you can delete it by writing to us. We do not sell personal data,
+we do not build marketing profiles, and we never share account data with advertisers.</p>
+
+<h2>What we collect, and why</h2>
+<p><b>Visitors without an account.</b> Our servers and Cloudflare, which hosts the site, record the
+standard technical log of each request — the page requested, the time, the IP address, the browser
+and its language — to serve the page, defend against abuse and keep the site running. Google
+Analytics 4 counts visits and pages; it is configured with IP anonymisation and, in the European
+Economic Area, the United Kingdom and Switzerland, runs only after you consent. Cloudflare Web
+Analytics counts visits without cookies. Your chosen country for pricing is stored in your browser's
+local storage, not on our servers.</p>
+<p><b>The VIN checker.</b> A VIN you type is sent to the public NHTSA (United States National Highway
+Traffic Safety Administration) decoder and recall services to identify the vehicle. We do not store
+the VIN, and a VIN is not linked to you.</p>
+<p><b>Accounts.</b> If you create an account we store your email address, a display name, a password
+hash (PBKDF2-SHA256; we cannot read your password), the cars you have loved or saved, your site
+preferences and any owner-survey answers you submit. If you sign in with Google we receive your
+email address and name from Google and nothing else; we hold no Google password or token beyond the
+sign-in itself. Session tokens are stored hashed. Owner-survey answers are published in aggregate
+only once five owners have answered, and any written comment you submit is shown with the label
+"owner", never with your name or email.</p>
+<p><b>Newsletter and alerts.</b> An email address you submit for updates is used only to send those
+updates. Every message carries an unsubscribe link, and we will remove the address on request.</p>
+
+<h2>Advertising and cookies</h2>
+<p>Advertising on this site is served by Google AdSense. Third-party vendors, including Google, use
+cookies to serve ads based on a user's prior visits to this website or to other websites. Google's
+use of advertising cookies enables it and its partners to serve ads to you based on your visit to
+this site and other sites on the internet. You may opt out of personalised advertising by visiting
+<a href="https://www.google.com/settings/ads" rel="noopener">Google Ads Settings</a>, and opt out of
+some third-party vendors' use of cookies for personalised advertising at
+<a href="https://www.aboutads.info/choices/" rel="noopener">aboutads.info</a> or, in Europe,
+<a href="https://www.youronlinechoices.eu/" rel="noopener">youronlinechoices.eu</a>. Google's own
+description of how it uses data from sites that use its services is at
+<a href="https://policies.google.com/technologies/partner-sites" rel="noopener">policies.google.com/technologies/partner-sites</a>.</p>
+<p>For visitors in the European Economic Area, the United Kingdom and Switzerland, no advertising or
+analytics cookie is set until you make a choice in the consent message, which is Google's certified
+consent management platform. Google Consent Mode starts in the "denied" state for advertising
+storage, advertising user data, advertising personalisation and analytics storage, and only your
+consent changes it. You can change your choice at any time from the "Privacy settings" link in the
+footer of every page, or by clearing cookies for motorjury.com.</p>
+<p>Our own cookies are limited to the session cookie that keeps you signed in when you have an
+account, and the consent cookie that records your consent choice.</p>
+
+<h2>Photographs and third-party content</h2>
+<p>Car photographs are loaded from Wikimedia Commons, whose servers receive the standard request
+log (IP address, browser) when an image is fetched. We send no personal data to Wikimedia, and
+images are requested with a no-referrer policy so the page you are reading is not disclosed.</p>
+
+<h2>How long we keep it</h2>
+<p>Server logs are retained for up to 30 days. Analytics data is retained for 14 months. Account
+data is kept for as long as the account exists and deleted within 30 days of a deletion request.
+Newsletter addresses are deleted on unsubscribe.</p>
+
+<h2>Your rights</h2>
+<p>Under the General Data Protection Regulation you may ask for a copy of the personal data we hold
+about you, ask us to correct or delete it, ask us to stop processing it, ask for it in a portable
+format, and object to processing based on legitimate interest. Write to
+<a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a>; we answer within 30 days and never
+charge for a request. You also have the right to lodge a complaint with a supervisory authority; in
+Portugal that is the Comissão Nacional de Proteção de Dados (CNPD).</p>
+
+<h2>Children</h2>
+<p>This site is not directed at children and we do not knowingly collect personal data from anyone
+under 16. If you believe a child has created an account, write to us and we will delete it.</p>
+
+<h2>Changes</h2>
+<p>When this policy changes, the effective date at the top changes with it. Material changes to how
+account data is used are announced by email to account holders before they take effect.</p>"""))
+
     gen.append(prose_page("terms/index.html", "Terms of Use", f"""
-<p>Effective {TODAY}.</p>
-<p>All data is provided "as is" for informational purposes, aggregated from public government sources; verify safety-critical information (especially recalls) against NHTSA directly before acting. No warranty of fitness. Verdicts are computed opinions based on the published methodology, not professional advice.</p>
-<p>Content may be cited with attribution and a link. Bulk scraping beyond published data files: contact us for the data license.</p>"""))
-    gen.append(prose_page("disclosure/index.html", "Affiliate Disclosure", f"""
-<p>Some links on this site are affiliate links (e.g. parts, diagnostics, insurance quote partners). If you buy through them we may earn a commission at no cost to you. This never influences verdicts or scores — those are computed from NHTSA/EPA data per our <a href="/methodology/">methodology</a> before any monetization is attached.</p>
-<p>Advertising is clearly separated from data content and never alters it.</p>"""))
+<p class="lib-note">Effective {TODAY}. These terms apply to motorjury.com and everything published
+on it. Using the site means you accept them.</p>
+
+<h2>What the site is</h2>
+<p>MotorJury publishes ownership-cost data, reliability verdicts, recall summaries and buyer's
+guides for cars sold in the United States, computed from public records held by the United States
+National Highway Traffic Safety Administration (NHTSA) and the Environmental Protection Agency (EPA),
+plus class-level estimates of prices, depreciation, insurance and running costs. The
+<a href="/methodology/">methodology page</a> describes every formula. The
+<a href="/editorial-policy/">editorial policy</a> describes what is computed, what is written by a
+person, and how corrections are handled.</p>
+
+<h2>Information, not advice</h2>
+<p>Everything on the site is provided for general information. A score, a verdict or a guide
+describes the pattern in the federal record for a model year across all the cars of that type; it
+is not an inspection of the particular car in front of you, and it cannot tell you whether that car
+is sound. Prices, running costs, depreciation and insurance figures are estimates, labelled as such,
+and are not quotes, valuations or offers. Nothing here is legal, financial or mechanical advice. Before
+buying a car, have it inspected, check its history, and verify every open recall against NHTSA's own
+VIN lookup at nhtsa.gov/recalls, because a recall record on this site may be incomplete or out of date.</p>
+
+<h2>Accuracy and corrections</h2>
+<p>We work from the public record as published and refresh it regularly, but the record itself
+contains errors and gaps, and our processing can introduce more. We correct mistakes when they are
+pointed out; the process is described on the <a href="/editorial-policy/">editorial policy</a> page.
+The site is provided "as is" and "as available", without warranty of any kind, express or implied,
+including fitness for a particular purpose and accuracy. To the fullest extent permitted by law,
+MotorJury and its editor are not liable for any loss arising from use of the site or reliance on
+anything published on it.</p>
+
+<h2>Using the content</h2>
+<p>You may quote and cite the data and the written material with attribution and a link to the page
+it came from. Bulk copying, scraping or republishing of pages, or of the underlying data files beyond
+the published data packs, requires a licence: write to <a href="/contact/">the editor</a>. Car
+photographs are the work of their credited photographers and are used under the Creative Commons
+licences stated on each image's Wikimedia Commons page; text derived from Wikipedia is used under
+CC BY-SA 4.0, as noted on the <a href="/about/">about page</a>. NHTSA and EPA data are public
+domain works of the United States government.</p>
+
+<h2>Accounts and owner responses</h2>
+<p>An account is for one person. You are responsible for what is submitted from it. Owner-survey
+answers must describe a car you have actually owned; we remove ratings and comments that are
+abusive, promotional, off-topic or evidently not from an owner, and we may close accounts that
+submit them. You may delete your account at any time by writing to
+<a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a>.</p>
+
+<h2>Advertising and affiliate links</h2>
+<p>The site carries advertising served by Google AdSense and may carry affiliate links; both are
+described on the <a href="/disclosure/">disclosure page</a>. Advertisers and affiliate partners
+have no influence on any score, verdict or guide.</p>
+
+<h2>Trademarks</h2>
+<p>Manufacturer and model names are the trademarks of their owners and are used only to identify
+the vehicles the data describes. MotorJury is not affiliated with, endorsed by or sponsored by any
+manufacturer, dealer, insurer or government agency.</p>
+
+<h2>Law</h2>
+<p>These terms are governed by the law of Portugal, and disputes are subject to the courts of
+Porto, without prejudice to mandatory consumer protections in your country of residence. If any
+provision is found unenforceable the rest remain in effect.</p>"""))
+
+    gen.append(prose_page("disclosure/index.html", "Advertising and Affiliate Disclosure", f"""
+<p class="lib-note">Effective {TODAY}.</p>
+<h2>How the site is funded</h2>
+<p>MotorJury is funded by display advertising served by Google AdSense and, where they appear, by
+affiliate links. There is no subscription, no sponsored content and no paid placement in any list,
+score or guide, and no manufacturer, dealer or insurer has ever paid to appear on the site or to be
+left out of it.</p>
+<h2>Advertising</h2>
+<p>Advertisements are selected and served by Google, not by us, and are marked as advertising.
+Advertising never appears inside a data table, a verdict card or a buyer's guide, and it never
+changes what those say. In the European Economic Area, the United Kingdom and Switzerland, advertising
+cookies are set only after you consent in the message shown on your first visit; see the
+<a href="/privacy/">privacy policy</a> for how to change that choice.</p>
+<h2>Affiliate links</h2>
+<p>Some links — for example to parts, diagnostic tools, vehicle-history reports or insurance quote
+partners — may be affiliate links. If you buy through one, we may earn a commission at no extra cost
+to you. Affiliate links are chosen after the page's content is written and computed, never before,
+and the presence or absence of an affiliate partner has no effect on any score or recommendation.
+Where a page carries an affiliate link it is labelled as such near the link.</p>
+<h2>Independence</h2>
+<p>Every score and verdict is computed from NHTSA and EPA public records by the published
+<a href="/methodology/">methodology</a>, and every guide is written by the editor from that record
+before any monetisation is attached to the page. The <a href="/editorial-policy/">editorial policy</a>
+sets out how corrections are handled and how a reader can challenge a figure.</p>"""))
     return gen
 
 def gen_assets():

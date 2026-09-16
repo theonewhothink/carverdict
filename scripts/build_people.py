@@ -231,10 +231,13 @@ the car — founders, engineers, designers, champions and industrialists.</p></d
 <p class="lib-note">Biographies from Wikipedia (CC BY-SA), photographs via Wikimedia Commons.
 Each name links to the full article.</p></div>"""
     (SITE / "legends").mkdir(parents=True, exist_ok=True)
+    # The roster and its 99 one-paragraph Wikipedia biographies are a gallery, not
+    # editorial. Online for readers, out of the index like the person pages beneath it.
     (SITE / "legends" / "index.html").write_text(
         shell(f"The Legends — The Greatest People in Motoring | {BRAND}",
               "Founders, engineers, designers, racing drivers and industrialists who made the "
-              "motor car what it is.", f"{ORIGIN}/legends/", body))
+              "motor car what it is.", f"{ORIGIN}/legends/", body).replace(
+            "</head>", '<meta name="robots" content="noindex,follow"></head>', 1))
 
     # a compact feed the home page renders from
     (SITE / "assets").mkdir(parents=True, exist_ok=True)

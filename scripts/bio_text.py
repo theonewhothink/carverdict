@@ -87,6 +87,12 @@ def _first(v):
 
 def _layout_words(layout):
     l = (layout or "").lower()
+    # An infobox that lists several layouts ("front-engine, front-wheel-drive or
+    # four-wheel-drive") used to be read as the last one matched, so the Honda Fit page
+    # said drive went to all four wheels. When the record offers a choice, say nothing
+    # rather than pick one.
+    if l.count("drive") > 1 or " or " in l or "/" in l:
+        return None
     if "mr" in l or "mid-engine" in l or "rear mid" in l:
         return "the engine sits behind the driver and ahead of the rear axle, which puts the mass in the middle of the car and is why mid-engined cars change direction the way they do"
     if "rr" in l or "rear-engine" in l:
