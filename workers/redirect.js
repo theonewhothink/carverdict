@@ -30,6 +30,7 @@ export { HubDO } from "./hub.js";
 // same JSON the generator writes is bundled here and prefix-matched per request.
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
+import { geniusEnabled, handleGenius } from "./genius.mjs";
 import { makeRecovery } from "./recover.mjs";
 import { b64urlToBytes, idTokenClaims, isJsonRequest, stateCookie,
          validIdentityClaims, verifyGoogleIdToken } from "./oauth.mjs";
@@ -375,7 +376,7 @@ async function api(req, url, env) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
 
     if (url.hostname.endsWith(".workers.dev") || url.hostname === "www.motorjury.com") {
@@ -386,6 +387,29 @@ export default {
 
     const moved = modelRedirect(url);
     if (moved) return Response.redirect(moved, 301);
+
+    // Car Genius streams its answer, so it is routed before api(), which reads the body.
+    if (url.pathname === "/api/genius/status") {
+      return json({ enabled: geniusEnabled(env) }, 200, { "Cache-Control": "public, max-age=300" });
+    }
+    if (url.pathname === "/api/genius") {
+      if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+      if (!isJsonRequest(req)) return json({ error: "expected JSON" }, 415);
+      // Answers cost money: only this site's own pages may ask. Browsers always send Origin
+      // on a cross-site POST, so another site cannot use the endpoint as a free AI proxy.
+      const origin = req.headers.get("Origin");
+      if (origin && origin !== url.origin) return json({ error: "forbidden" }, 403);
+      try {
+        const quota = async (ip) => {
+          const { ok, data } = await call(env, "genius-quota",
+            { ip, cap: Number(env.GENIUS_DAILY_CAP) || 0 });
+          return ok ? { ok: true } : { ok: false, error: data.error };
+        };
+        return await handleGenius(req, url, env, quota, ctx);
+      } catch (e) {
+        return json({ error: "Something went wrong on our side." }, 500);
+      }
+    }
 
     if (url.pathname.startsWith("/api/")) {
       try {

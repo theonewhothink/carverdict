@@ -780,9 +780,11 @@ html,body{overflow-x:clip}
 .chart svg{width:100%;height:auto;display:block}
 
 /* --- accessibility --------------------------------------------------------- */
-.skip{position:absolute;left:-9999px;top:0;z-index:300;background:var(--brand);color:#fff;
-  padding:12px 18px;border-radius:0 0 8px 0;font-size:15px;text-decoration:none}
-.skip:focus{left:0}
+/* Hidden above the page, not at left:-9999px: in a right-to-left document that offset is
+   scrollable overflow, and the Hebrew pages opened scrolled 10,000px sideways onto a blank screen. */
+.skip{position:absolute;inset-inline-start:0;top:0;transform:translateY(-120%);z-index:300;background:var(--brand);color:#fff;
+  padding:12px 18px;border-end-end-radius:8px;font-size:15px;text-decoration:none}
+.skip:focus{transform:none}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media(max-width:767px){
   /* WCAG 2.5.8 / Apple HIG minimum. Measured 47 sub-44px targets on a car page. */

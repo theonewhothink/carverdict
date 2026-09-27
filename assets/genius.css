@@ -1,0 +1,138 @@
+/* genius.css — the page tools bar (AI Brief, Share), the share sheet and Car Genius.
+   Uses the site's tokens from site.css; logical properties throughout so Hebrew mirrors. */
+
+/* ---- page tools bar ---- */
+.page-tools{display:flex;justify-content:flex-end;gap:8px;padding-top:10px;margin-bottom:-6px;position:relative;z-index:2}
+.pt-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;cursor:pointer;
+  font:600 13.5px/1 var(--font);border:1px solid var(--line);background:var(--card);color:var(--text);
+  box-shadow:0 1px 2px rgba(16,24,40,.05);transition:background .15s,border-color .15s,box-shadow .15s}
+.pt-btn svg{width:16px;height:16px;flex:none}
+.pt-btn:hover{border-color:#c9d1dc;box-shadow:0 4px 12px -4px rgba(16,24,40,.18)}
+.pt-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.pt-brief{background:var(--brand);border-color:transparent;color:#fff}
+.pt-brief svg{color:var(--gold,#A8751A);filter:brightness(1.35)}
+.pt-brief:hover{border-color:transparent;box-shadow:0 6px 18px -6px rgba(16,35,63,.55)}
+.pt-btn[hidden]{display:none}
+
+/* ---- share sheet ---- */
+.mj-share{position:fixed;inset:0;z-index:200;display:none}
+.mj-share.open{display:block}
+.mj-share-scrim{position:absolute;inset:0;background:rgba(7,20,38,.5);animation:mj-fade .15s ease}
+.mj-share-box{position:absolute;inset-inline:0;margin:auto;top:50%;transform:translateY(-50%);width:min(440px,calc(100% - 32px));
+  background:var(--card);border-radius:20px;padding:20px;box-shadow:var(--shadow-lg);animation:mj-pop .18s cubic-bezier(.2,.8,.2,1)}
+.mj-share-hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mj-share-hd h2{font-size:18px;letter-spacing:-.01em}
+.mj-share-x{border:0;background:var(--bg2);width:34px;height:34px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;color:var(--muted)}
+.mj-share-title{color:var(--muted);font-size:13.5px;margin:6px 0 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mj-share-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 6px}
+.mj-share-t{display:flex;flex-direction:column;align-items:center;gap:6px;font:500 12.5px/1.2 var(--font);color:var(--text);
+  text-decoration:none;background:none;border:0;cursor:pointer;padding:4px 0;border-radius:12px}
+.mj-share-t:hover{text-decoration:none;background:var(--bg2)}
+.mj-share-t:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.mj-share-ic{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:#5A6472}
+.mj-share-ic svg{width:24px;height:24px}
+.mj-whatsapp .mj-share-ic{background:#25D366}.mj-x .mj-share-ic{background:#000}.mj-facebook .mj-share-ic{background:#1877F2}
+.mj-linkedin .mj-share-ic{background:#0A66C2}.mj-telegram .mj-share-ic{background:#229ED9}.mj-reddit .mj-share-ic{background:#FF4500}
+.mj-mail .mj-share-ic{background:#5A6472}.mj-more .mj-share-ic{background:var(--bg2);color:var(--text)}
+.mj-share-copy{display:flex;gap:8px;margin-top:18px}
+.mj-share-copy input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:0 12px;height:42px;font:14px var(--font);
+  color:var(--muted);background:var(--bg2)}
+.mj-share-copy .btn{display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 14px;border:0;border-radius:12px;cursor:pointer;
+  font:600 14px var(--font);white-space:nowrap}
+.mj-share-copy .btn svg{width:16px;height:16px}
+.social-share .soc-share{cursor:pointer;font:inherit}
+@keyframes mj-fade{from{opacity:0}}
+@keyframes mj-pop{from{opacity:0;transform:translateY(-46%) scale(.97)}}
+
+/* ---- Car Genius launcher ---- */
+.genius-fab{position:fixed;inset-inline-end:20px;bottom:20px;z-index:95;display:none;align-items:center;gap:8px;height:48px;
+  padding:0 18px 0 14px;border:0;border-radius:999px;cursor:pointer;color:#fff;font:700 14.5px/1 var(--font);
+  background:var(--brand);box-shadow:0 10px 28px -8px rgba(16,35,63,.6);transition:transform .15s,box-shadow .15s}
+.genius-on .genius-fab{display:inline-flex}
+.genius-fab svg{width:20px;height:20px;color:var(--gold,#A8751A);filter:brightness(1.35)}
+.genius-fab:hover{transform:translateY(-1px);box-shadow:0 14px 32px -8px rgba(16,35,63,.7)}
+.genius-fab:focus-visible{outline:3px solid var(--gold,#A8751A);outline-offset:2px}
+.genius-open .genius-fab{display:none}
+
+/* ---- Car Genius panel ---- */
+.genius{position:fixed;inset-block:0;inset-inline-end:0;z-index:150;width:min(440px,100%);display:flex;flex-direction:column;
+  background:var(--card);border-inline-start:1px solid var(--line);box-shadow:-18px 0 50px -20px rgba(16,24,40,.28);
+  transform:translateX(105%);visibility:hidden;transition:transform .24s cubic-bezier(.2,.8,.2,1),visibility .24s}
+[dir=rtl] .genius{transform:translateX(-105%)}
+.genius.open{transform:none;visibility:visible}
+.genius-inline{position:static;transform:none;visibility:visible;width:auto;height:min(72vh,760px);min-height:460px;
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin:18px 0}
+.g-hd{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15.5px}
+.g-hd b{margin-inline-end:auto;letter-spacing:-.01em}
+.g-logo{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--gold,#A8751A);background:var(--brand);flex:none}
+.g-logo svg{filter:brightness(1.35)}
+.g-logo svg{width:18px;height:18px}
+.g-big{width:46px;height:46px;border-radius:14px}.g-big svg{width:26px;height:26px}
+.g-ic{border:0;background:none;cursor:pointer;color:var(--muted);font:600 13px var(--font);border-radius:8px;padding:6px 8px}
+.g-ic:hover{background:var(--bg2);color:var(--text)}
+.g-x{font-size:24px;line-height:1;padding:2px 10px}
+.g-list{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+.g-empty{margin:auto 0;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px}
+.g-empty p{font-size:15px;max-width:34ch}
+.g-sugs{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
+.g-sugs button{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;text-align:start;cursor:pointer;
+  font:500 14px/1.35 var(--font);color:var(--text)}
+.g-sugs button:hover{border-color:var(--gold,#A8751A);background:var(--gold-wash,#FDF6E6)}
+.g-msg{display:flex;flex-direction:column;max-width:100%}
+.g-u{align-items:flex-end}
+.g-u .g-b{background:var(--brand);color:#fff;border-radius:18px 18px 4px 18px;padding:9px 14px;max-width:85%;white-space:pre-wrap;
+  word-wrap:break-word;font-size:15px}
+[dir=rtl] .g-u .g-b{border-radius:18px 18px 18px 4px}
+.g-a .g-b{color:var(--text);font-size:15px;line-height:1.6;word-wrap:break-word}
+.g-a .g-b p{margin:0 0 10px}.g-a .g-b p:last-child{margin-bottom:0}
+.g-a .g-b h4{font-size:15.5px;margin:12px 0 6px}
+.g-a .g-b ul,.g-a .g-b ol{margin:0 0 10px;padding-inline-start:20px}
+.g-a .g-b li{margin:3px 0}
+.g-a .g-b code{background:var(--bg2);padding:1px 5px;border-radius:5px;font-size:13.5px}
+.g-a .g-b a{font-weight:600;text-decoration:underline;text-decoration-color:var(--gold,#A8751A);text-underline-offset:3px}
+.g-tw{overflow-x:auto;margin:6px 0 12px;border:1px solid var(--line);border-radius:10px}
+.g-tw table{border-collapse:collapse;width:100%;font-size:13.5px}
+.g-tw th,.g-tw td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:start;white-space:nowrap;color:var(--text)}
+.g-tw th{background:var(--bg2);font-weight:650;font-size:12.5px}
+.g-tw tr:last-child td{border-bottom:0}
+.g-err .g-b{color:var(--bad)}
+.g-status{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.g-status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold,#A8751A);animation:g-pulse 1s ease-in-out infinite}
+@keyframes g-pulse{50%{opacity:.25;transform:scale(.7)}}
+.g-act{display:flex;gap:4px;margin-top:4px}
+.g-act button{border:0;background:none;color:var(--faint);font:600 12.5px var(--font);cursor:pointer;padding:4px 8px;border-radius:7px}
+.g-act button:hover{background:var(--bg2);color:var(--text)}
+.g-form{display:flex;align-items:flex-end;gap:8px;margin:0 12px;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--bg2)}
+.g-form:focus-within{border-color:var(--brand);background:var(--card);box-shadow:0 0 0 3px rgba(16,35,63,.1)}
+.g-form textarea{flex:1;border:0;background:none;resize:none;font:15px/1.45 var(--font);color:var(--text);padding:6px 4px;
+  max-height:160px;min-height:24px;outline:none}
+.g-send{flex:none;width:38px;height:38px;border:0;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  background:var(--brand);color:#fff}
+.g-send svg{width:18px;height:18px}
+[dir=rtl] .g-send svg{transform:scaleX(-1)}
+.g-send.g-stop{background:var(--text)}
+.g-sq{width:12px;height:12px;border-radius:2px;background:#fff}
+.g-note{font-size:11.5px;color:var(--faint);text-align:center;padding:8px 14px 12px;line-height:1.4}
+.genius-page .lede{color:var(--muted);max-width:70ch;margin:8px 0 0}
+.genius-page h1{margin-top:10px}
+.genius-page .src-note{margin:0 0 30px}
+
+@media (max-width:767px){
+  .page-tools{padding-top:8px}
+  .pt-btn{height:32px;font-size:13px;padding:0 11px}
+  .genius-fab{bottom:calc(var(--tabs-h,58px) + env(safe-area-inset-bottom) + 12px);inset-inline-end:14px;height:46px;padding:0 14px}
+  .genius-fab span{display:none}
+  body:has(.app-actionbar.show) .genius-fab{bottom:calc(var(--tabs-h,58px) + env(safe-area-inset-bottom) + 76px)}
+  .genius{width:100%;inset-block-start:env(safe-area-inset-top);border-radius:0;z-index:130;
+    padding-bottom:env(safe-area-inset-bottom)}
+  .genius-open body{overflow:hidden}
+  .genius-inline{height:calc(100dvh - 190px);min-height:420px;margin:12px 0}
+  .mj-share-box{top:auto;bottom:0;transform:none;width:100%;border-radius:22px 22px 0 0;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom));animation:mj-up .22s cubic-bezier(.2,.8,.2,1)}
+  @keyframes mj-up{from{transform:translateY(100%)}}
+}
+@media (prefers-reduced-motion:reduce){
+  .genius,.mj-share-box,.mj-share-scrim,.genius-fab{transition:none;animation:none}
+}
+@media print{.page-tools,.genius-fab,.genius,.mj-share{display:none!important}}

@@ -22,6 +22,8 @@ Live: https://motorjury.com
 | `/loved/` | The love-button leaderboard, counted live, one vote per account |
 | `/garage/`, `/notify/` | Saved cars, interests, reminders — synced to the account when signed in |
 | `/follow/` | The public link-in-bio page the social profiles point at |
+| `/ask/` | **Car Genius** — the chat assistant, full page (`/ask/?q=…` opens with a question) |
+| every page | **AI Brief** + **Share** at the top of the content, Car Genius in the corner |
 | `/studio/` | Seven days of ready-to-post social packages (noindex, not linked) |
 | `/pt/ /es/ /fr/ /de/ /he/` | Full localisations; Hebrew is RTL |
 
@@ -43,6 +45,7 @@ python scripts/build_stories.py         # data stories + indexable comparisons
 python scripts/build_problems.py        # high-intent model-year problem pages
 python scripts/build_people.py --from-cache # legends pages when the roster exists
 python scripts/build_social.py          # social packages + /studio/ + /follow/
+python scripts/build_genius.py          # Car Genius knowledge files + /ask/
 python scripts/localize.py              # 5 languages + sitemap
 python scripts/polish.py                # chrome, icons, cards, landmarks on every page
 ```
@@ -88,6 +91,43 @@ Redirect URIs to register: `https://motorjury.com/api/auth/google/callback` and
 | `GET/POST /api/survey` | owner satisfaction; averages publish at 5 responses |
 | `POST /api/prefs`, `POST /api/subscribe`, `GET /api/stats` | preferences, email capture, counts |
 | `GET /api/vin?vin=…` | same-origin NHTSA VIN decode + model recall lookup; VIN is not stored |
+
+## Car Genius and the AI Brief
+
+Car Genius is a chat assistant that answers from MotorJury's own data and nothing else. It is
+Claude, called from the Worker (`workers/genius.mjs`) with five read-only tools over three files
+`scripts/build_genius.py` writes at build time: every model-year's verdict, score, complaints,
+recalls, fuel and price estimates; the signed guides; and the title and URL of every other page.
+The index only carries URLs whose page exists, and the model is told to link only URLs a tool
+returned, so an answer cannot point at a page that is not there.
+
+* **AI Brief** — the button at the top of every page. Car Genius reads that page and gives its
+  bottom line; the reader can close it or keep asking. A brief is the same for every reader of
+  a page version, so it is generated once and served from Cloudflare's cache after that.
+* **Chat** — the Car Genius button in the corner of every page, and `/ask/`. The conversation
+  follows the reader from page to page in the same tab, and every question carries the page it
+  was asked on, so "is this year a good buy?" means this page's car.
+* **Share** — the Share button next to the AI Brief and in the footer opens one sheet: WhatsApp,
+  X, Facebook, LinkedIn, Telegram, Reddit, email, copy link and the device's own share sheet.
+  Plain share links, no third-party widget.
+
+Switching it on takes one secret; until it exists the AI buttons stay hidden and nothing else
+changes:
+
+```
+npx wrangler secret put ANTHROPIC_API_KEY
+```
+
+| Optional Worker variable | Default | Purpose |
+|---|---|---|
+| `GENIUS_DAILY_CAP` | 1000 | questions per day, whole site (per visitor: 15 an hour, 60 a day) |
+| `GENIUS_EFFORT` | `medium` | model effort: `low` is cheaper and faster, `high` more thorough |
+| `ANTHROPIC_BASE_URL` | — | route through a Cloudflare AI Gateway for logs and a spend limit |
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/genius/status` | whether Car Genius is switched on |
+| `POST /api/genius` | `{messages, page, mode: "chat"\|"brief"}` → a server-sent event stream |
 
 ## The money layer
 

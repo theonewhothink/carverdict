@@ -315,6 +315,19 @@ export class HubDO {
         return { ok: true };
       }
 
+      case "genius-quota": {
+        // Car Genius spends money per question. Per visitor: 15 an hour, 60 a day. Site
+        // wide: GENIUS_DAILY_CAP (default 1,000) a day, so a scripted flood has a ceiling.
+        // The address is hashed before it becomes a key: only the count is kept.
+        const who = "g:" + (await sha256("genius|" + (b.ip || "?"))).slice(0, 24);
+        if (!this.limit(who + ":h", 15, 3600)) throw new Error("That is a lot of questions in an hour. Try again a little later.");
+        if (!this.limit(who + ":d", 60, 86400)) throw new Error("You have reached today's Car Genius limit. It resets tomorrow.");
+        if (!this.limit("genius:all", Number(b.cap) > 0 ? Number(b.cap) : 1000, 86400)) {
+          throw new Error("Car Genius has answered a lot of questions today. Try again tomorrow.");
+        }
+        return { ok: true };
+      }
+
       case "stats": {
         return {
           users: this.one(`SELECT COUNT(*) n FROM users`).n,
