@@ -181,6 +181,12 @@ timeout 90 "$PY" scripts/build_people.py --harvest-only || echo "WARNING: legend
 # so /follow/ enters the sitemap and /studio/, being noindex, does not.
 "$PY" scripts/build_social.py || echo "WARNING: social factory skipped"
 
+# Car Genius: the data the chat assistant answers from (model-years, guides, page index) and
+# its /ask/ page. Runs after every page generator, so the index only carries URLs that
+# exist, and before the localiser, so /ask/ enters the sitemap. A failure stops the deploy:
+# a stale or missing index would have the assistant answering from nothing.
+"$PY" scripts/build_genius.py
+
 "$PY" scripts/localize.py
 
 # One normalising pass over every page: icons, the correct theme-colour pair, social
@@ -330,5 +336,11 @@ except Exception as e:
     print(f"WARNING: IndexNow ping failed ({e}); key file still deployed")
 PY_EOF
 
-node --test workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/gis.test.mjs workers/vin.test.mjs workers/recovery.test.mjs
+# The Worker imports the Anthropic SDK for Car Genius. There is no package.json in the
+# repository (see .gitignore), so the one runtime dependency is installed here, pinned, for
+# wrangler to bundle at deploy time.
+npm install --no-save --no-package-lock --no-audit --no-fund @anthropic-ai/sdk@0.128.0 >/dev/null 2>&1 \
+  || npm install --no-save --no-package-lock --no-audit --no-fund @anthropic-ai/sdk@0.128.0
+
+node --test workers/genius.test.mjs workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/gis.test.mjs workers/vin.test.mjs workers/recovery.test.mjs
 echo "build complete"

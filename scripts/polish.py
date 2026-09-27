@@ -45,6 +45,32 @@ RE_HREFLANG = re.compile(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">'
 
 ACCT_CHIP = '<div class="acct-host" data-account-chip></div>'
 
+# The page tools bar: AI Brief and Share at the top of every page's content. Server-rendered
+# so nothing shifts as the page settles; the AI Brief button stays hidden until genius.js
+# confirms Car Genius is switched on, so a build without the key shows no dead button.
+SPARK = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 2.5c.3 0 .5.2.6.5l1.2 3.7a4 4 0 0 0 '
+         '2.5 2.5l3.7 1.2c.6.2.6 1 0 1.2l-3.7 1.2a4 4 0 0 0-2.5 2.5l-1.2 3.7c-.2.6-1 .6-1.2 0L9.2 15.3a4 4 0 0 0-2.5-2.5L3 '
+         '11.6c-.6-.2-.6-1 0-1.2l3.7-1.2a4 4 0 0 0 2.5-2.5L10.4 3c.1-.3.3-.5.6-.5z"/></svg>')
+SHARE_ICON = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c.1'
+              '-.2.1-.5.1-.7s0-.5-.1-.7L16 7.1c.5.5 1.2.8 2 .8a2.9 2.9 0 1 0-2.9-2.9c0 .2 0 .5.1.7L8.1 9.9a2.9 2.9 0 1 0 0 '
+              '4.2l7.2 4.2c0 .2-.1.4-.1.6a2.8 2.8 0 1 0 2.8-2.8z"/></svg>')
+BRIEF_BTN = ('<button type="button" class="pt-btn pt-brief" data-genius-brief hidden>' + SPARK
+             + '<span>AI Brief</span></button>')
+SHARE_BTN = ('<button type="button" class="pt-btn pt-share" data-share-open>' + SHARE_ICON
+             + '<span data-share-label>Share</span></button>')
+# pages with nothing to brief: forms, account screens, the chat itself, the 404
+NO_BRIEF = re.compile(r"^/(?:[a-z]{2}/)?(?:account|login|garage|notify|ask|studio|search)/|^/404")
+
+
+def page_tools(url):
+    brief = "" if NO_BRIEF.search(url) or url.endswith("/404.html") else BRIEF_BTN
+    return '<div class="page-tools wrap" data-page-tools>' + brief + SHARE_BTN + "</div>"
+
+
+def url_of(path):
+    rel = "/" + os.path.relpath(path, "site").replace(os.sep, "/")
+    return rel[: -len("index.html")] if rel.endswith("/index.html") else rel
+
 def _social_urls():
     """data/social.json: only networks with a real profile URL are linked anywhere."""
     try:
@@ -186,12 +212,19 @@ def polish(path):
             s = s.replace("</div></footer>", SOCIAL_ROW + "</div></footer>", 1)
         else:
             s = s.replace("</footer>", SOCIAL_ROW + "</footer>", 1)
-    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js", "/assets/app.js"):
+    # 5b. AI Brief + Share at the top of the content, on every page with a <main>
+    if "data-page-tools" not in s and "<main" in s:
+        s = re.sub(r"(<main\b[^>]*>)", lambda m: m.group(1) + page_tools(url_of(path)), s, count=1)
+    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js", "/assets/app.js",
+                "/assets/genius.js"):
         if src not in s and "</body>" in s:
             s = s.replace("</body>", f'<script src="{src}" defer></script></body>', 1)
     # The phone layer (app.css) loads after site.css so its scoped rules win on phones.
     if "/assets/app.css" not in s and "/assets/site.css" in s:
         s = re.sub(r'(<link[^>]+/assets/site\.css[^>]*>)', r'\1<link rel="stylesheet" href="/assets/app.css">', s, count=1)
+    # Car Genius, the share sheet and the page tools bar
+    if "/assets/genius.css" not in s and "</head>" in s:
+        s = s.replace("</head>", '<link rel="stylesheet" href="/assets/genius.css"></head>', 1)
 
     # 6. structured data floor. Several generators emit none at all, which leaves a third of
     #    the site invisible to rich results and to the AI engines that read JSON-LD first.
@@ -234,7 +267,7 @@ def main():
     pages = glob.glob("site/**/*.html", recursive=True)
     n = sum(1 for p in pages if polish(p))
     print(f"POLISH OK: {n}/{len(pages)} pages normalised "
-          f"(icons, theme-colour, social cards, landmarks, account chip, follow row)")
+          f"(icons, theme-colour, social cards, landmarks, account chip, follow row, AI Brief + Share)")
     return 0
 
 

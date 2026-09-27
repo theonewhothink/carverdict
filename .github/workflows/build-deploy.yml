@@ -69,6 +69,7 @@ jobs:
           python scripts/build_problems.py
           python scripts/build_people.py --from-cache
           python scripts/build_social.py
+          python scripts/build_genius.py
           python scripts/localize.py
           python scripts/polish.py
 
@@ -94,7 +95,7 @@ jobs:
           PY
 
       - name: Calculator unit tests
-        run: node --test workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/vin.test.mjs
+        run: node --test workers/genius.test.mjs workers/calc.test.mjs workers/hub.test.mjs workers/oauth.test.mjs workers/vin.test.mjs
 
       # Publishing is NOT done here. Cloudflare Workers Builds is connected directly to this
       # repository (Worker "carsite"): on every push to main Cloudflare runs `bash build.sh`
