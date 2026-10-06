@@ -173,6 +173,9 @@ rel="noopener">Wikipedia</a>, used under CC BY-SA. Photograph via Wikimedia Comm
 
 
 def main():
+    if '--from-cache' in sys.argv:
+        print('LEGENDS: imported biographies withheld pending independent editorial review')
+        return
     # --harvest-only runs before gen_site.py (which wipes site/) purely to fill the cache,
     # so the home page knows whether /legends/ will exist. The page-writing pass runs after.
     harvest_only = "--harvest-only" in sys.argv
@@ -181,6 +184,9 @@ def main():
         from build_models import shell        # reuse the model-page chrome
 
     people, seen = [], set()
+    if "--from-cache" in sys.argv and not CACHE.exists():
+        print("LEGENDS: no reviewed cache; network harvesting is disabled in the publication build")
+        return
     if "--from-cache" in sys.argv and CACHE.exists():
         people = json.loads(CACHE.read_text())
     else:

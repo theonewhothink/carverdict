@@ -63,8 +63,8 @@ def main():
         if "class=\"model-story\"" in text:
             if "data-love=" not in text or "data-survey=" not in text:
                 issues.append("incomplete_account_engagement")
-            if "adsbygoogle.js" not in text:
-                issues.append("biography_missing_adsense")
+            if "adsbygoogle" in text:
+                issues.append("unreviewed_biography_requests_ads")
             # Check the reader-visible article copy, not HTML attributes such as
             # class="bio-card", which naturally contain an equals sign.
             story = re.search(r'<article class="model-story">(.*?)</article>', text, re.I | re.S)
@@ -87,9 +87,10 @@ def main():
         lm = re.search(r'<p class="sub"><b>([\d,]+)</b>', library)
         fm = re.search(r'The library — ([\d,]+) models from ([\d,]+) marques', follow)
         counts = [int(x.group(1).replace(",", "")) for x in (hm, lm, fm) if x]
-        if len(counts) != 3 or len(set(counts)) != 1:
+        expected = int(bool(lm)) + int(bool(fm)) if 'data-buying-product' in home else 3
+        if len(counts) != expected or len(set(counts)) != 1:
             failures.append(("catalogue counts", f"home/library/follow={counts}"))
-        if "typical price" not in home or "/yr fuel + maintenance" not in home:
+        if 'data-buying-product' not in home and ("typical price" not in home or "/yr fuel + maintenance" not in home):
             failures.append(("site/index.html", "homepage_cards_missing_price_or_running_cost"))
         search = open("site/search/index.html", encoding="utf-8").read()
         if "typical price" not in search or "/yr insurance" not in search or "/yr depreciation" not in search:

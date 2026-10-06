@@ -157,13 +157,8 @@ MAX_MODEL_PAGES = 6500
 
 
 def _load_specs():
-    """Per-model technical facts from harvest_specs.py. Optional: if the harvest has not
-    run, pages render exactly as before instead of failing."""
-    p = ROOT / "data" / "car_specs.json"
-    try:
-        return json.loads(p.read_text()) if p.exists() else {}
-    except Exception:
-        return {}
+    """Imported encyclopedia facts are retained privately, never production evidence."""
+    return {}
 
 
 SPECS = _load_specs()
@@ -171,12 +166,8 @@ FLAT = {}
 
 
 def _load_wiki():
-    """Wikipedia infobox specifications — engine, power, production, weight, transmission."""
-    p = ROOT / "data" / "wiki_specs.json"
-    try:
-        return json.loads(p.read_text()) if p.exists() else {}
-    except Exception:
-        return {}
+    """Imported encyclopedia facts are retained privately, never production evidence."""
+    return {}
 
 
 WIKI = _load_wiki()
@@ -432,13 +423,8 @@ def _clean_spec_value(v):
 
 
 def _load_wiki():
-    """Wikipedia infobox specifications — engine, power, production, weight, transmission.
-    Richer than Wikidata's structured claims, which is why it takes precedence below."""
-    p = ROOT / "data" / "wiki_specs.json"
-    try:
-        return json.loads(p.read_text()) if p.exists() else {}
-    except Exception:
-        return {}
+    """Imported encyclopedia facts are retained privately, never production evidence."""
+    return {}
 
 
 WIKI = _load_wiki()
@@ -883,8 +869,10 @@ def main():
             _own = ownership_summary(b, m["n"])
         except Exception:
             _own = None
-        bio_html, bio_words, bio_facts = build_bio(
-            b, m, sp, wk, sib, riv, fe, len(brands[b]), _era_year(m), bool(sp.get("commons")), own=_own)
+        bio_html = ('<h2>Reference entry</h2><p>This legacy catalogue entry has no independently reviewed ownership story. '
+                    'Imported encyclopedia prose and specifications are no longer published here. '
+                    'Use the linked public safety records where available; they do not certify an individual car.</p>')
+        bio_words, bio_facts = 0, 0
         # Index gate. A library page earns a place in Google's index only when it carries
         # something a reader cannot get from the marque list: a photograph AND at least two
         # sourced facts (or a Wikipedia summary). Everything else stays online for readers and

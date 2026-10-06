@@ -10,6 +10,11 @@ bash scripts/build_inner.sh 2>&1 | tee "$LOG"
 BUILD_CODE=${PIPESTATUS[0]}
 
 DEPLOY_CODE=-1
+if [ "$BUILD_CODE" -eq 0 ] && [ "${MOTORJURY_PREVIEW:-0}" = "1" ]; then
+  echo "Preview build verified; production deployment skipped."
+  exit 0
+fi
+
 if [ "$BUILD_CODE" -eq 0 ]; then
   echo "== in-build production deploy ==" | tee -a "$LOG"
   if npx wrangler deploy 2>&1 | tee -a "$LOG"; then

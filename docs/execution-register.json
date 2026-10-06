@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-06",
+  "production_modified": false,
+  "stage": "reviewable pilot; real buyer validation pending",
+  "baseline_commit": "d507e35",
+  "implemented": [
+    "primary-source RAV4 guide",
+    "gasoline-versus-Hybrid decision guide",
+    "private save/export checklist",
+    "user-input ownership calculator",
+    "separate source-service model matching",
+    "failed lookup states and preserved prior evidence",
+    "predictive ratings suspended",
+    "explicit ads deny-by-default policy",
+    "reviewed-path indexing policy",
+    "Wikipedia extract/spec harvesting stopped",
+    "draft migration and release gates"
+  ],
+  "pending": [
+    "ten real buyers",
+    "qualified mechanic review",
+    "Search Console and analytics access",
+    "public catalogue and image-permission review",
+    "production Worker preview and consent validation",
+    "measured acquisition and advertising economics"
+  ],
+  "metrics": {
+    "buyer_tests": 0,
+    "mechanic_reviews": 0,
+    "ad_revenue": null,
+    "rpm": null,
+    "organic_visits": null
+  },
+  "constraints": [
+    "GSC connector subscription unavailable",
+    "remaining legacy catalogue metadata originated in Wikidata",
+    "legacy class cost estimates remain outside the new buyer tool",
+    "sitemap baseline is not a complete historical URL inventory"
+  ]
+}

@@ -24,7 +24,8 @@ export function severeRecall(row) {
 async function getJson(url, fetcher) {
   const response = await fetcher(url, {
     headers: { Accept: "application/json", "User-Agent": "MotorJury/1.0 (motorjury.com)" },
-    cf: { cacheEverything: true, cacheTtl: 86400 },
+    // VIN requests are private inputs, not reusable public cache keys.
+    ...(url.includes("DecodeVin") ? { cache: "no-store" } : { cf: { cacheEverything: true, cacheTtl: 86400 } }),
   });
   if (!response.ok) {
     const error = new Error("The NHTSA service is temporarily unavailable. Please try again.");
@@ -60,10 +61,29 @@ export async function inspectVin(value, fetcher = fetch) {
     throw error;
   }
 
-  const params = new URLSearchParams({ make, model, modelYear: year });
-  const recallData = await getJson(`https://api.nhtsa.gov/recalls/recallsByVehicle?${params}`, fetcher);
-  const rawRecalls = recallData.results || [];
-  const recalls = rawRecalls.slice(0, 30).map((row) => ({
+  const menu = await getJson(`https://api.nhtsa.gov/products/vehicle/models?${new URLSearchParams({ make, modelYear: year, issueType: "r" })}`, fetcher);
+  const key = (v) => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!Array.isArray(menu.results)) throw new Error("The recall model list could not be verified. Check directly with NHTSA.");
+  let aliases = [...new Set(menu.results.filter((r) => key(r.model) === key(model)).map((r) => r.model))];
+  if (!aliases.length) throw new Error("The decoded model could not be matched to the recall service. This is not a zero-recall result; check directly with NHTSA.");
+  // Verified service mismatch: the menu lists RX 350 but recalls use RX350.
+  if (key(make) === "LEXUS" && key(model) === "RX350") aliases = ["RX350"];
+  const unique = new Map();
+  const sourceUrls = [];
+  for (const alias of [...new Set(aliases)]) {
+    const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?${new URLSearchParams({ make, model: alias, modelYear: year })}`;
+    sourceUrls.push(url);
+    const data = await getJson(url, fetcher);
+    if (!Array.isArray(data.results) || Number(data.count ?? data.Count ?? data.results.length) !== data.results.length) {
+      throw new Error("The recall response was incomplete. Verify directly with NHTSA before buying.");
+    }
+    for (const row of data.results) {
+      if (!row.NHTSACampaignNumber) throw new Error("A recall record could not be verified. Check directly with NHTSA.");
+      unique.set(row.NHTSACampaignNumber, row);
+    }
+  }
+  const rawRecalls = [...unique.values()];
+  const recalls = rawRecalls.map((row) => ({
     campaign: first(row.NHTSACampaignNumber),
     component: first(row.Component),
     summary: first(row.Summary),
@@ -85,10 +105,12 @@ export async function inspectVin(value, fetcher = fetch) {
       drive: first(d.DriveType),
       plant_country: first(d.PlantCountry),
     },
-    recall_count: Number(recallData.Count) || rawRecalls.length,
+    recall_count: rawRecalls.length,
     severe_count: rawRecalls.filter((row) => severeRecall(row)).length,
     recalls,
     checked_at: new Date().toISOString(),
     source: "U.S. National Highway Traffic Safety Administration (NHTSA)",
+    source_urls: sourceUrls,
+    scope: "Model-level campaigns. This does not establish VIN applicability or whether a remedy is complete.",
   };
 }

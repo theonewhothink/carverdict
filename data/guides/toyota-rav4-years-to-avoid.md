@@ -1,31 +1,41 @@
-title: Used Toyota RAV4: the 2019 and 2020 problem, and the years around it
+title: Before buying a 2019–2020 RAV4: the checks that matter
 slug: toyota-rav4-years-to-avoid
 date: 2026-09-01
-description: The best-selling non-truck in America had five quiet years and then a redesign that tripled its complaint count. Here is what went wrong and when it stopped.
-models: toyota/rav4, toyota/rav4-hybrid, toyota/rav4-prime
+updated: 2026-10-06
+source_review: 2026-10-06
+description: Confirm the powertrain, check the actual VIN and ask for the right repair records. A practical US-market viewing brief, without an automatic reliability verdict.
+models: toyota/rav4
 ---
-The fourth-generation RAV4 (2013 to 2018) is the kind of car this site was built to find: between 197 and 330 owner complaints a year, scores between 76 and 88, no component that dominates. The fifth generation launched for 2019, and the 2019 car has 873 complaints and a score of 35. The 2020 car has 628 and a score of 32. That is the whole story of the used RAV4, and a buyer who knows it can save the difference between a 2018 and a 2019 in repair risk alone.
+Start with the actual car, not a blanket verdict about its model year. For a 2019–2020 US RAV4, establish the powertrain, check the VIN and ask for evidence of applicable remedies before making a deposit. Then compare the asking price and condition with your alternatives.
 
-## What went wrong in 2019
+## The engine-block campaign
 
-Three things, and they were different in kind. The first was the transmission: the fifth generation introduced an eight-speed automatic with the new 2.5-litre direct-injection engine, and owners reported hesitation and lurching at low speed, a delay when pulling out into traffic, and a shudder in the lower gears. Toyota addressed it with software updates through 2020. The second was the fuel tank: owners found that the tank could not be filled to its stated 14.5-gallon capacity, cutting real range by 50 to 100 miles; Toyota acknowledged the problem and, after a class action, offered a repair on affected cars. The third was the engine block: a proportion of 2019 and early 2020 2.5-litre engines had porous castings that leaked coolant, in some cases losing it entirely. Toyota extended the warranty on the engine for those cars to ten years and unlimited mileage and replaced engines under it.
+Toyota campaign 20V-064 covers certain gasoline and Hybrid vehicles. Its remedy notice describes an engine-block defect, coolant leakage and possible serious engine damage. The dealer must establish applicability and remedy status for the actual VIN. An old invoice or an empty model lookup does not settle that question.
 
-The 2020 car carries the same problems at a slightly lower rate. By 2021 the transmission software had matured and the engine casting problem had been resolved in production; the 2021 car scores 54 on 382 complaints, and the 2023 car 71.
+[Read Toyota's remedy notice](https://static.nhtsa.gov/odi/rcl/2020/RCMN-20V064-6563.pdf).
 
-{{years:toyota/rav4}}
+## A different question for the Hybrid
 
-## The Hybrid and the Prime
+Program 20TE04 addresses a refuelling or fuel-gauge condition on certain RAV4 Hybrid vehicles. It is a customer support program. Ask the dealer whether this vehicle qualifies now and what work has already been done; the model year alone does not promise a free repair.
 
-The RAV4 Hybrid, offered throughout the fifth generation, pairs the same 2.5-litre engine with Toyota's electric continuously variable transmission rather than the eight-speed. It does not have the transmission complaints, and the engine-block problem affected it far less. Its record on this site is separate and better than the petrol car's in every year, and the price premium over a petrol car of the same year is usually smaller than the reliability gap justifies. The RAV4 Prime plug-in hybrid from 2021 has a small record with no distinct pattern.
+[Read the program document](https://static.nhtsa.gov/odi/tsbs/2021/MC-10190478-9999.pdf).
 
-## The fourth generation
+## Questions worth sending before a viewing
 
-If you want the best used RAV4 regardless of age, it is a 2015 to 2018 petrol or Hybrid. The 2013 car has a moderate count for an early year of a generation and is fine; the 2016 facelift brought Toyota Safety Sense and changed nothing mechanically. Known faults are minor: a torque-converter shudder on some 2013 to 2015 six-speed cars addressed by a software update, and a rear-hatch strut that fails. There is nothing on these cars that the record flags as a recurring failure.
+- Does the VIN match the model year and powertrain in the advert?
+- Can a Toyota dealer confirm applicable campaigns and recorded remedies?
+- Has there been coolant loss, overheating or engine work? Can I see the invoices?
+- Will the seller allow an independent inspection of the actual car?
+- What is the out-the-door price, and what does my insurer quote for it?
 
-## What to check on a 2019 to 2020 car
+Ask a qualified inspector to investigate mechanical concerns. A seller's explanation is something to verify, rather than a diagnosis. Do not assume that every car in a campaign needed the same repair or that a repaired car has no other issues.
 
-Ask for the engine warranty status and the coolant history — a car that has had the engine replaced under the extended warranty is a good buy, and a car that has never lost coolant is probably fine, but a car with an unexplained coolant top-up is the one to walk away from. Drive it in traffic and from a rolling stop for the transmission hesitation. Fill the tank and see whether it takes what the gauge says it should.
+## Gasoline or Hybrid: compare the candidates
 
-## Summary
+Put the two actual cars in the same ownership scenario. Use the same mileage, local fuel price and holding period, then enter each purchase quote and exact fuel-economy figure. Keep unknown insurance, maintenance or resale values visible. Fuel savings alone do not establish an ownership-cost winner.
 
-Buy: 2015 to 2018 petrol or Hybrid, and 2021 onward, Hybrid preferred. Avoid: 2019 and 2020 petrol unless the engine and transmission history is documented.
+[Build a buying brief with the checklist and budget](/buying-brief/). You can save it on your browser, download the checklist or print it for the viewing. [Read the comparison](/guides/rav4-gasoline-vs-hybrid/).
+
+## What this guide does not establish
+
+This is desk research. No vehicle was driven or inspected, and no specialist endorsement is claimed. The linked documents support the issue descriptions; VIN applicability, present eligibility and the car's condition still need individual checks. Complaint totals cannot tell you the probability that your candidate will fail.

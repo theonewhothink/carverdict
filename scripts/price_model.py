@@ -128,27 +128,7 @@ _WIKI = None
 
 
 def wiki_msrp(make, model):
-    """Real MSRP where Wikipedia's infobox carries one. Optional: the harvest writes
-    data/wiki_specs.json during the build and the file simply may not exist."""
-    global _WIKI
-    if _WIKI is None:
-        f = ROOT / "data" / "wiki_specs.json"
-        try:
-            raw = json.loads(f.read_text())
-        except Exception:
-            raw = {}
-        _WIKI = {}
-        for k, v in (raw.items() if isinstance(raw, dict) else []):
-            if isinstance(v, dict) and v.get("msrp"):
-                _WIKI[str(k).strip().lower()] = v["msrp"]
-    for key in (f"{make} {model}".strip().lower(), (model or "").strip().lower()):
-        val = _WIKI.get(key)
-        if not val:
-            continue
-        nums = [int(x.replace(",", "")) for x in re.findall(r"\$\s?([\d,]{4,9})", str(val))]
-        nums = [n for n in nums if 3000 <= n <= 3000000]
-        if nums:
-            return sum(nums) / len(nums)
+    """Imported encyclopedia facts are retained privately, never production evidence."""
     return None
 
 

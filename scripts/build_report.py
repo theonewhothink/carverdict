@@ -59,6 +59,18 @@ def main():
     con.row_factory = sqlite3.Row
     rows = gen_site.rows_all(con)
     scored = [r for r in rows if gen_site.gate(r) and r["score"] is not None]
+    if not scored:
+        from build_buying_brief import write as write_safe
+        import csv
+        pilot = json.loads((ROOT / 'data' / 'pilot_records.json').read_text())['records']
+        with (SITE / CSV_URL.lstrip('/')).open('w') as f:
+            writer = csv.writer(f); writer.writerow(['make','model','year','complaint_reports','distinct_campaigns','recall_check_date','scope'])
+            for r in pilot:
+                writer.writerow([r['make'],r['model'],r['year'],r['checks']['complaints']['count'],r['checks']['recalls']['count'],r['checks']['recalls']['checked_at'],r['scope']])
+        write_safe(URL, 'Safety-record matching audit', '<section class="hero"><h1>A model spelling can hide a recall.</h1></section><article class="card"><p>The 2020 Lexus RX 350 case exposed a service mismatch: the complaint endpoint uses RX 350, while the recall endpoint returns the fuel-pump campaign under RX350. The corrected adapter matches each service separately and records its response URLs.</p><p>Three model-year checks have now been independently refreshed. This is a small matching audit, not a representative reliability study. The earlier trap-year rankings are suspended because complaint totals lack comparable sales and usage denominators.</p><p>Failed or unmatched lookups are unavailable, not zero. Model campaigns still require VIN-specific applicability and remedy checks.</p><p><a href="'+CSV_URL+'">Download the three checked records</a> · <a href="/cars/lexus/rx-350/2020/">Inspect the Lexus record</a> · <a href="/methodology/">Read the method</a></p></article>')
+        print('REPORT: unsupported rankings replaced with a limited source-matching audit')
+        con.close()
+        return
     strong = [r for r in scored if (r["confidence"] or "") in ("high", "medium")]
     n_complaints = sum(r["complaint_count"] or 0 for r in rows)
     n_recalls = con.execute("SELECT COUNT(DISTINCT campaign) FROM recalls").fetchone()[0]

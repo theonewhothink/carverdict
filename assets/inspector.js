@@ -37,16 +37,16 @@
   function render(data) {
     var v = data.vehicle;
     var name = [v.year, v.make, v.model, v.trim].filter(Boolean).join(' ');
-    var q = encodeURIComponent([v.year, v.make, v.model].join(' '));
     var nhtsa = 'https://www.nhtsa.gov/recalls?vin=' + encodeURIComponent(data.vin);
     var status = data.recall_count
       ? '<div class="vin-status bad"><b>' + data.recall_count + ' recall campaign' + (data.recall_count === 1 ? '' : 's') + ' found</b>' +
         '<span>' + (data.severe_count ? data.severe_count + ' includes a safety-critical signal. ' : '') + 'Ask a dealer to verify completion by VIN.</span></div>'
-      : '<div class="vin-status good"><b>No campaigns returned for this year, make and model</b>' +
+      : '<div class="vin-status"><b>No campaigns returned for the matched model record</b>' +
         '<span>This is not proof that every VIN-specific repair is complete. Verify on NHTSA before buying.</span></div>';
     out.innerHTML = '<section class="card vin-report"><p class="vin-eyebrow">Decoded by NHTSA</p>' +
       '<h2>' + esc(name) + '</h2>' + facts(v) + status +
-      '<div class="hh-cta"><a class="btn" href="/search/?q=' + q + '">See MotorJury costs & verdicts</a>' +
+      '<p class="src-note">These are model-level campaigns. VIN applicability and repair completion still need an official check.</p>' +
+      '<div class="hh-cta"><a class="btn" href="/buying-brief/">Prepare a buying brief</a>' +
       '<a class="btn ghost" href="' + nhtsa + '" target="_blank" rel="noopener">Verify on NHTSA</a></div></section>' +
       (data.recalls.length ? '<section class="card"><h2>Recall details</h2><div class="vin-recalls">' +
         data.recalls.map(recall).join('') + '</div>' +
