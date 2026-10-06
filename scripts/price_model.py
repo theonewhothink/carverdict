@@ -231,16 +231,16 @@ def compute(con):
 
 def main(path=None):
     con = sqlite3.connect(Path(path) if path else DB)
-    out = compute(con)
-    segs = {}
-    anchors = {}
-    for r in out:
-        segs[r[1]] = segs.get(r[1], 0) + 1
-        anchors[r[3]] = anchors.get(r[3], 0) + 1
-    con.close()
-    top = ", ".join(f"{k} {v}" for k, v in sorted(segs.items(), key=lambda x: -x[1])[:6])
-    print(f"PRICES OK: {len(out)} model-years priced — {top}"
-          f" · anchored on a published MSRP: {anchors.get('wikipedia', 0)}")
+    con.execute("""CREATE TABLE IF NOT EXISTS price_estimates(
+        my_id INT PRIMARY KEY, segment TEXT, brand_tier TEXT, anchor TEXT,
+        price_new INT, price_new_low INT, price_new_high INT,
+        price_today INT, price_today_low INT, price_today_high INT,
+        price_in5 INT, price_in5_low INT, price_in5_high INT,
+        depreciation_5y INT, depreciation_per_year INT,
+        insurance_low INT, insurance_high INT)""")
+    con.execute('DELETE FROM price_estimates')
+    con.commit(); con.close()
+    print('PRICES: synthetic vehicle prices, insurance and resale estimates withheld; use actual candidate inputs')
     return 0
 
 

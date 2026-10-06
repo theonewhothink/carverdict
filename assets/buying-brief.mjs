@@ -21,8 +21,8 @@ if (form) {
     const { d } = read();
     document.querySelector('#hybrid-check').hidden = d.powertrain === 'gasoline';
     document.querySelectorAll('[data-hybrid-item]').forEach((e) => { e.hidden = d.powertrain === 'gasoline'; });
-    document.querySelector('#version-note').textContent = d.powertrain === 'unknown'
-      ? 'Version not confirmed. Ask for the exact powertrain before using the version-specific checks.'
+    document.querySelector('#version-note').textContent = !d.year || d.powertrain === 'unknown'
+      ? 'Version not confirmed. Ask for the exact model year and powertrain before using version-specific checks.'
       : `Selected: ${d.year} RAV4 ${d.powertrain}. Confirm this matches the actual car. Model records do not clear its VIN.`;
     document.querySelectorAll('[data-record-year]').forEach((e) => { e.hidden = e.dataset.recordYear !== d.year; });
   }
@@ -61,7 +61,7 @@ if (form) {
   document.querySelector('#export-brief').addEventListener('click', () => {
     const { d } = read();
     const lines = [...form.querySelectorAll('[data-check]')].filter((x) => !x.closest('label').hidden).map((x) => `${x.checked ? '[x]' : '[ ]'} ${x.closest('label').textContent.trim()}`);
-    const text = `MotorJury viewing checklist — ${d.year} RAV4, ${d.powertrain}\nModel-level research; not VIN clearance or a mechanical inspection.\n\n${lines.join('\n')}\n\nSources and budget: https://motorjury.com/buying-brief/\n`;
+    const text = `MotorJury viewing checklist — ${d.year || 'year not confirmed'} RAV4, ${d.powertrain}\nModel-level research; not VIN clearance or a mechanical inspection.\n\n${lines.join('\n')}\n\nSources and budget: https://motorjury.com/buying-brief/\n`;
     const href = URL.createObjectURL(new Blob([text],{ type:'text/plain;charset=utf-8' }));
     const link = document.createElement('a'); link.href=href; link.download='motorjury-viewing-checklist.txt'; link.click();
     status.textContent = 'Checklist download requested. Check your browser downloads; your budget is excluded.';
@@ -76,7 +76,7 @@ if (form) {
   });
   document.querySelector('#clear-brief').addEventListener('click', () => {
     try { localStorage.removeItem('mj-buying-brief-v1'); } catch {}
-    form.reset(); output.hidden=true; update(); status.textContent='Saved inputs and checklist cleared from this browser.';
+    form.reset(); output.hidden=true; update(); form.dispatchEvent(new Event('change',{bubbles:true})); status.textContent='Saved inputs and checklist cleared from this browser.';
   });
   try {
     const saved=JSON.parse(localStorage.getItem('mj-buying-brief-v1') || 'null');

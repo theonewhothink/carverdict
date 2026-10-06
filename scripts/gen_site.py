@@ -2906,7 +2906,7 @@ operated by its editor, Adir Trabelsi, from Porto, Portugal. Questions and reque
 <h2>The short version</h2>
 <p>You can read every page on this site without an account and without telling us who you are.
 We use analytics to count visits, a consent banner to ask European visitors before any advertising
-cookie is set, and Google AdSense to show advertising. If you create an account we keep the
+cookie is set. Advertising is paused during the current rebuild; Google AdSense may be used after review and approval. If you create an account we keep the
 minimum needed to run it, and you can delete it by writing to us. We do not sell personal data,
 we do not build marketing profiles, and we never share account data with advertisers.</p>
 
@@ -2921,6 +2921,8 @@ local storage, not on our servers.</p>
 <p><b>The VIN checker.</b> A VIN you type is sent to the public NHTSA (United States National Highway
 Traffic Safety Administration) decoder and recall services to identify the vehicle. We do not store
 the VIN, and a VIN is not linked to you.</p>
+<p><b>Buying brief.</b> Saving a brief stores its inputs and checklist on this browser, not in a MotorJury account. Anyone using the same browser may see them. Clear saved work removes that saved brief. Shared links contain only the selected year and powertrain; exported checklists exclude budget inputs.</p>
+<p><b>Buying questions and AI.</b> Guided mode answers from reviewed material in your browser. If the interface reports AI available, sending a question transmits its text, selected year and powertrain, recent conversation and relevant public reference material to MotorJury's service and Anthropic to produce an answer. Budget fields and saved checklist items are excluded. Do not enter VINs, contact details or private documents: pattern checks cannot detect every private detail. Conversation history is kept in page memory and clears when you reload or clear the conversation; the provider processes requests under its own applicable terms. MotorJury's usage logs record model and token counts, not question text. Technical logs and IP-based request limits still apply.</p>
 <p><b>Accounts.</b> If you create an account we store your email address, a display name, a password
 hash (PBKDF2-SHA256; we cannot read your password), the cars you have loved or saved, your site
 preferences and any owner-survey answers you submit. If you sign in with Google we receive your
@@ -2932,7 +2934,7 @@ only once five owners have answered, and any written comment you submit is shown
 updates. Every message carries an unsubscribe link, and we will remove the address on request.</p>
 
 <h2>Advertising and cookies</h2>
-<p>Advertising on this site is served by Google AdSense. Third-party vendors, including Google, use
+<p>Advertising is currently paused. When advertising is enabled, it is served by Google AdSense. Third-party vendors, including Google, use
 cookies to serve ads based on a user's prior visits to this website or to other websites. Google's
 use of advertising cookies enables it and its partners to serve ads to you based on your visit to
 this site and other sites on the internet. You may opt out of personalised advertising by visiting

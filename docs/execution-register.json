@@ -14,15 +14,21 @@
     "explicit ads deny-by-default policy",
     "reviewed-path indexing policy",
     "Wikipedia extract/spec harvesting stopped",
-    "draft migration and release gates"
+    "draft migration and release gates",
+    "question-led guided buying experience",
+    "bounded streaming AI integration with reviewed fallback",
+    "synthetic price insurance and resale estimates withdrawn",
+    "AI privacy disclosure and private-input rejection",
+    "local Worker routing and request guards verified"
   ],
   "pending": [
     "ten real buyers",
     "qualified mechanic review",
     "Search Console and analytics access",
     "public catalogue and image-permission review",
-    "production Worker preview and consent validation",
-    "measured acquisition and advertising economics"
+    "deployed Worker, live AI answer quality and consent validation",
+    "measured acquisition and advertising economics",
+    "completed checklist download and operating-system printing verification"
   ],
   "metrics": {
     "buyer_tests": 0,
@@ -34,7 +40,7 @@
   "constraints": [
     "GSC connector subscription unavailable",
     "remaining legacy catalogue metadata originated in Wikidata",
-    "legacy class cost estimates remain outside the new buyer tool",
-    "sitemap baseline is not a complete historical URL inventory"
+    "sitemap baseline is not a complete historical URL inventory",
+    "live AI service reports disabled; secure provider activation required"
   ]
 }

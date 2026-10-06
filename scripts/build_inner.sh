@@ -62,5 +62,5 @@ PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" -c "from build_record_page
 "$PY" scripts/qa_site.py
 "$PY" scripts/qa_publication.py
 "$PY" -m unittest discover -s tests -v
-node --test workers/*.test.mjs assets/buying-budget.test.mjs
+node --test workers/*.test.mjs assets/buying-*.test.mjs
  echo "Verified site build complete; no deployment was performed."

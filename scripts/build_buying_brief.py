@@ -32,6 +32,10 @@ def shell(title, path, body, script=""):
 <p><a href="/methodology/">How the evidence works</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/contact/">Send a correction</a> · <a href="/privacy/">Privacy</a> · <a href="/disclosure/">Advertising</a></p></div></footer>{script}</body></html>'''
 
 
+def guide_widget():
+    return """<section class="guide-workspace" data-buying-guide aria-label="Guided buying conversation"><div class="guide-main"><div class="guide-head"><h2>Start with your question.</h2><span class="guide-mode" data-guide-mode>Guided mode · from reviewed material</span></div><p class="note">2019–2020 US RAV4. Tell us the year, powertrain and what you need to decide.</p><div class="guide-prompts"><button type="button" data-guide-prompt="I'm viewing a 2020 RAV4 Hybrid. What should I ask?">Prepare a viewing</button><button type="button" data-guide-prompt="Is a 2020 RAV4 recall list enough to say it is safe?">Understand a recall</button><button type="button" data-guide-prompt="How do I compare the budget for a 2020 RAV4 gasoline and Hybrid?">Compare my costs</button></div><div data-guide-thread role="log" aria-label="Buying conversation" aria-live="polite" aria-relevant="additions text"></div><form><label for="guide-question">Your car question</label><textarea class="guide-input" id="guide-question" maxlength="600" placeholder="I'm considering a 2020 RAV4 Hybrid. What should I check before a deposit?" required></textarea><div class="guide-controls"><button type="submit" data-guide-send>Help me prepare</button><button type="button" class="guide-clear" data-guide-clear>Clear conversation</button></div></form><p class="note">Guided answers use reviewed material. When AI is available, your question and selected year/powertrain go to our AI provider. Budget inputs and saved checklist items are excluded. Do not enter a VIN, contact details or private documents.</p></div><aside class="guide-side"><span class="guide-source-label">Your next useful output</span><h3>A brief for the actual viewing</h3><p data-guide-context>Year not confirmed · Powertrain not confirmed · US RAV4</p><ol class="guide-progress"><li>Match the exact version</li><li>Check the documented concern</li><li>Request the right evidence</li><li>Take a checklist and a budget</li></ol><p class="note">A helpful answer shows its sources and leaves room for what is still unknown.</p><a href="/methodology/">Inspect the method</a></aside></section>"""
+
+
 def write(path, title, body, script=""):
     p = SITE / path.strip("/") / "index.html"
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -49,7 +53,7 @@ def sources():
 
 def main():
     records = json.loads((ROOT / "data" / "pilot_records.json").read_text())["records"]
-    for name in ("buying-brief.css", "buying-brief.mjs", "buying-budget.mjs"):
+    for name in ("buying-brief.css", "buying-brief.mjs", "buying-budget.mjs", "buying-guide-core.mjs", "buying-guide.mjs"):
         (SITE / "assets").mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / "assets" / name, SITE / "assets" / name)
     budget = (ROOT / 'assets' / 'buying-budget.mjs').read_text()
@@ -58,6 +62,13 @@ def main():
     script = (ROOT / 'assets' / 'buying-brief.mjs').read_text().replace('./buying-budget.mjs','./'+budget_name)
     script_name = 'buying-brief.' + hashlib.sha256(script.encode()).hexdigest()[:10] + '.mjs'
     (SITE / 'assets' / script_name).write_text(script)
+    core = (ROOT / 'assets' / 'buying-guide-core.mjs').read_text()
+    core_name = 'buying-guide-core.' + hashlib.sha256(core.encode()).hexdigest()[:10] + '.mjs'
+    (SITE / 'assets' / core_name).write_text(core)
+    guide = (ROOT / 'assets' / 'buying-guide.mjs').read_text().replace('./buying-guide-core.mjs', './'+core_name)
+    guide_name = 'buying-guide.' + hashlib.sha256(guide.encode()).hexdigest()[:10] + '.mjs'
+    (SITE / 'assets' / guide_name).write_text(guide)
+    guide_script = f'<script type="module" src="/assets/{guide_name}"></script>'
     evidence = []
     for r in records:
         if r["make"] != "TOYOTA" or r["model"] != "RAV4":
@@ -91,10 +102,10 @@ def main():
         inputs = "".join(f'<label>{label2}<input type="number" name="{prefix}_{key}" min="0" max="2000000" step="any" placeholder="{placeholder}"></label>' for key, label2, placeholder in fields)
         fieldsets.append(f'<fieldset><legend>{label}</legend>{inputs}</fieldset>')
     body = f'''<section class="hero"><p class="eyebrow">The first MotorJury buying brief</p>
-<h1>Go to the viewing with better questions.</h1><p class="lede">Build a brief for a 2019–2020 US Toyota RAV4. Check the right version, take a useful checklist, and compare a gasoline car with a Hybrid using your own budget.</p>
+<h1>A question in. A useful buying brief out.</h1><p class="lede">Build a brief for a 2019–2020 US Toyota RAV4. Check the right version, take a useful checklist, and compare a gasoline car with a Hybrid using your own budget.</p>
 <span class="pill">Free · no account · no automatic buying verdict</span></section>
-<form id="brief-form"><section class="card"><p class="step">1 · Identify the candidate</p><h2>Which RAV4 are you considering?</h2>
-<div class="grid"><label>Model year<select name="year"><option>2019</option><option>2020</option></select></label>
+{guide_widget()}<form id="brief-form"><section class="card" id="identify"><p class="step">1 · Identify the candidate</p><h2>Which RAV4 are you considering?</h2>
+<div class="grid"><label>Model year<select name="year"><option value="">Not confirmed</option><option>2019</option><option>2020</option></select></label>
 <label>Powertrain<select name="powertrain"><option value="unknown">Not confirmed yet</option><option value="gasoline">Gasoline</option><option value="hybrid">Hybrid</option></select></label></div>
 <p id="version-note" class="callout">Confirm the powertrain before using version-specific checks.</p>
 <p>This brief covers these model years and the US market. It does not cover the plug-in RAV4 Prime. More models will follow after reader testing.</p></section>
@@ -104,9 +115,9 @@ def main():
 <div id="hybrid-check"><h3>For a Hybrid: ask about refuelling</h3><p>Toyota program 20TE04 addresses a fuel-gauge or refuelling condition on certain RAV4 Hybrid vehicles. It is a customer support program, not the same thing as a safety recall. Ask the dealer to check the VIN, symptoms, previous work and current eligibility; do not assume a free repair from the model year.</p><p><a href="{TANK}">Read the program document</a>.</p></div>
 <details><summary>What the matched public record can establish</summary>{''.join(evidence)}</details>
 <p><a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">Check the actual VIN on NHTSA</a> · <a href="https://www.toyota.com/recall" target="_blank" rel="noopener">Check with Toyota</a></p></section>
-<section class="card"><p class="step">3 · Take this to the seller</p><h2>Your viewing checklist</h2>{checklist}
+<section class="card" id="checklist"><p class="step">3 · Take this to the seller</p><h2>Your viewing checklist</h2>{checklist}
 <p class="note">Checking a box records your progress. It does not certify that a car is safe. Mechanical diagnosis and high-voltage checks belong with a qualified professional.</p></section>
-<section class="card"><p class="step">4 · Work out your budget</p><h2>Does the Hybrid premium make sense for you?</h2>
+<section class="card" id="budget"><p class="step">4 · Work out your budget</p><h2>Does the Hybrid premium make sense for you?</h2>
 <p>Begin with mileage, fuel price and each car's exact fuel economy for a fuel comparison. Add the remaining figures for a cash-ownership scenario. Blank costs stay unknown; an explicit zero is your assumption.</p>
 {common}<div class="grid">{''.join(fieldsets)}</div><button type="submit">Calculate my scenarios</button>
 <p class="note">Cash purchase in USD. Ownership scenario = purchase minus assumed resale, plus your stated years of fuel, insurance, maintenance and repair reserves. Financing interest, parking and other personal costs are outside this scenario. A reserve is money set aside, not a claim that repairs will occur. No market price or failure probability is estimated.</p>
@@ -115,7 +126,7 @@ def main():
 <div class="actions"><button type="button" id="save-brief">Save on this browser</button><button type="button" class="secondary" id="export-brief">Download checklist</button>
 <button type="button" class="secondary" id="print-brief">Print / save PDF</button><button type="button" class="secondary" id="share-brief">Copy share link</button><button type="button" class="secondary" id="clear-brief">Clear saved work</button></div>
 <p id="brief-status" role="status"></p></section></form>{sources()}'''
-    write("/buying-brief/", "2019–2020 RAV4 buying brief", body, f'<script type="module" src="/assets/{script_name}"></script>')
+    write("/buying-brief/", "2019–2020 RAV4 buying brief", body, f'<script type="module" src="/assets/{script_name}"></script>'+guide_script)
     home = '''<section class="hero"><p class="eyebrow">Know what to check before you buy</p><h1>A used car is a decision.<br>Bring better evidence.</h1>
 <p class="lede">Find the documented issues, prepare questions for the seller, and budget with your own numbers. Leave with a brief you can take to the viewing.</p>
 <div class="actions"><a class="button" href="/buying-brief/">Build a RAV4 buying brief</a><a class="button secondary" href="/guides/toyota-rav4-years-to-avoid/">See how the research works</a></div>
@@ -123,7 +134,7 @@ def main():
 <div class="grid"><section class="card"><p class="step">A clear next step</p><h2>What should I ask before travelling to see it?</h2><p>Start with the exact version, VIN campaign check and documented repair history. Take a checklist rather than relying on a single reliability score.</p><a href="/buying-brief/">Prepare the viewing</a></section>
 <section class="card"><p class="step">Your numbers, visible assumptions</p><h2>Will a Hybrid cost less for me?</h2><p>Compare actual purchase prices and fuel use. Keep unknown costs visible and see when your assumptions change the answer.</p><a href="/guides/rav4-gasoline-vs-hybrid/">Compare the decisions</a></section></div>
 <section class="card"><h2>Evidence you can inspect</h2><p>Our first brief connects manufacturer campaign documents and matched US safety records to practical buying questions. Those records describe issues to investigate. They cannot establish an individual car's condition.</p><p><a href="/cars/">Public-record lookup</a> · <a href="/vin-check/">Decode a VIN</a> · <a href="/methodology/">Read the method</a></p></section>'''
-    write("/", "Know what to check before buying a used car", home)
+    write("/", "Know what to check before buying a used car", home.replace('<div class="grid">', guide_widget()+'<div class="grid">',1), guide_script)
     write('/about/', 'About MotorJury', '''<section class="hero"><h1>Useful questions before a used-car viewing.</h1><p class="lede">MotorJury is being rebuilt around documented checks and practical buying tools.</p></section><article class="card"><h2>What we currently offer</h2><p>The first complete buying brief covers 2019–2020 US RAV4 gasoline and Hybrid vehicles. It combines linked primary documents, a version-specific checklist and a budget using the reader's own assumptions. It does not establish an individual vehicle's condition.</p><h2>Who is accountable</h2><p>Adir Trabelsi is the publisher. This release contains AI-assisted desk research and generated public-record tables. No road test, owner interview, qualified-mechanic review or user research is claimed unless it actually took place and is described on the relevant page.</p><h2>What is being repaired</h2><p>Automatic reliability scores and buying verdicts are suspended. Imported biographies and unreviewed guides are withheld. Some older reference routes remain accessible while their facts, image permissions and usefulness are reviewed. They should not be read as reviewed buying recommendations.</p><p><a href="/methodology/">Inspect the evidence method</a> · <a href="/editorial-policy/">Read the editorial policy</a> · <a href="/contact/">Send a correction</a></p></article>''')
     write('/about/adir-trabelsi/', 'Publisher accountability', '''<section class="hero"><h1>Publisher accountability</h1></section><article class="card"><p>Adir Trabelsi is the publisher of MotorJury. Publication responsibility does not imply personal authorship, vehicle inspection or professional mechanical review of every page.</p><p>The current brief is described as assisted desk research. Named expert reviews and firsthand experience require actual work and a visible record.</p><a href="/about/">About the site</a> · <a href="/contact/">Contact the publisher</a></article>''')
     write("/guides/rav4-gasoline-vs-hybrid/", "Used RAV4 gasoline or Hybrid: compare the actual candidates", f'''<section class="hero"><p class="eyebrow">2019–2020 US RAV4 · decision guide</p><h1>The Hybrid premium needs your numbers.</h1><p class="lede">A badge cannot decide between two used cars with different prices, histories and condition.</p></section><article class="card">

@@ -93,11 +93,9 @@ def main():
         if 'data-buying-product' not in home and ("typical price" not in home or "/yr fuel + maintenance" not in home):
             failures.append(("site/index.html", "homepage_cards_missing_price_or_running_cost"))
         search = open("site/search/index.html", encoding="utf-8").read()
-        if "typical price" not in search or "/yr insurance" not in search or "/yr depreciation" not in search:
-            failures.append(("site/search/index.html", "search_cards_missing_ownership_costs"))
         libdata = json.load(open("site/assets/library-data.json", encoding="utf-8"))
-        if not any(m[4] for b in libdata.values() for m in b.get("m", []) if len(m) > 4):
-            failures.append(("site/assets/library-data.json", "library_cards_have_no_cost_summaries"))
+        if any(m[4] for b in libdata.values() for m in b.get("m", []) if len(m)>4):
+            failures.append(("library pricing", "unverified synthetic cost summaries remain"))
     except Exception as e:
         failures.append(("cross-page QA", str(e)))
 
