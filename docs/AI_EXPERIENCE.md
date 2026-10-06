@@ -1,6 +1,6 @@
 # Guided buying experience and AI activation
 
-The homepage and brief now start with a question, useful prompts and a visible path to a saved buying brief. Recognised questions produce reviewed, source-linked guidance without a provider or account. Unknown years, multiple candidates, other markets and the RAV4 Prime do not silently become supported versions. Applying an interpreted version to the checklist requires the reader to select the visible action.
+The homepage starts with a photo collection and car search. The buying brief starts with a question, useful task prompts and a visible path to a saved brief. Four expandable steps reduce the amount shown at once; persistent phone navigation opens the selected section. Task prompts use the selected year and powertrain, and ask for a version when it is unknown. Recognised questions produce reviewed, source-linked guidance without a provider or account. Unknown years, multiple candidates, other markets and the RAV4 Prime do not silently become supported versions. Applying an interpreted version to the checklist requires the reader to select the visible action.
 
 The interface labels the active mode. Guided responses are curated rules, not generated AI answers. If the same-site `/api/genius/status` reports enabled, follow-up questions can use the real streaming AI service. Answers link back to reviewed material. Errors and incomplete streams are replaced by the reviewed guide rather than left as authoritative partial advice.
 

@@ -46,7 +46,7 @@ if(panel){
   finally{if(requestGeneration===generation){busy=false;panel.querySelector('[data-guide-send]').disabled=false;}}
  }
  form.addEventListener('submit',e=>{e.preventDefault();submit(input.value.slice(0,600));});
- panel.querySelectorAll('[data-guide-prompt]').forEach(button=>button.addEventListener('click',()=>submit(button.dataset.guidePrompt)));
+ panel.querySelectorAll('[data-guide-prompt]').forEach(button=>button.addEventListener('click',()=>{const c=context();const candidate=(c.year?c.year+' ':'')+'US RAV4'+(c.powertrain==='unknown'?'':' '+c.powertrain);const topic=button.dataset.guidePrompt;submit(topic==='budget'?`How do I compare the budget for a ${candidate}?`:topic==='recall'?`Is a ${candidate} recall list enough to say it is safe?`:`I'm viewing a ${candidate}. What should I ask?`);}));
  panel.querySelector('[data-guide-clear]').addEventListener('click',()=>{generation++;controller?.abort();busy=false;panel.querySelector('[data-guide-send]').disabled=false;history=[];thread.replaceChildren();input.value='';mode.textContent=enabled?'AI available · questions go to our AI provider':'Guided mode · from reviewed material';});
  brief?.addEventListener('change',updateContext);updateContext();
  fetch('/api/genius/status').then(r=>r.ok?r.json():{enabled:false}).then(data=>{enabled=data.enabled===true;mode.textContent=enabled?'AI available · questions go to our AI provider':'Guided mode · AI is not enabled';}).catch(()=>{mode.textContent='Guided mode · AI is not enabled';});

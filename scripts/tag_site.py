@@ -13,6 +13,13 @@ def strip_measurement(text):
         'googletagmanager.com/gtag/', 'window.dataLayer', 'gtag("config"', "gtag('config'")) else m.group(0), text)
 
 
+def index_tags(text,url,policy,preview=False):
+    if preview or (policy.get('index_policy') != 'preserve_template_gates' and url not in policy.get('index_pages', [])):
+        text=re.sub(r'<meta\b[^>]*name=["\']robots["\'][^>]*>', '',text,flags=re.I)
+        text=text.replace('</head>', '<meta name="robots" content="noindex,follow"></head>', 1)
+    return text
+
+
 def main():
     site=ROOT/'site'; policy=load_policy(); preview=os.environ.get('MOTORJURY_PREVIEW')=='1'
     client=os.environ.get('ADS_CLIENT','ca-pub-6675837012921030')
@@ -21,9 +28,7 @@ def main():
     for f in site.rglob('*.html'):
         url='/'+f.relative_to(site).as_posix().removesuffix('index.html')
         text=strip_measurement(strip_ads(f.read_text())); tags=''
-        if preview or url not in policy.get('index_pages', []):
-            text=re.sub(r'<meta\b[^>]*name=["\']robots["\'][^>]*>', '',text,flags=re.I)
-            text=text.replace('</head>', '<meta name="robots" content="noindex,follow"></head>', 1)
+        text=index_tags(text,url,policy,preview)
         if preview:
             tags=''
         else:

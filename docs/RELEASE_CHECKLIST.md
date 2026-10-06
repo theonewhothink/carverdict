@@ -4,9 +4,10 @@ This branch is a pilot for review. It is not an AdSense approval guarantee or ev
 
 ## Before replacing production
 
+- [ ] Review MOBILE_COLLECTION.md and test the complete collection, external photo failures and buying steps on actual iOS/Android devices. Lab viewport checks are not physical-device or field-performance validation.
 - [ ] Complete the real buyer test in BUYER_TEST.md and record the decision.
 - [ ] Review the independently sourced brief with a qualified mechanic; do not invent an endorsement.
-- [ ] Restore access to actual Search Console and analytics. Identify valuable pages and inbound links before applying the proposed broad index exclusions or withheld guide copy.
+- [ ] Restore access to actual Search Console and analytics. Identify valuable pages and inbound links before releasing the remaining per-page index exclusions or withheld guide copy. The former blanket nine-route restriction has been removed.
 - [ ] Approve the URL migration treatment. This build preserves all 2,979 URLs captured from the Oct 6 production sitemap, but that is not a complete inventory of every historical URL.
 - [ ] Verify production mode, canonical URLs, sitemap exclusions, consent and the deployment preview through the real Cloudflare Worker. A local static preview does not verify edge routing or all production integrations.
 - [ ] Complete secure AI activation and real answer evaluation as described in AI_EXPERIENCE.md. Keep guided mode available. Include observed AI token charges in the cost register.

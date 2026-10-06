@@ -4,23 +4,35 @@ A working pilot is implemented on an isolated branch from production commit `d50
 
 ## What changed
 
-- Homepage now leads to one complete 2019–2020 US RAV4 buying journey: primary-source guide, gasoline/Hybrid decision guide, version-specific viewing checklist, private save/export/print/share controls and a budget using the reader's inputs.
-- Homepage and brief now include a question-led experience: reviewed guided responses, explicit version selection, source links and streaming AI integration when the provider is activated. The live service reports AI disabled; no real model answer is claimed.
+- Homepage now leads with car photography and search of the complete stored collection. The 2019–2020 US RAV4 buying journey remains prominent: primary-source guide, gasoline/Hybrid comparison, version-specific checklist, private save/export/print/share and a budget using the reader's inputs.
+- The buying brief includes a question-led experience: reviewed guided responses, explicit version selection, source links and streaming AI integration when the provider is activated. The live service reports AI disabled; no real model answer is claimed.
 - Synthetic prices, insurance and resale estimates have been withdrawn from the wider build and lookup data.
 - Missing costs remain unknown. The tool cannot declare an ownership-cost winner without complete inputs. Shared links contain year and powertrain only.
 - Complaint and recall services resolve model identities separately. The 2020 Lexus RX 350 regression is covered in both the dataset and VIN service. Unmatched, unavailable and incomplete responses cannot become verified zero results. Recall IDs are deduplicated.
 - Predictive reliability scores and automatic buying verdicts are suspended. The assistant receives only source-checked pilot records and reviewed editorial routes, without synthetic market-price or severity claims.
 - Global ads are paused. Exact-path review is required to opt a page into advertising. Preview builds remove analytics and ads and cannot deploy through `build.sh`.
 - Wikipedia extract/spec harvesting and automatic encyclopaedia catalogue expansion are removed from the production build. Imported biographies and unreviewed guide bodies are withheld. Catalogue identifiers and reference photos still need a separate, measured migration and permission review.
-- Earlier comparison routes remain accessible without unsupported winners. A dated inventory preserves all URLs from the current sitemap. Proposed production indexing is restricted to nine selected pilot routes; review traffic before releasing this broad change.
+- Earlier comparison routes remain accessible without unsupported winners. A dated inventory preserves all URLs from the current sitemap. The broad nine-route indexing restriction has been removed: production now preserves each builder's individual indexing gate. Unreviewed model pages remain held; the collection root, complete-directory root and coverage notes are accessible for indexing. Review traffic and the remaining individual exclusions before release.
 
-## Verification actually performed
+## Collection and mobile update
+
+- Stored source catalogue unchanged: 16,235 raw rows and 12,859 photo references. Existing duplicate merging produces 15,888 distinct entries across 1,096 marques, with 12,609 photo references. This is not verified coverage of every car ever made.
+- Complete search covers names and marques, including entries without photos or dates. Explicit decade/photo filters and 24-card batches avoid loading thousands of images at once. The 2.45 MB search JSON is fetched on interaction; compressed size and browser checks are recorded in MOBILE_COLLECTION.md.
+- Every distinct entry appears exactly once in 133 paginated HTML directory pages. All marque pages contain their complete static roster. Models beyond the existing 6,500 standalone-page limit link to an anchored roster entry rather than a missing page.
+- Featured photographs have checked Commons author/licence metadata and per-file attribution links. Historical record photos are labelled illustrations; RAV4 records use a sourced 2019 LE photo rather than a 2025 prototype. Remaining inherited photo permissions are not presented as reviewed.
+- Mobile buying flow uses four expandable steps and persistent section navigation. Four fuel inputs are visible when the budget step opens; the additional ownership inputs are optional. Unknown ownership costs still prevent an invented winner. Task prompts follow the selected version.
+
+## Latest collection verification
+
+46 JavaScript and nine Python tests passed after this update. Final structure checks passed for 14,788 audited pages; publication checks covered all 14,789 generated HTML pages. All 15,888 search/directory entries, every destination and roster anchor, and all 2,979 baseline routes were verified. Browser checks cover 320/390/430 px phones and 1280 px desktop, photo loading, search/filter/reset/pagination, catalogue-only photo previews, version-aware prompts and incomplete fuel-budget results. See MOBILE_COLLECTION.md for precise observations and remaining limits.
+
+## Earlier pilot verification actually performed
 
 - Full preview build and full production-mode build completed locally. Neither deployed.
 - 44 existing/new JavaScript tests passed; 8 Python evidence/publication checks passed.
 - Final HTML checks covered 14,655 pages: no broken internal links/assets, no unapproved ad requests, no predictive scores in the assistant index; structure checks found no failures.
 - All 2,979 routes captured from the live sitemap remained present. This does not prove coverage of every historical URL.
-- Production-mode sitemap agreed with the nine selected index paths. The restored preview has no ads or analytics scripts.
+- The earlier production-mode check verified the then-current nine-path policy. The subsequent collection update replaces that policy with tested per-template gates. The restored preview has no ads or analytics scripts.
 - Browser checks: unknown version, gasoline-specific visibility, incomplete budget, complete budget, checkbox save and restore without automatic calculation, sharing disclosure, export action and clear action. At a 390-pixel phone viewport, homepage and brief had no horizontal overflow.
 - Clearly fictional budget inputs: 12,000 miles, $3.50/gallon, five years, 30/40 MPG; complete scenarios returned $28,500/$27,750, a $750 difference. These are arithmetic tests, not market valuations or savings promises.
 - Saved screenshots document desktop (1280 pixels) and phone (390 pixels) layouts without horizontal overflow. Question checks covered Hybrid viewing, gasoline-specific refuelling guidance, unsupported Prime/Canada and private-input withholding. Save/restore and actual clipboard contents were checked. The checklist download action ran without a console error, but the in-app browser did not expose a completed download event or file; file contents and operating-system printing remain unverified.

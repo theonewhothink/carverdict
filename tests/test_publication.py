@@ -9,7 +9,7 @@ from publication_policy import apply, verify, load_policy
 from nhtsa_records import records
 from score_model_years import compute
 from refresh_pilot import refresh
-from tag_site import strip_measurement
+from tag_site import strip_measurement, index_tags
 
 
 class EvidenceChecks(unittest.TestCase):
@@ -64,6 +64,13 @@ class AdvertisingChecks(unittest.TestCase):
         result=strip_measurement(text)
         self.assertNotIn('googletagmanager',result);self.assertNotIn('dataLayer',result)
         self.assertIn('buying-brief.mjs',result)
+    def test_production_preserves_individual_index_gates(self):
+        policy={'index_policy':'preserve_template_gates'}
+        public='<head></head>';held='<head><meta name="robots" content="noindex,follow"></head>'
+        self.assertEqual(index_tags(public,'/library/',policy),public)
+        self.assertEqual(index_tags(held,'/library/toyota/',policy),held)
+        self.assertIn('noindex',index_tags(public,'/library/',policy,True))
+
     def test_noindex_is_not_ad_approval(self):
         with tempfile.TemporaryDirectory() as d:
             site=Path(d);p=site/'library'/'index.html';p.parent.mkdir()

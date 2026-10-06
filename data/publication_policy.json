@@ -12,6 +12,10 @@
     "/editorial-policy/",
     "/cars/toyota/rav4/2019/",
     "/cars/toyota/rav4/2020/",
-    "/cars/lexus/rx-350/2020/"
-  ]
+    "/cars/lexus/rx-350/2020/",
+    "/library/",
+    "/all-cars/",
+    "/catalogue-notes/"
+  ],
+  "index_policy": "preserve_template_gates"
 }

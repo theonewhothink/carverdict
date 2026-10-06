@@ -83,15 +83,13 @@ def main():
         home = open("site/index.html", encoding="utf-8").read()
         library = open("site/library/index.html", encoding="utf-8").read()
         follow = open("site/follow/index.html", encoding="utf-8").read()
-        hm = re.search(r'<span class="hh-kicker">([\d,]+) models', home)
-        lm = re.search(r'<p class="sub"><b>([\d,]+)</b>', library)
+        hm = re.search(r'<p class="collection-stats"><b>([\d,]+)</b>', home)
+        lm = re.search(r'<p class="collection-stats"><b>([\d,]+)</b>', library)
         fm = re.search(r'The library — ([\d,]+) models from ([\d,]+) marques', follow)
+        count_data = json.load(open("site/assets/catalogue-data.json", encoding="utf-8"))
         counts = [int(x.group(1).replace(",", "")) for x in (hm, lm, fm) if x]
-        expected = int(bool(lm)) + int(bool(fm)) if 'data-buying-product' in home else 3
-        if len(counts) != expected or len(set(counts)) != 1:
-            failures.append(("catalogue counts", f"home/library/follow={counts}"))
-        if 'data-buying-product' not in home and ("typical price" not in home or "/yr fuel + maintenance" not in home):
-            failures.append(("site/index.html", "homepage_cards_missing_price_or_running_cost"))
+        if not hm or not lm or any(n != len(count_data) for n in counts):
+            failures.append(("catalogue counts", f"home/library/follow={counts}; searchable={len(count_data)}"))
         search = open("site/search/index.html", encoding="utf-8").read()
         libdata = json.load(open("site/assets/library-data.json", encoding="utf-8"))
         if any(m[4] for b in libdata.values() for m in b.get("m", []) if len(m)>4):

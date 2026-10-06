@@ -1,5 +1,6 @@
 """Check final files, not the promises made by individual templates."""
 import json
+import html
 import re
 from collections import Counter
 import sys
@@ -7,8 +8,33 @@ from pathlib import Path
 from publication_policy import ROOT, verify
 
 
+def verify_collection(site):
+    from catalogue_experience import rows
+    expected,_=rows()
+    actual=json.loads((site/'assets/catalogue-data.json').read_text())
+    if actual != expected:raise ValueError('Search omitted or changed catalogue records')
+    coverage=json.loads((site/'assets/catalogue-coverage.json').read_text())
+    directory=[]
+    for page in (site/'all-cars').rglob('index.html'):
+        content=page.read_text()
+        block=re.search(r'<ol class="car-directory"[^>]*>(.*?)</ol>',content,re.S)
+        if not block:raise ValueError('Directory page has no accessible roster')
+        directory.extend((html.unescape(n),html.unescape(b)) for n,b in re.findall(r'<b>(.*?)</b><span>(.*?)</span>',block.group(1),re.S))
+    if Counter(directory)!=Counter((r['n'],r['b']) for r in expected):
+        raise ValueError('Static A-Z directory omitted or duplicated entries')
+    anchors={}
+    for row in actual:
+        url,_,fragment=row['u'].partition('#');path=site/url.strip('/')/'index.html'
+        if not path.exists():raise ValueError('Catalogue destination missing: '+row['u'])
+        if fragment:
+            if path not in anchors:anchors[path]=set(re.findall(r'id="([^"]+)"',path.read_text()))
+            if fragment not in anchors[path]:raise ValueError('Catalogue roster anchor missing: '+row['u'])
+    if coverage['distinct_entries']!=len(actual) or coverage['photo_references']!=sum(bool(r['p']) for r in actual):raise ValueError('Coverage totals do not match available records')
+    print(f"COLLECTION QA: all {len(actual):,} entries and {coverage['photo_references']:,} photo references retained; every static directory row and destination verified")
+
+
 def main():
-    site=ROOT/'site';verify(site)
+    site=ROOT/'site';verify(site);verify_collection(site)
     pages=list(site.rglob('*.html'));dead=set()
     for f in pages:
         text=f.read_text()

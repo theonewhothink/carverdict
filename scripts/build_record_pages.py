@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 from build_buying_brief import write, esc, ROOT, SITE
 from nhtsa_records import identity, record_check
+from catalogue_experience import record_photo
 
 
 def apply_pilot(con):
@@ -68,7 +69,7 @@ def main():
         lookup='https://www.nhtsa.gov/vehicle/'+str(r['year'])+'/'+r['make'].upper()+'/'+r['model'].upper().replace(' ','%20')
         body=f'''<section class="hero"><p class="eyebrow">US public safety record</p><h1>{esc(name)}</h1><p class="lede">Use the record to choose what to check. It cannot establish this car's condition.</p></section>
 <section class="card"><h2>What is verified here?</h2><p>Complaint reports: <b>{count(r,'complaints')}</b>. Distinct recall campaigns: <b>{count(r,'recalls')}</b>.</p><p>“Not verified” means the snapshot lacks a successful service-specific matching check. It does not mean zero. Complaint totals are reports, not failure rates.</p><p>Predictive reliability scores and automatic BUY/AVOID decisions are suspended.</p><div class="actions"><a class="button" href="https://www.nhtsa.gov/recalls">Check the actual VIN</a><a class="button secondary" href="{esc(lookup)}">See the NHTSA vehicle record</a></div></section>
-{campaign_html}<section class="card"><h2>Before a deposit</h2><ul><li>Confirm the exact version and service history.</li><li>Ask for dealer evidence of applicable recall remedies.</li><li>Arrange an independent inspection of the actual vehicle.</li><li>Compare your purchase quote and insurance with a budget.</li></ul><p><a href="/cars/{r['kslug']}/{r['mslug']}/">Other years of this model</a> · <a href="/buying-brief/">See the RAV4 buying-brief example</a></p></section>'''
+{record_photo(r["make"],r["model"],r["year"])}{campaign_html}<section class="card"><h2>Before a deposit</h2><ul><li>Confirm the exact version and service history.</li><li>Ask for dealer evidence of applicable recall remedies.</li><li>Arrange an independent inspection of the actual vehicle.</li><li>Compare your purchase quote and insurance with a budget.</li></ul><p><a href="/cars/{r['kslug']}/{r['mslug']}/">Other years of this model</a> · <a href="/buying-brief/">See the RAV4 buying-brief example</a></p></section>'''
         write(url,name+' — documented safety checks',body)
         f=SITE / url.strip('/') / 'index.html'
         if not rc or rc['status'] not in ('matched','empty'):

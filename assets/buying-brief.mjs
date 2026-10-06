@@ -4,6 +4,15 @@ if (form) {
   const output = document.querySelector('#budget-result');
   const status = document.querySelector('#brief-status');
   const tasks = new Set();
+  function openSection(hash) {
+    const target=document.getElementById(hash.replace('#',''));
+    if(target){if(target.tagName==='DETAILS')target.open=true;target.scrollIntoView({block:'start'});}
+  }
+  document.addEventListener('click',e=>{const link=e.target.closest('a[href^="#"]');if(link&&['#identify','#checks','#checklist','#budget'].includes(link.getAttribute('href'))){e.preventDefault();openSection(link.getAttribute('href'));}});
+  if(['#identify','#checks','#checklist','#budget'].includes(location.hash))openSection(location.hash);
+  let printDetails=[];
+  addEventListener('beforeprint',()=>{printDetails=[...document.querySelectorAll('details')].map(e=>[e,e.open]);printDetails.forEach(([e])=>e.open=true);});
+  addEventListener('afterprint',()=>printDetails.forEach(([e,open])=>e.open=open));
   const money = (n) => n === null ? 'Unknown' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
   function track(task) {
     if (tasks.has(task)) return;
