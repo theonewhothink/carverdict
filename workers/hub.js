@@ -1,3 +1,4 @@
+import { dashboardDispatch } from "./dashboard-store.mjs";
 /**
  * hub.js — MotorJury's account and engagement store.
  *
@@ -66,6 +67,8 @@ export class HubDO {
 
   init() {
     const s = this.sql;
+    s.exec(`CREATE TABLE IF NOT EXISTS dashboard_config(k TEXT PRIMARY KEY, v TEXT)`);
+    s.exec(`CREATE TABLE IF NOT EXISTS dashboard_sessions(hash TEXT PRIMARY KEY, expires INTEGER)`);
     s.exec(`CREATE TABLE IF NOT EXISTS users(
       id TEXT PRIMARY KEY, email TEXT UNIQUE, name TEXT,
       pw_hash TEXT, pw_salt TEXT, provider TEXT, provider_id TEXT,
@@ -176,6 +179,7 @@ export class HubDO {
 
   async dispatch(op, b, q) {
     const now = Date.now();
+    if (op.startsWith("dashboard-")) return dashboardDispatch(this, op, b);
     switch (op) {
 
       case "signup": {

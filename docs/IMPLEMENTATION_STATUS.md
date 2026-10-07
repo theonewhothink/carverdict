@@ -1,3 +1,11 @@
+# Current operating status
+
+The private dashboard at https://motorjury.com/dashboard is the current task register once this dashboard release deploys. Read docs/dashboard-register.json for the current baseline and docs/FULL_SYSTEM_QA.md for the verified 7 October reader-value release. Owner changes live in the protected dashboard database, with a change history.
+
+The notes below are historical pilot observations. Their earlier disabled-AI and pending-production statements have been superseded by the 7 October QA. They must not be used as current production status.
+
+---
+
 # MotorJury execution — 6 October 2026
 
 A working pilot is implemented on an isolated branch from production commit `d507e355376ff1cf505e4e7a63e9425ae84fbb6b`. Production has not been replaced. Synced project sources were untouched.
