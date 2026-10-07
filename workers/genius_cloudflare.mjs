@@ -3,20 +3,24 @@ import {privateQuestion} from '../assets/buying-guide-core.mjs';
 
 export const CLOUDFLARE_MODEL='@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 export function reviewedContext(index,question,path){
- const tokens=terms(question).filter(t=>t.length>1);
- const query=' '+norm(question)+' ',compact=norm(question).replaceAll(' ','');
+ const tokens=terms(question).filter(t=>t.length>1&&!/^\d{4}$/.test(t));
+ const query=' '+norm(question)+' ',words=norm(question).split(' ');
+ const matches=phrase=>query.includes(' '+norm(phrase)+' ')||words.includes(norm(phrase).replaceAll(' ',''));
  const years=yearsIn(question);
- const records=(index.cars||[]).filter(r=>norm(r.model).length>=2&&safePagePath(r.url)&&compact.includes(norm(r.model).replaceAll(' ',''))&&(!years.length||years.includes(r.year))&&Number.isFinite(r.complaints)&&Number.isFinite(r.recalls)).slice(0,4).map(r=>({make:r.make,model:r.model,year:r.year,url:r.url,complaint_reports:r.complaints,recall_campaigns:r.recalls,scope:r.scope}));
- const cars=(index.catalogue||[]).filter(r=>{
+ const records=(index.cars||[]).filter(r=>norm(r.model).length>=2&&safePagePath(r.url)&&matches(r.model)&&(!years.length||years.includes(r.year))&&Number.isFinite(r.complaints)&&Number.isFinite(r.recalls)).slice(0,4).map(r=>({make:r.make,model:r.model,year:r.year,url:r.url,complaint_reports:r.complaints,recall_campaigns:r.recalls,scope:r.scope}));
+ const full=(index.catalogue||[]).filter(r=>matches(r.n));
+ const candidates=full.length?full:(index.catalogue||[]).filter(r=>{
   const name=norm(r.n),brand=norm(r.b),model=name.startsWith(brand+' ')?name.slice(brand.length+1):name;
-  return query.includes(' '+name+' ') || model.length>=2 && query.includes(' '+model+' ') || model.length>=3 && /[a-z]/.test(model) && compact.includes(model.replaceAll(' ',''));
- }).sort((a,b)=>b.n.length-a.n.length).slice(0,6).map(r=>({name:r.n,marque:r.b,url:r.u}));
+  return /\p{L}/u.test(model)&&(model.length>=3||/\d/.test(model))&&matches(model);
+ });
+ const cars=candidates.sort((a,b)=>b.n.length-a.n.length).slice(0,6).map(r=>({name:r.n,marque:r.b,url:r.u}));
  const scored=index.pages.filter(p=>p.text && (p.url.startsWith('/guides/')||p.url.startsWith('/library/')&&p.url.split('/').filter(Boolean).length===3||['/buying-brief/','/methodology/','/editorial-policy/'].includes(p.url))).map(p=>{
   const title=' '+norm(p.title)+' ',body=' '+norm(p.text||'')+' ';
   const titleHits=tokens.filter(t=>title.includes(' '+t+' ')).length;
   const bodyHits=tokens.filter(t=>body.includes(' '+t+' ')).length;
   const identityHit=cars.some(c=>c.url.split('#')[0]===p.url);
   const pinned=p.url===path&&(!(cars.length||records.length)||identityHit||records.some(r=>r.url===path));
+  if(p.url.startsWith('/library/')&&(cars.length||records.length)&&!identityHit&&!pinned)return {p,score:0,matched:false};
   const score=(identityHit?40:0)+titleHits*8+Math.min(bodyHits,5)+(pinned?25:0);
   return {p,score,matched:identityHit||titleHits>0||bodyHits>=3||pinned};
  }).filter(x=>x.matched).sort((a,b)=>b.score-a.score);

@@ -89,3 +89,16 @@ test('an invalid provider response fails quickly instead of leaving chat hanging
  const r=await cloudflareChat(req,new URL(req.url),{AI:{run:async()=>({unexpected:true})}},async()=>({ok:true}),index,ask('Explain the F40'));
  assert.equal(r.status,503);assert.match(await r.text(),/unreadable answer/);
 });
+
+test('another Honda page and short catalogue names cannot contaminate Civic retrieval',()=>{
+ const fixture={...index,pages:[...index.pages,{url:'/library/honda/honda-nsx/',title:'Honda NSX',text:'Honda NSX first-generation design.'}],catalogue:[...index.catalogue,{n:'Honda NSX',b:'Honda',u:'/library/honda/honda-nsx/'},{n:'Lexus IS',b:'Lexus',u:'/library/lexus/lexus-is/'},{n:'Arrows A20',b:'Arrows',u:'/library/arrows/arrows-a20/'}]};
+ const r=reviewedContext(fixture,'Is a 2018 Honda Civic reliable?',null);
+ assert.deepEqual(r.cars.map(c=>c.name),['Honda Civic']);assert.equal(r.pages.length,0);
+});
+test('compact model matching respects word boundaries rather than adjacent words',()=>{
+ const fixture={...index,cars:[{make:'Lexus',model:'RX 350',year:2020,url:'/cars/lexus/rx-350/2020/',complaints:53,recalls:1,scope:'US aggregate'}],catalogue:[{n:'Lexus RX',b:'Lexus',u:'/library/lexus/lexus-rx/'},{n:'Cadillac SRX',b:'Cadillac',u:'/library/cadillac/cadillac-srx/'},{n:'Farmall 350',b:'Farmall',u:'/library/farmall/farmall-350/'},{n:'Aston Martin 2020',b:'Aston Martin',u:'/library/aston-martin/2020/'}]};
+ const r=reviewedContext(fixture,'What do the 2020 Lexus RX 350 records show?',null);
+ assert.deepEqual(r.cars.map(c=>c.name),['Lexus RX']);assert.equal(r.records.length,1);assert.equal(r.pages.length,0);
+ assert.equal(reviewedContext(fixture,'Records for a 2020 RX350',null).records.length,1);
+ assert.equal(reviewedContext(fixture,'Ask the doctor x350 about records',null).records.length,0);
+});
