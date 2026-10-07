@@ -11,10 +11,13 @@ if [ -z "$PY" ]; then
 fi
 if [ -z "$PY" ]; then echo 'No Python interpreter with SQLite is available'; exit 1; fi
 if ! "$PY" -c 'import PIL' >/dev/null 2>&1; then
-  "$PY" -m venv /tmp/motorjury-image-runtime
-  /tmp/motorjury-image-runtime/bin/pip install --quiet --disable-pip-version-check pillow
-  image_site=$(/tmp/motorjury-image-runtime/bin/python -c 'import site; print(site.getsitepackages()[0])')
-  export PYTHONPATH="$image_site${PYTHONPATH:+:$PYTHONPATH}"
+  # Cloudflare's system Python lacks ensurepip. Create an isolated runtime
+  # without it, then bootstrap pip from its official distribution.
+  image_runtime=/tmp/motorjury-image-runtime
+  "$PY" -m venv --without-pip "$image_runtime"
+  curl -fsSL --max-time 90 https://bootstrap.pypa.io/get-pip.py -o "$image_runtime/get-pip.py"
+  "$image_runtime/bin/python" "$image_runtime/get-pip.py" --quiet --disable-pip-version-check 'pillow==12.3.0'
+  PY="$image_runtime/bin/python"
 fi
 export SITE_ORIGIN="${SITE_ORIGIN:-https://motorjury.com}"
 export MOTORJURY_PREVIEW="${MOTORJURY_PREVIEW:-0}"

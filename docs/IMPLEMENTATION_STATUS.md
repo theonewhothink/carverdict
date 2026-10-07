@@ -68,3 +68,9 @@ Browser evidence: 320 px discovery and 390 px model/shortlist flows, 1280 px des
 Screenshots: `collection-discovery-desktop.png`, `collection-story-phone.png`, `collection-shortlist-phone.png`.
 
 This entry records the validated candidate, not an already completed deployment. CI and production deployment must be verified separately. Reader participation, qualified mechanic review, physical-device / field performance, broader image-permission review, provider activation and actual audience/revenue evidence remain outstanding. No outreach or AdSense resubmission was performed.
+
+### Hosting repair — 7 October
+
+The Cloudflare dashboard exposed the failed release build: system Python could not create a pip-enabled virtual environment because ensurepip was absent. The build now creates an isolated environment without pip, bootstraps pip from its official distribution, and installs Pillow 12.3.0. The bootstrap was verified in an empty local environment.
+
+Cloudflare also builds feature branches. The entrypoint now recognises its documented `WORKERS_CI_BRANCH` value and forces a noindex, analytics-free preview for every branch other than main; those builds cannot execute the in-build production deployment. Three regression tests verify this behaviour, main-only successful deployment and failure propagation. The candidate now has 54 JavaScript and 15 Python passing tests. The live release remains subject to the Cloudflare build and live verification.
