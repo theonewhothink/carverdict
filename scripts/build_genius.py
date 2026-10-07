@@ -125,15 +125,21 @@ def pages():
             continue
         # model-year and library model pages are covered, with their data, by the cars
         # index; listing them twice only dilutes the search
-        if re.match(r"^/cars/[^/]+/[^/]+/\d{4}/$", url) or re.match(r"^/library/[^/]+/[^/]+/$", url):
+        if re.match(r"^/cars/[^/]+/[^/]+/\d{4}/$", url):
             continue
         if url not in reviewed:
             continue
-        s = p.read_text(encoding="utf-8", errors="ignore")[:6000]
+        s = p.read_text(encoding="utf-8", errors="ignore")
         t, d = RE_TITLE.search(s), RE_DESC.search(s)
         if not t:
             continue
-        out.append({"url": url, "title": unesc(t.group(1)).replace(" | MotorJury", "").replace(" — MotorJury", ""),
+        main=re.search(r'<main\b[^>]*>(.*?)</main>',s,re.S)
+        body=main.group(1) if main else ''
+        body=re.sub(r'<(script|style|nav|button|select|svg)\b[^>]*>.*?</\1>', ' ', body, flags=re.S|re.I)
+        body=re.sub(r'<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>',lambda a:re.sub(r'<[^>]+>','',a[2])+' ('+a[1]+')',body,flags=re.S)
+        readable=unesc(re.sub(r'<[^>]+>',' ',body))
+        readable=re.sub(r'\s+',' ',readable).strip()[:10000]
+        out.append({"text":readable,"url": url, "title": unesc(t.group(1)).replace(" | MotorJury", "").replace(" — MotorJury", ""),
                     "description": unesc(d.group(1)) if d else ""})
     return out
 
@@ -161,13 +167,9 @@ def main():
     (ASSETS / "genius-guides.json").write_text(dump(g), encoding="utf-8")
     (ASSETS / "genius-pages.json").write_text(dump(pg), encoding="utf-8")
     canon = gen_site.ORIGIN + "/ask/"
-    html = gen_site.page("Car Genius — ask anything about a car | MotorJury",
-                         "Ask Car Genius which years to avoid, what breaks and what a car costs to own. "
-                         "Answers from federal complaint and recall data, with links to the source page.",
-                         canon, ASK_BODY,
-                         # an app screen, not an article: kept out of the index so a reviewer
-                         # sampling pages never lands on an empty chat box
-                         extra_head=gen_site.NOINDEX)
+    from build_buying_brief import shell
+    body='<section class="collection-hero compact"><p class="eyebrow">Start with a useful question</p><h1>Explore the evidence.</h1><p class="lede">For a viewing, use the reviewed RAV4 brief. For the cars that fascinate you, follow the design stories.</p><div class="actions"><a class="button" href="/buying-brief/">Prepare for a viewing →</a><a class="button secondary" href="/discover/">Explore design stories →</a></div></section><section class="card"><h2>Car Genius</h2><p>When the AI service is available, answers can consult our reviewed records and six design profiles. Check the linked source and exact version. Do not enter a VIN, contact details or private documents.</p><div data-genius-page></div><p class="note">AI questions are sent to our provider. Private checklist and budget inputs are not supplied. <a href="/privacy/">Privacy details</a>.</p></section>'
+    html=shell('Explore the evidence with Car Genius','/ask/',body,'<script src="/assets/genius.js" defer></script>').replace('</head>','<link rel="stylesheet" href="/assets/genius.css">'+gen_site.NOINDEX+'</head>')
     gen_site.write("ask/index.html", html)
     linked = sum(1 for r in c if r.get("url"))
     print(f"GENIUS OK: {len(c)} model-years ({linked} linked), {len(g)} guides, {len(pg)} pages indexed; /ask/ written")

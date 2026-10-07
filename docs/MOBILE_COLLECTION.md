@@ -37,3 +37,11 @@ Screenshots: `rich-preview-desktop.png`, `rich-preview-phone.png`, `rich-brief-p
 ## Limits and release work
 
 These are simulated browser viewport checks. Physical iOS/Android devices, assistive-technology use, field Core Web Vitals, ten actual buyer sessions, mechanic review, completed checklist downloads and OS printing remain to be verified. Live AI remains disabled until securely configured and evaluated. Existing catalogue metadata is not independently reviewed ownership advice. AdSense eligibility and revenue cannot be established by layout checks.
+
+## 7 October collection journeys
+
+The discovery page now balances three engine stories, two contrasting project briefs and one full-width design feature. Cards expose Save car separately from the photo and attribution links. All standalone models use the same collection navigation. Community feedback is retained in an expandable section, keeping the researched story prominent.
+
+At 320 px the guided-question controls stack without horizontal overflow. At 390 px the model story and three saved-car comparison flowed within the viewport; all three shortlist photos loaded. At 1280 px all six discovery photographs loaded. Saving three cars, reopening the shortlist, comparing explicitly scoped facts, exporting a visible copyable list, opening/closing the credited photo viewer and removing the test saves were exercised in the browser. These are browser viewport checks, not physical iOS/Android or field Core Web Vitals measurements.
+
+The embedded browser did not confirm a native file-download event. The fallback text visibly contained all three expected names and canonical links. OS download and printing remain separate checks. The existing buyer-study and specialist-review work has not been fabricated or replaced by these interface tests.

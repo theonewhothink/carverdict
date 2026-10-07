@@ -19,7 +19,7 @@ if (form) {
     tasks.add(task);
     window.dispatchEvent(new CustomEvent('motorjury:buying-task', { detail: { task } }));
     // Never send prices, mileage, VINs, seller documents or checklist text.
-    if (typeof window.gtag === 'function') window.gtag('event', 'buying_task_complete', { task_type: task });
+    if (window.mjAnalyticsAllowed && typeof window.gtag === 'function') window.gtag('event', 'buying_task_complete', { task_type: task });
   }
   function read() {
     const d = Object.fromEntries(new FormData(form));

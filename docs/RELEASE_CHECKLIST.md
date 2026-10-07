@@ -37,3 +37,9 @@ Track: people who complete a useful task, repeat use, organic entry queries, suc
 Maintain a real cost register: research/review hours and rates, hosting, AI token charges, tools, acquisition and maintenance. Monthly operating profit = actual ad revenue minus those costs. If page RPM is measured, revenue = monetised pageviews / 1,000 × measured page RPM. Do not mix page RPM with impression RPM or assume a rate from another site.
 
 Current costs, revenue, acquisition rate and RPM: unknown. Start a measured trial after approval, set a spending ceiling from actual resources, and expand only when useful reader behaviour and economics support it. No revenue forecast is presented as a fact.
+
+## 7 October release scope
+
+The collection release adds six historical design profiles, guided browsing and a browser-only shortlist. It does not expand consequential buying advice beyond the existing RAV4 pilot, claim participant testing or claim a mechanic endorsement. The catalogue snapshot and every existing route remain available. Unreviewed reference pages stay excluded from indexing and ads.
+
+Production analytics now uses basic consent mode: the Google library is not loaded until the reader opts in, advertising consent remains denied, and Privacy choices allows withdrawal. This follows [Google's basic consent-mode documentation](https://developers.google.com/tag-platform/security/guides/consent?consentmode=basic). It is not a certified advertising CMP. Keep ads paused until account approval, the required advertising consent solution and placement checks are complete.

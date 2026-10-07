@@ -15,7 +15,14 @@
     "/cars/lexus/rx-350/2020/",
     "/library/",
     "/all-cars/",
-    "/catalogue-notes/"
+    "/catalogue-notes/",
+    "/discover/",
+    "/library/ferrari/ferrari-f40/",
+    "/library/lamborghini/lamborghini-miura/",
+    "/library/mazda/mazda-mx-5/",
+    "/library/bmw/bmw-m3/",
+    "/library/honda/honda-nsx/",
+    "/library/mercedes-benz/mercedes-benz-300-sl/"
   ],
   "index_policy": "preserve_template_gates"
 }

@@ -280,7 +280,7 @@ export const TOOLS = [
     name: "search_pages",
     description:
       "Find other MotorJury pages by topic: head-to-head comparisons, data stories, problem pages, " +
-      "superlatives, marque hubs, the car library, calculators, the VIN check, events and methodology.",
+      "reviewed car design stories, the buying brief, the collection and methodology.",
     input_schema: {
       type: "object",
       properties: { query: { type: "string" }, limit: { type: "integer" } },
@@ -288,8 +288,14 @@ export const TOOLS = [
       additionalProperties: false,
     },
   },
+  {name:'read_page',description:'Read one reviewed page with its exact version scope and source links. Use the exact url returned by search_pages.',input_schema:{type:'object',properties:{url:{type:'string'}},required:['url'],additionalProperties:false}},
 ];
 
+export function readIndexedPage(idx,{url='' }={}){
+  const path=safePagePath(url);
+  const page=path&&idx.pages.find(p=>p.url===path);
+  return page?.text?{url:page.url,title:page.title,text:page.text.slice(0,10000)}:{error:'This path has no reviewed readable reference.'};
+}
 const TOOL_NAMES = new Set(TOOLS.map((t) => t.name));
 
 /** Checks a parsed tool input against its schema's shape. Returns an error string or null. */
@@ -321,6 +327,7 @@ export function runTool(idx, name, input) {
     case "search_guides": return searchGuides(idx, input);
     case "read_guide": return readGuide(idx, input);
     case "search_pages": return searchPages(idx, input);
+    case "read_page": return readIndexedPage(idx,input);
   }
   return { error: "unreachable" };
 }
@@ -380,7 +387,7 @@ export function pageText(html, max = 28000) {
 export const SYSTEM_PROMPT = `You are Car Genius, the assistant on ${SITE_NAME} (motorjury.com), helping readers investigate documented concerns and prepare for a used-car viewing.
 
 Where your facts come from:
-- Answer from checked records and reviewed guides returned by tools. Reliability scores, automatic BUY / CAUTION / AVOID labels and market-price estimates are suspended. Do not reconstruct them from complaint counts or describe synthetic class estimates as vehicle prices.
+- Answer from checked records, reviewed guides and reviewed design stories returned by tools. For history or design, use search_pages then read_page before making factual claims. Preserve the original-generation scope and any warning that a photograph shows a later car. Manufacturer accounts describe project history; they do not independently prove ownership quality. Reliability scores, automatic BUY / CAUTION / AVOID labels and market-price estimates are suspended. Do not reconstruct them from complaint counts or describe synthetic class estimates as vehicle prices.
 - NHTSA records are US model-level records. A campaign does not prove VIN applicability or remedy completion. Source-matching coverage is limited; do not turn missing data into zero, a safety clearance, or a recommendation.
 - Look things up before answering any question about a specific car, year, ranking or cost. Do not state a score, count, price or verdict you did not get from a tool in this conversation.
 - If the data does not cover something (a car or market the dataset lacks, a live listing price, a repair quote, legal or financial advice), say so plainly in one sentence and give what the site does have. General car knowledge is fine for explaining a term or a mechanism, labelled as general knowledge, never as a ${SITE_NAME} figure.

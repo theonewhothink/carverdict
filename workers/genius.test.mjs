@@ -114,3 +114,11 @@ test("client history is reduced to alternating text turns that start and end wit
   assert.ok(h.every((m) => typeof m.content === "string"));
   assert.deepEqual(cleanHistory("nope"), []);
 });
+
+
+test('reading evidence is restricted to reviewed indexed pages and retains source scope',()=>{
+ const url='/library/mazda/mazda-mx-5/',text='Original NA design, introduced 1989. Photograph: later RF. Source: https://www.mazda.com/en/about/history/greatcar/roadster/03/';
+ const index=makeIndex({pages:[{url,title:'Mazda MX-5',description:'Roadster design',text}]});
+ assert.equal(runTool(index,'read_page',{url}).text,text);
+ for(const unsafe of ['https://evil.test/','/api/auth/me','/library/other/other/','/../secret/'])assert.ok(runTool(index,'read_page',{url:unsafe}).error);
+});

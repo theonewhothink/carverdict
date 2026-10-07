@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-06",
+  "date": "2026-10-07",
   "production_modified": false,
-  "stage": "reviewable pilot; real buyer validation pending",
+  "stage": "validated collection release candidate; CI and live deployment checks pending",
   "baseline_commit": "d507e35",
   "implemented": [
     "primary-source RAV4 guide",
@@ -19,7 +19,14 @@
     "bounded streaming AI integration with reviewed fallback",
     "synthetic price insurance and resale estimates withdrawn",
     "AI privacy disclosure and private-input rejection",
-    "local Worker routing and request guards verified"
+    "local Worker routing and request guards verified",
+    "six original manufacturer-archive design profiles with generation-scoped photographs",
+    "one collection layout across all 6500 standalone models",
+    "private saved-car shortlist and three-car design comparisons",
+    "guided discovery without transmitting a question",
+    "reviewed-page AI reading tool restricted to indexed references",
+    "explicit analytics opt-in and withdrawable privacy choices",
+    "truthful privacy and advertising disclosures"
   ],
   "pending": [
     "ten real buyers",
@@ -42,5 +49,23 @@
     "remaining legacy catalogue metadata originated in Wikidata",
     "sitemap baseline is not a complete historical URL inventory",
     "live AI service reports disabled; secure provider activation required"
-  ]
+  ],
+  "verification": {
+    "javascript_tests": 54,
+    "python_tests": 12,
+    "html_pages": 14791,
+    "distinct_catalogue_entries": 15888,
+    "distinct_photo_references": 12609,
+    "raw_entries": 16235,
+    "raw_photo_references": 12859,
+    "baseline_routes_preserved": 2979,
+    "browser_widths": [
+      320,
+      390,
+      1280
+    ],
+    "physical_device_tests": 0,
+    "live_ai_enabled": false,
+    "production_deployment": "pending"
+  }
 }

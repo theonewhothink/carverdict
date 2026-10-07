@@ -5,11 +5,12 @@
    swipe, so it works identically on desktop and mobile. Attribution stays visible
    (CC requirement) but the click target is internal. */
 (function () {
-  var box, imgEl, capEl, cntEl, items = [], idx = 0;
+  var box, imgEl, capEl, cntEl, items = [], idx = 0, previousFocus = null;
 
   function build() {
     box = document.createElement('div');
     box.className = 'lb';
+    box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label','Car photograph viewer');
     box.setAttribute('hidden', '');
     box.innerHTML =
       '<div class="lb-bd"></div>' +
@@ -30,7 +31,8 @@
     box.querySelector('.lb-next').addEventListener('click', function (e) { e.stopPropagation(); step(1); });
     document.addEventListener('keydown', function (e) {
       if (box.hasAttribute('hidden')) return;
-      if (e.key === 'Escape') close();
+      if(e.key==='Tab'){var controls=[].slice.call(box.querySelectorAll('button')).filter(function(b){return b.style.display!=='none';});var first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+      else if (e.key === 'Escape') close();
       else if (e.key === 'ArrowLeft') step(-1);
       else if (e.key === 'ArrowRight') step(1);
     });
@@ -74,7 +76,7 @@
     if (!it) return;
     imgEl.src = it.src;
     imgEl.alt = it.title || '';
-    capEl.innerHTML = '<b>' + (it.title || '') + '</b><span>' + it.credit + '</span>';
+    var title=document.createElement('b'),credit=document.createElement('span');title.textContent=it.title||'';credit.textContent=it.credit;capEl.replaceChildren(title,credit);
     cntEl.textContent = items.length > 1 ? (idx + 1) + ' / ' + items.length : '';
     var nav = items.length > 1 ? '' : 'none';
     box.querySelector('.lb-prev').style.display = nav;
@@ -94,8 +96,10 @@
 
   function open() {
     if (!box) build();
+    previousFocus=document.activeElement;
     show();
     box.removeAttribute('hidden');
+    box.querySelector('.lb-x').focus();
     document.body.style.overflow = 'hidden';
   }
   function close() {
@@ -103,6 +107,7 @@
     box.setAttribute('hidden', '');
     imgEl.src = '';
     document.body.style.overflow = '';
+    if(previousFocus&&previousFocus.focus)previousFocus.focus();
   }
 
   document.addEventListener('click', function (e) {

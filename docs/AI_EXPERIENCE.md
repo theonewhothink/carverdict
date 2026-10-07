@@ -19,3 +19,9 @@ Requests use the standard streaming Messages API, a maximum of four model rounds
 Usage logging records model, mode and token counts, without question text, private form values or VINs. Measure AI cost alongside hosting and research cost when calculating actual operating contribution. Leave the useful guided mode available if model cost or answer quality does not justify AI calls.
 
 Implementation reference: [official Claude API primer](https://platform.claude.com/docs/en/claude_api_primer), inspected 6 October 2026. A local SDK transport fixture tests streaming, grounding, private-input rejection and disabled/quota paths; it is not a real provider answer or customer test.
+
+## 7 October collection addition
+
+Six explicitly scoped historical profiles and the discovery hub are now in the assistant's reviewed-page search index. Its page tool can fetch their full text and linked primary sources. No encyclopedia content or automatic reliability verdict is added. The separate collection discovery form is deterministic matching in the browser, labelled guided discovery; it does not pretend to use an LLM and transmits no question. Queries about buying, costs, recalls or reliability point to the explicitly limited RAV4 pilot.
+
+Read-only production status check on 7 October: `/api/genius/status` returned HTTP 200 and `enabled:false`. Provider credentials and real answer evaluation remain outstanding. This addition is not evidence that an AI service was activated.

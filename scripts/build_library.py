@@ -6,7 +6,7 @@ Generates:
   site/{lang}/library/index.html         localized interactive library (renders from shared JSON)
   site/assets/library-data.json          shared dataset (also powers header search)
 Photo policy: hotlink Wikimedia Commons via Special:FilePath (redirects to upload.wikimedia.org),
-credit + link to the Commons file page on every card. No files copied -> no licensing risk.
+Each reference links to its Commons file page. Hotlinking does not remove attribution or licence obligations.
 """
 import json, os, re, sys, html, urllib.parse
 from pathlib import Path

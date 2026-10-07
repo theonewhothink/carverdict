@@ -30,6 +30,29 @@ def verify_collection(site):
             if path not in anchors:anchors[path]=set(re.findall(r'id="([^"]+)"',path.read_text()))
             if fragment not in anchors[path]:raise ValueError('Catalogue roster anchor missing: '+row['u'])
     if coverage['distinct_entries']!=len(actual) or coverage['photo_references']!=sum(bool(r['p']) for r in actual):raise ValueError('Coverage totals do not match available records')
+    from collection_stories import PROFILES
+    for name,profile in PROFILES.items():
+        row=next(r for r in actual if r['n']==name)
+        content=(site/row['u'].strip('/')/'index.html').read_text()
+        if 'data-reviewed-profile' not in content or html.escape(profile['photo']) not in content:
+            raise ValueError('Missing profile or photo-generation scope: '+name)
+        if any(html.escape(url,quote=True) not in content for _,url,_ in profile['sources']):
+            raise ValueError('Profile lost a primary source: '+name)
+    model_pages=[p for p in (site/'library').glob('*/*/index.html')]
+    if len(model_pages)!=6500:raise ValueError('Standalone model coverage changed')
+    for p in model_pages:
+        content=p.read_text()
+        if 'data-save-car=' not in content or 'data-love=' not in content or 'data-survey=' not in content:
+            raise ValueError('Model lost saving or community controls: '+str(p))
+        if 'Assembled by' in content or 'Wikipedia (CC BY-SA)' in content:
+            raise ValueError('Retired encyclopedia byline returned: '+str(p))
+    assistant=json.loads((site/'assets/genius-pages.json').read_text())
+    for name in PROFILES:
+        row=next(r for r in actual if r['n']==name)
+        page=next((p for p in assistant if p['url']==row['u']),None)
+        if not page or PROFILES[name]['scope'] not in page.get('text','') or PROFILES[name]['sources'][0][1] not in page.get('text',''):
+            raise ValueError('Assistant reference lost version scope or sources: '+name)
+    print(f'STORY QA: six sourced profiles; all {len(model_pages)} model pages retain saving and community controls')
     print(f"COLLECTION QA: all {len(actual):,} entries and {coverage['photo_references']:,} photo references retained; every static directory row and destination verified")
 
 

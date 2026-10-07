@@ -435,24 +435,11 @@ def esc(s):
 
 
 def shell(title, desc, canon, body):
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#FFFFFF"><title>{esc(title)}</title>
-<meta name="description" content="{esc(desc)}"><link rel="canonical" href="{canon}">
-<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}">
-<link rel="stylesheet" href="/assets/site.css"></head><body>
-<header class="hdr"><div class="wrap hdr-in">
-<a class="logo" href="/">Motor<em>Jury</em></a>
-<div class="searchbox"><input id="q" type="search" placeholder="Search any car ever made…" autocomplete="off" aria-label="search" data-none="No matches"><div id="q-out" hidden></div></div>
-<nav class="nav"><a href="/guides/">Guides</a><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
-</div></header>
-{body}
-<footer><div class="wrap"><p>Catalogue: <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0) ·
-Photography: <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a> ·
-<a href="/methodology/">Methodology</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/about/">About</a> · <a href="/contact/">Contact</a> · <a href="/privacy/">Privacy</a></p></div></footer>
-<script src="/assets/site.js" defer></script>
-<script src="/assets/lightbox.js" defer></script>
-<script src="/assets/gallery.js" defer></script></body></html>"""
+    from build_buying_brief import shell as modern_shell
+    path=canon.removeprefix(ORIGIN)
+    scripts='<script src="/assets/account.js" defer></script><script src="/assets/lightbox.js" defer></script><script src="/assets/gallery.js" defer></script>'
+    return re.sub(r'<meta name="description" content="[^"]*">','<meta name="description" content="'+esc(desc)+'">',modern_shell(title.replace(' | '+BRAND,''),path,body,scripts),count=1)
+
 
 
 def main():
@@ -694,10 +681,10 @@ def main():
                 + (f'<small>{y or ""}</small>' if (y := (s2["y"] or "")) else "<small>&nbsp;</small>")
                 + "</a>"
                 for _, s2 in fam)
-            family_card = ('<div class="card"><h2>The family, through the years</h2>'
+            family_card = ('<div class="card"><h2>Related catalogue entries</h2>'
                            f'<div class="fam-grid">{cells}</div>'
-                           '<p class="lib-note">Every generation and sibling of this nameplate in the '
-                           'catalogue, oldest first. Photos: Wikimedia Commons.</p></div>')
+                           '<p class="lib-note">Related names from the stored '
+                           'catalogue. Dates and relationships require version checks. Photos: Wikimedia Commons.</p></div>')
         sib = [s for s in brands[b]
                if s["n"] != m["n"] and s["n"] in index.get(bs, {})][:8]
         sib_html = "".join(
@@ -941,6 +928,29 @@ def main():
 <aside>{side}</aside>
 </div>"""
 
+        # Keep original photographs, gallery category and account controls while
+        # presenting one coherent collection journey. A reference entry is not a review.
+        from collection_stories import PROFILES, story
+        profile=PROFILES.get(m['n'])
+        caption=profile['photo'] if profile else 'Catalogue illustration; generation, year and trim have not been verified.'
+        credit_url='https://commons.wikimedia.org/wiki/File:'+urllib.parse.quote(m['p'].replace(' ','_')) if m['p'] else ''
+        credit='<a href="'+esc(credit_url)+'">Photographer, licence and original image ↗</a>' if credit_url else ''
+        shot=shot.replace('</figure>','<figcaption>'+esc(caption)+' '+credit+' </figcaption></figure>')
+        if m['p']:
+            from catalogue_experience import photo_credits
+            photo_meta=photo_credits().get(m['p'],{})
+            if photo_meta.get('thumb'):
+                shot=re.sub(r'src="[^"]+"','src="'+esc(photo_meta['thumb'])+'"',shot,count=1)
+                shot=shot.replace('data-credit="Wikimedia Commons &middot; CC"','data-credit="'+esc(photo_meta['author']+' · '+photo_meta['licence'])+'"')
+                attribution=esc(photo_meta['author'])+' · <a href="'+esc(photo_meta['licence_url'])+'">'+esc(photo_meta['licence'])+'</a>.'
+                shot=shot.replace('</figcaption>',attribution+'</figcaption>')
+        scope=profile['scope'] if profile else 'Catalogue identity · research pending'
+        narrative=story(m['n']) or '<section class="card"><h2>Start with the version</h2><p>This entry preserves the car’s catalogue identity and available photographs. Its history and specifications have not yet been independently reviewed. Identify the generation, market and variant before using any specifications or buying advice.</p><p><a href="/discover/">Read the researched design stories</a> or explore more cars from this marque below.</p></section>'
+        if profile:
+            links=''.join('<a href="'+esc(FLAT[name])+'">'+esc(name)+' →</a>' for name in profile['related'] if name in FLAT)
+            narrative+='<section class="card"><h2>Follow another idea</h2><div class="collection-chips">'+links+'</div></section>'
+        body=f'<nav class="collection-chips" aria-label="Breadcrumb"><a href="/library/">Car collection</a><a href="/library/{bs}/">{esc(b)}</a></nav><section class="collection-hero compact"><p class="eyebrow">{esc(scope)}</p><h1>{esc(m["n"])}</h1><div class="actions"><button type="button" data-save-car="{esc(url)}" data-car-name="{esc(m["n"])}" aria-pressed="false">Save car +</button><a class="button secondary" href="/shortlist/">Compare saved cars →</a></div></section>{shot}{narrative}{gallery_card}<details class="card"><summary>Community feedback</summary><div class="love-host" data-love="model:{esc(m["q"])}" data-love-name="{esc(m["n"])}"></div>{engagement_card}</details>{family_card}<section class="card"><h2>More from {esc(b)}</h2><div class="collection-chips">{sib_html}</div><a href="/library/{bs}/">Complete {esc(b)} collection →</a></section>'
+
         # Vehicle plus the breadcrumb trail the page already shows visually. Google renders the
         # BreadcrumbList as the result's path line instead of a bare URL, so every library model
         # page earns "Library > Brand > Model" in the SERP. A top-level array is valid JSON-LD.
@@ -960,12 +970,14 @@ def main():
                 {"@type": "ListItem", "position": 3, "name": m["n"],
                  "item": ORIGIN + url}]},
         ], separators=(",", ":"))
-        # 2026-09-16: held out of the index until AdSense approval (see build_library.py);
-        # the biography is a Wikipedia summary (CC BY-SA) with a specification table, which
-        # is exactly the copied content the review names. LIBRARY_INDEXABLE=1 re-opens it.
-        robots = '' if (substantive and LIBRARY_INDEXABLE) else '<meta name="robots" content="noindex,follow">'
+        # Only an explicitly researched profile may leave the reference-page index hold.
+        if profile:
+            if url in THIN_PAGES:THIN_PAGES.remove(url)
+        else:
+            jsonld=json.dumps([x for x in json.loads(jsonld) if x.get('@type')!='Article'],separators=(',',':'))
+        robots = '' if profile else '<meta name="robots" content="noindex,follow">'
         page = shell(f"{m['n']} — {b} | {BRAND}",
-                     f"{m['n']} by {b}: photograph, catalogue facts and ownership-cost context.",
+                     (profile["intro"] if profile else f"{m['n']} by {b}: catalogue photographs and related models. History and specifications await review."),
                      ORIGIN + url, body).replace("</head>",
                      f'{robots}<script type="application/ld+json">{jsonld}</script></head>')
         out = SITE / url.lstrip("/") / "index.html"
