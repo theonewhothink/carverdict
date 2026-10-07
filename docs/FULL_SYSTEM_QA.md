@@ -22,6 +22,8 @@ The pipeline checks all generated HTML, indexing and advertising gates, director
 
 Release and real-provider results are recorded separately after deployment. Build success or enabled status alone does not establish a working AI answer.
 
+The completed automated release checks passed 19 Python tests and 73 Node tests. Retrieval regressions verify that an unsupported Civic question cannot borrow the NSX story and that compact model names respect word boundaries. A real production conversation comparing the Miura and F40 streamed successfully with reviewed-site source links. The live public-route check passed all 25 requested URLs and catalogue preservation checks.
+
 ## Limits
 
 The catalogue is not a verified list of every car ever made. Most entries remain reference directories. Reviewed design coverage includes six identities; the buying brief covers the 2019–2020 US RAV4; three exact model-years have indexed aggregate records. Unsupported AI questions must receive an honest limitation.

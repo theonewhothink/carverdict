@@ -12,6 +12,8 @@ main = "workers/redirect.js"
 GOOGLE_CLIENT_ID = "519984973200-q94tosv123gmigjvknvtmnotilhs30ak.apps.googleusercontent.com"
 GENIUS_DAILY_CAP = "20"
 
+# Native AI answers receive reviewed site evidence, never the private budget.
+# Keep this binding and GENIUS_DAILY_CAP together when updating the worker.
 [ai]
 binding = "AI"
 
