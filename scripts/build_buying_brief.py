@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import shutil
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -32,7 +33,8 @@ def shell_assets():
     return ''.join(styles),'/assets/genius.js?v='+version
 
 
-def shell(title, path, body, script=""):
+def shell(title, path, body, script="", description=None, jsonld=None, og_type="website"):
+    custom_description=description
     from collection_stories import asset_script
     script=script+asset_script()
     styles,chat_script=shell_assets()
@@ -43,11 +45,19 @@ def shell(title, path, body, script=""):
     elif path=='/discover/':description='Follow six original car design stories from manufacturer archives. Explore engine packaging, roadster simplicity and the reason behind gullwing doors.'
     elif path=='/shortlist/':description='Save cars in your browser and compare explicitly scoped design briefs, with links to the source-backed stories.'
     elif path=='/catalogue-notes/':description="What the MotorJury car collection covers, how duplicates are handled, and the sources and credits for featured photographs."
+    if custom_description:description=custom_description
+    elif path not in ('/','/buying-brief/','/discover/','/shortlist/','/catalogue-notes/') and not path.startswith(('/library/','/all-cars/')):
+        para=re.search(r'<p(?:\s[^>]*)?>(.*?)</p>',body,re.S)
+        summary=html.unescape(re.sub(r'<[^>]+>',' ',para.group(1))) if para else ''
+        description=(title+'. '+re.sub(r'\s+',' ',summary).strip())[:190].rsplit(' ',1)[0]
+    webpage={"@context":"https://schema.org","@type":"WebPage","name":title,"description":description,"url":ORIGIN+path,"isPartOf":{"@type":"WebSite","name":"MotorJury","url":ORIGIN+'/'}}
+    blocks=[webpage]+(jsonld or [])
+    ld=''.join('<script type="application/ld+json">'+json.dumps(x).replace('<','\\u003c')+'</script>' for x in blocks)
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#12685e">
 <title>{esc(title)} | MotorJury</title><meta name="description" content="{esc(description,quote=True)}">
-<link rel="canonical" href="{ORIGIN}{path}"><meta property="og:title" content="{esc(title,quote=True)} | MotorJury"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:url" content="{ORIGIN}{path}"><meta property="og:type" content="website"><meta property="og:image" content="{ORIGIN}/assets/og/default.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
-{styles}</head><body>
+<link rel="canonical" href="{ORIGIN}{path}"><meta property="og:title" content="{esc(title,quote=True)} | MotorJury"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:url" content="{ORIGIN}{path}"><meta property="og:type" content="{esc(og_type)}"><meta property="og:image" content="{ORIGIN}/assets/og/default.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+{styles}<meta name="twitter:card" content="summary_large_image">{ld}</head><body>
 <a class="skip" href="#content">Skip to content</a><header><div class="wrap"><a class="logo" href="/">Motor<span>Jury</span></a>
 <nav aria-label="Main"><a href="/library/">Car collection</a><a href="/discover/">Discover</a><a href="/ask/">Ask AI</a><a href="/guides/">Guides</a><a href="/buying-brief/">Buying brief</a><a href="/shortlist/">Saved cars<span data-saved-count></span></a></nav></div></header>
 <main id="content" data-buying-product><div class="wrap">{body}</div></main>
@@ -59,10 +69,10 @@ def guide_widget():
     return """<section class="guide-workspace" data-buying-guide aria-label="Guided buying conversation"><div class="guide-main"><div class="guide-head"><h2>What would you like to check?</h2><span class="guide-mode" data-guide-mode>Guided mode · reviewed material</span></div><p class="note">2019–2020 US RAV4. Start with a question or choose a task.</p><form><label for="guide-question">Your car question</label><textarea class="guide-input" id="guide-question" maxlength="600" placeholder="What should I check on a 2020 RAV4 Hybrid?" required></textarea><div class="guide-controls"><button type="submit" data-guide-send>Help me prepare →</button><button type="button" class="guide-clear" data-guide-clear>Clear conversation</button></div></form><div class="guide-prompts"><button type="button" data-guide-prompt="viewing">Viewing checks</button><button type="button" data-guide-prompt="recall">Recall evidence</button><button type="button" data-guide-prompt="budget">Compare costs</button></div><div data-guide-thread role="log" aria-label="Buying conversation" aria-live="polite" aria-relevant="additions"></div><details><summary>How answers work · keep private details out</summary><p class="note">Guided answers use reviewed material. When AI is available, your question and selected year/powertrain go to our AI provider. Budget inputs and saved checklist items are excluded. Do not enter a VIN, contact details or private documents.</p></details></div><aside class="guide-side"><span class="guide-source-label">Your brief</span><h3>For the actual viewing</h3><p data-guide-context>Year not confirmed · Powertrain not confirmed · US RAV4</p><ol class="guide-progress"><li>Match the exact version</li><li>Inspect the documented concern</li><li>Request the right evidence</li><li>Take a checklist and a budget</li></ol><p class="note">Answers show their sources and leave room for what is still unknown.</p><a href="/methodology/">Inspect the method</a></aside></section>"""
 
 
-def write(path, title, body, script=""):
+def write(path, title, body, script="", description=None, jsonld=None, og_type="website"):
     p = SITE / path.strip("/") / "index.html"
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(shell(title, path, body, script))
+    p.write_text(shell(title, path, body, script, description, jsonld, og_type))
 
 
 def sources():

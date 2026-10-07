@@ -1,0 +1,193 @@
+{
+  "requested_at": "2026-10-07",
+  "scope": "Task additions and subscription decision research; none of these entries represents completed execution.",
+  "tasks": [
+    {
+      "title": "SEO: complete and continuously verify the full technical checklist",
+      "area": "SEO",
+      "priority": 0,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Audit every template for HTTP status, canonical URLs, robots/noindex, unique titles/descriptions, crawlable internal links, correct sitemaps/lastmod, rendered content, image alt/licensing, relevant schema, social previews, mobile performance and real translations/hreflang. Fix failures; archive dated URL-level evidence. Keep thin reference pages excluded.",
+      "next_action": "Extend SEO-02 and existing publication checks into a template-by-template audit. Separate lab checks from field measurements; do not add unsupported ratings or schema.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Search engines: verify properties, submit sitemaps and prove crawl activity",
+      "area": "SEO",
+      "priority": 0,
+      "status": "blocked",
+      "owner": "MotorJury team + Adir for account access",
+      "acceptance": "Inventory Google Search Console, Bing Webmaster Tools and other audience-relevant engines; verify ownership and current sitemap submission. Record access, submitted, fetched, crawled and indexed as distinct states, with actual reports or validated crawler logs. Implement IndexNow only for supported engines and changed eligible URLs.",
+      "next_action": "Recover Google reporting access; use direct official consoles if the inactive GSC Wizard connector cannot be used. Verify Bing ownership. Capture existing property and sitemap evidence before submitting anything.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "AI discovery: audit search crawler access and measure real citations",
+      "area": "AI",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Check public HTML, robots and CDN/WAF delivery for Google search, Bing/Copilot, OAI-SearchBot, Claude search and Perplexity using current official bot guidance. Verify crawler identities from official IP/reverse-DNS methods where available. Separate search/retrieval from training choices. Track actual referrals and cited URLs; protect private routes.",
+      "next_action": "Build an engine-by-engine access matrix. Test public responses and request verified server-side crawl evidence. Evaluate platform-specific submission tools where offered; no promise of registration everywhere or guaranteed citations.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Directories: secure relevant editorial and business listings",
+      "area": "Growth",
+      "priority": 2,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Build a relevance/eligibility shortlist of reputable automotive, publisher and applicable business directories. Record profile owner, verified contact, canonical URL, submission/status and referral quality. Avoid paid link schemes, invented local-business eligibility and bulk spam directories.",
+      "next_action": "Research directories with a real audience. Confirm the MotorJury identity and eligibility, then prepare accurate profiles for submissions and any human final steps.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Daily indexing: request 8-10 eligible URLs when Google quota permits",
+      "area": "SEO",
+      "priority": 0,
+      "status": "blocked",
+      "owner": "MotorJury team + Adir for Search Console access",
+      "acceptance": "Daily queue contains 8-10 new or materially improved reviewed, canonical, 200-response, indexable URLs when enough qualify and the actual console quota permits. Log the exact URL, request date, result and subsequent crawl/index status. Submit the sitemap for broad discovery. Never recycle unchanged URLs just to meet a count.",
+      "next_action": "Connect the official Search Console property. Establish the actual indexed baseline; the supplied figure of 26 is not independently verified. Queue quality pages first. Manual Request indexing is separate from the inspection API; the general automotive site is not eligible for the restricted Google Indexing API.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Social: register and launch the official TikTok presence",
+      "area": "Growth",
+      "priority": 1,
+      "status": "blocked",
+      "owner": "MotorJury team + Adir for final registration",
+      "acceptance": "Confirm whether MotorJury already owns a TikTok profile before registering. Use adir@trabelsi.co where supported; Google sign-in only when offered. Adir completes final human registration/verification and terms acceptance. Correct brand identity, rights-cleared media, two-factor security, site links and the first approved original posts are live; owner/access and publication evidence are recorded.",
+      "next_action": "Check existing account/handle ownership, prepare the profile and initial content, and hand off final human steps to Adir. Never treat a footer link as an active account.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Social: register and launch the official Instagram presence",
+      "area": "Growth",
+      "priority": 1,
+      "status": "blocked",
+      "owner": "MotorJury team + Adir for final registration",
+      "acceptance": "Confirm whether MotorJury already owns a Instagram profile before registering. Use adir@trabelsi.co where supported; Google sign-in only when offered. Adir completes final human registration/verification and terms acceptance. Correct brand identity, rights-cleared media, two-factor security, site links and the first approved original posts are live; owner/access and publication evidence are recorded.",
+      "next_action": "Check existing account/handle ownership, prepare the profile and initial content, and hand off final human steps to Adir. Never treat a footer link as an active account.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Social: register and launch the official Facebook presence",
+      "area": "Growth",
+      "priority": 1,
+      "status": "blocked",
+      "owner": "MotorJury team + Adir for final registration",
+      "acceptance": "Confirm whether MotorJury already owns a Facebook profile before registering. Use adir@trabelsi.co where supported; Google sign-in only when offered. Adir completes final human registration/verification and terms acceptance. Correct brand identity, rights-cleared media, two-factor security, site links and the first approved original posts are live; owner/access and publication evidence are recorded.",
+      "next_action": "Check existing account/handle ownership, prepare the profile and initial content, and hand off final human steps to Adir. Never treat a footer link as an active account.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Social operations: run an active TikTok, Instagram and Facebook calendar",
+      "area": "Growth",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "After account launch, operate a four-week pilot: three original short-video concepts per week adapted for TikTok/Reels/Facebook, two useful still/carousel posts, and weekly review of audience questions. Record actual publication URLs, permissions, qualified site visits, saves, useful actions and return visits. Adjust cadence from performance; do not fabricate reach or engagement.",
+      "next_action": "Prepare a four-week editorial calendar from reviewed guides, design stories and useful diagrams. Use authorised posting tools, coordinate moderation and review results weekly; disclose sponsorships when applicable.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Editorial: write interesting original articles in natural human language",
+      "area": "Content",
+      "priority": 0,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Develop clear columns around buyer dilemmas, design decisions, misunderstood ownership issues and real owner experiences. Each article has a distinct useful takeaway, verifiable sources, specific examples, original interpretation, accurate images and editing that removes robotic filler. Attribute real experience only when it exists.",
+      "next_action": "Research reader questions and draft the next three guides. Obtain owner permissions and qualified review where required. More facts or paraphrasing alone do not make an original article.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Editorial growth: publish the next 12 reviewed guides and build a 50-guide roadmap",
+      "area": "Content",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "First wave: 12 substantial original guides across at least three demand-supported topic clusters, with source checks, useful visuals, internal links, accurate scope, named responsibility and an update plan. Then expand toward 50 only when usefulness and demand justify each page. Verify the current article/indexed-URL baseline instead of assuming 26.",
+      "next_action": "Create a prioritised brief backlog with search questions, article angle, source availability and reader benefit. Draft regularly; publish after editorial verification and add eligible URLs to the daily indexing queue.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Originality: end Wikipedia-derived editorial dependence while preserving lawful photo credits",
+      "area": "Content",
+      "priority": 0,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Audit article text, summaries, biographies, generated snippets and assistant sources. Replace inherited wording with independent research and original interpretation from primary sources or permissioned firsthand evidence. Remove public Wikipedia links/references except any necessary Terms disclosure. Preserve required creator/licence attribution, including Commons credits until a lawfully licensed replacement exists.",
+      "next_action": "Broaden CONTENT-02 from visible wording to editorial provenance. Investigate inherited assets individually; do not disguise paraphrases or remove mandatory credits to make the site look independent.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Visual explanations: add useful sourced charts and diagrams across the site",
+      "area": "Experience",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Start with six visuals on relevant high-value pages: user-input cost breakdown, fuel break-even, version checklist, recall/VIN decision flow, design timeline and sourced dimension/feature comparison. Every chart has a clear question, source/date, units, scope, uncertainty and accessible text/table. Test mobile readability and image/graphic speed; no invented data or reliability scores.",
+      "next_action": "Choose the six pages and questions, inspect available evidence, and build responsive interactive visuals where inputs genuinely help. Use qualitative diagrams when sound numeric comparisons are unavailable.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Subscriptions: validate what readers would pay for and why they would return",
+      "area": "Revenue",
+      "priority": 0,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Interview at least ten target users and test demand for saved research workspaces, source-backed model coverage, version comparisons, useful alerts and expanded grounded chat. Determine primary country/market, buyer versus enthusiast segments, willingness to pay, repeat-use interval, current conversion/return rates, source licensing, answer accuracy/support burden and cost per active user. Produce an evidence-based go/no-go decision.",
+      "next_action": "Start with CONTENT-04 buyer testing and AI-04 usage/cost evidence. Test a 30-day buying pass alongside a recurring enthusiast plan; do not infer subscription demand from catalogue size.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Subscriptions: define a valuable free tier and paid buying/ownership workspace",
+      "area": "Revenue",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Document an understandable tier matrix and working prototype. Free retains the catalogue, core articles, sources, essential viewing/safety guidance and a bounded chat allowance. Paid adds validated workflow benefits such as account-synced research, advanced comparisons/export, useful updates and higher grounded-chat limits. Price, geography, refunds, ads and limits are explicit. Test pricing and retention; no claim of unlimited AI.",
+      "next_action": "Prototype the offer before billing implementation. Treat example chat allowances as hypotheses, select quotas from actual cost/usefulness, and avoid paywalling generic encyclopaedia facts or essential recall instructions.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Subscriptions: implement billing, accounts and server-side access rights",
+      "area": "Product",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "After offer validation and merchant decisions, ship hosted checkout, customer billing portal, monthly/annual or pass products, account linkage and server-side access checks. Verify signed, idempotent webhooks; reconcile payments, renewals, cancellation, refunds, disputes and failed payments. Define tax/invoice handling, supported countries/currencies, terms/privacy and support. Test checkout and cancellation end-to-end before accepting money.",
+      "next_action": "Evaluate Stripe Billing/Checkout or a merchant-of-record alternative based on entity, countries and tax/support responsibility. Decide the merchant and pricing first. Do not trust browser plan flags or grant access merely from a successful redirect.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Paid chat: meter free and paid usage without exposing private budgets",
+      "area": "AI",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Associate usage with verified accounts; define free and paid successful-answer allowances, context/token caps, reset periods and transparent remaining balance. Enforce atomic limits, concurrency/rate abuse protection and total spend caps server-side. Handle retries/provider failures fairly, provide notice before charging/upgrading, log actual provider usage/cost and protect private inputs. Validate unsupported-model refusal and source links at both tiers.",
+      "next_action": "Instrument per-answer cost and usefulness first. Model free allowance, paid allowance and optional credits; keep public demos bounded. The current shared 20-call daily cap is not a per-reader billing system.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    },
+    {
+      "title": "Subscription launch: measure conversion, retention and real profit",
+      "area": "Revenue",
+      "priority": 1,
+      "status": "open",
+      "owner": "MotorJury team",
+      "acceptance": "Run a small paid pilot only after valuable coverage and billing QA. Dashboard measures active paid subscribers, free-to-paid conversion, trial/pass conversion, renewals/churn, refunds/disputes, answer usefulness, gross receipts, tax/fees, AI/support cost and contribution per cohort. Define continue/change/stop criteria from tested willingness to pay and costs.",
+      "next_action": "Keep ad contribution separate from subscription receipts and true subscription margin. Choose a limited pilot with stated goals; release broader paid access only after successful customer outcomes.",
+      "evidence": "Requested by Adir on 7 October 2026; planning entry, no execution or result claimed."
+    }
+  ],
+  "live_verification": {
+    "date": "2026-10-07",
+    "dashboard": "https://motorjury.com/dashboard",
+    "new_tasks_persisted": 18,
+    "current_tasks": 72,
+    "verified_tasks": 17
+  }
+}

@@ -759,6 +759,20 @@
       "verified_at": "",
       "updated_at": "2026-10-07",
       "source": "October QA + execution plan; August audit where identified"
+    },
+    {
+      "id": "PLAN-01",
+      "area": "Operations",
+      "title": "Publish SEO, Money and Business Plan dashboard tabs with A–Z execution order",
+      "priority": 0,
+      "status": "in_progress",
+      "owner": "MotorJury team",
+      "acceptance": "Protected production dashboard has three complete tabs, source-labelled search/financial metrics, a tested scenario calculator, all current tasks in execution order and the complete business plan. Verify desktop and phone layout without losing stored owner edits.",
+      "next_action": "Complete release tests and verify the new tabs and retained tasks on the live dashboard.",
+      "evidence": "Implementation started 7 October 2026; completion requires production verification.",
+      "verified_at": "",
+      "updated_at": "2026-10-07",
+      "source": "Adir request, 7 October 2026"
     }
   ],
   "metrics": [
