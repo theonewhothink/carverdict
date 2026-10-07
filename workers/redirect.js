@@ -23,6 +23,7 @@
  * /api/auth/providers reports which are live, and the sign-in page renders only those.
  */
 export { HubDO } from "./hub.js";
+import { PUBLIC_METHODS, accountWriteAllowed, boundedJson } from "./public-controls.mjs";
 
 // The model-canonicalisation 301 map. It used to be emitted into Cloudflare's _redirects
 // file as splat rules, and its nightly growth crossed the platform's 100-dynamic-rule cap —
@@ -66,9 +67,13 @@ async function serveWithRecovery(req, url, env) {
 }
 
 const SEC = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Cache-Control": "no-store",
+  "Cache-Control": "private, no-store",
+  "Vary": "Cookie",
 };
 
 const COOKIE = "mj_session";
@@ -81,7 +86,7 @@ function cookie(req, name) {
   const raw = req.headers.get("Cookie") || "";
   for (const part of raw.split(";")) {
     const [k, ...v] = part.trim().split("=");
-    if (k === name) return decodeURIComponent(v.join("="));
+    if (k === name) { try { return decodeURIComponent(v.join("=")); } catch { return null; } }
   }
   return null;
 }
@@ -251,12 +256,23 @@ async function oauthCallback(kind, req, url, env) {
 
 async function api(req, url, env) {
   const path = url.pathname.replace(/\/+$/, "");
+  const methods = PUBLIC_METHODS[path];
+  if (methods && !methods.includes(req.method)) return json({ error: "method not allowed" }, 405, { Allow: methods.join(", ") });
+  const isJson = isJsonRequest(req);
+  const providerCallback = path.endsWith("/callback") || (path === "/api/auth/google/token" && !isJson);
+  if (methods && req.method === "POST" && !providerCallback) {
+    if (!accountWriteAllowed(req, url.origin)) return json({error:"forbidden"},403);
+    if (!isJson) return json({error:"expected JSON"},415);
+  }
   const token = cookie(req, COOKIE);
   const ip = req.headers.get("CF-Connecting-IP") || "";
   // Do not consume Apple's application/x-www-form-urlencoded callback as JSON before
   // oauthCallback gets to req.formData().
-  const isJson = isJsonRequest(req);
-  const body = req.method === "POST" && isJson ? await req.json().catch(() => ({})) : {};
+  let body = {};
+  if (req.method === "POST" && isJson) {
+    try { body = await boundedJson(req); }
+    catch(e) { return json({error:e.message},e.status || 400); }
+  }
 
   if (path === "/api/auth/providers") return json(providers(env));
 
@@ -356,7 +372,7 @@ async function api(req, url, env) {
   if (path === "/api/survey") {
     if (req.method === "POST") {
       const { ok, data } = await call(env, "survey", { ...body, token });
-      return json(data, ok ? 200 : 401);
+      return json(data, ok ? 200 : 400);
     }
     const { data } = await call(env, "survey-read", {},
       new URLSearchParams({ item: url.searchParams.get("item") || "", token: token || "" }).toString());
@@ -421,7 +437,7 @@ export default {
       try {
         return await api(req, url, env);
       } catch (e) {
-        return json({ error: "Something went wrong on our side.", detail: String(e && e.message || e) }, 500);
+        return json({ error: "Something went wrong on our side." }, 500);
       }
     }
 

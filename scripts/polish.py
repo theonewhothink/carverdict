@@ -217,10 +217,14 @@ def polish(path):
             s = s.replace("</div></footer>", SOCIAL_ROW + "</div></footer>", 1)
         else:
             s = s.replace("</footer>", SOCIAL_ROW + "</footer>", 1)
+    # Regional proxy prices and proportional resale estimates were retired. Keep
+    # their automatic geolocation and misleading nightly-price selector retired too.
+    s = re.sub(r'<div\b[^>]*data-geo-chip[^>]*>\s*</div>', '', s, flags=re.I)
+    s = re.sub(r'<script\b(?=[^>]*\bsrc=["\']/assets/(?:geo|tco)\.js(?:\?[^"\']*)?["\'])[^>]*>.*?</script>', '', s, flags=re.I | re.S)
     # 5b. AI Brief + Share at the top of the content, on every page with a <main>
     if "data-page-tools" not in s and "<main" in s:
         s = re.sub(r"(<main\b[^>]*>)", lambda m: m.group(1) + page_tools(url_of(path)), s, count=1)
-    for src in ("/assets/account.js", "/assets/share.js", "/assets/tco.js", "/assets/geo.js", "/assets/app.js",
+    for src in ("/assets/account.js", "/assets/share.js", "/assets/app.js",
                 "/assets/genius.js"):
         if src not in s and "</body>" in s:
             s = s.replace("</body>", f'<script src="{src}" defer></script></body>', 1)

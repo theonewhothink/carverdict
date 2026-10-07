@@ -7,25 +7,18 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function safeLink(value) {
+    if (typeof value !== 'string' || !/^\/(?!\/)/.test(value) || /[\\\u0000-\u0020]/.test(value)) return '/';
+    try { var u = new URL(value, location.origin); return u.origin === location.origin ? u.pathname + u.search + u.hash : '/'; } catch (e) { return '/'; }
+  }
   fetch('/api/most-loved?limit=48').then(function (r) { return r.json(); }).then(function (j) {
     var items = j.items || [];
     if (!items.length) {
-      // Honest empty state: no fabricated votes. Show the data's own favourites, labelled.
-      fetch('/assets/loved-fallback.json').then(function (r) { return r.json(); }).then(function (fb) {
-        host.innerHTML = '<p class="muted" style="grid-column:1/-1">No reader votes yet — the first heart tapped on any car ' +
-          'page starts the real list. Until then, the cars the federal record likes most:</p>' +
-          fb.map(function (it, i) {
-            return '<a class="loved-card" href="' + esc(it.url) + '"><span class="loved-rank">' + (i + 1) + '</span>' +
-              '<b>' + esc(it.name) + '</b><span class="loved-n">' + it.score + '/100</span></a>';
-          }).join('');
-      }).catch(function () {
-        host.innerHTML = '<p class="muted">No votes yet — the first heart tapped on any car page starts ' +
-          'this list. <a href="/cars/">Go find a car</a>.</p>';
-      });
+      host.innerHTML = '<p class="muted">No reader votes yet. Find a car you love and tap its heart to start the list. <a href="/cars/">Explore the cars →</a></p>';
       return;
     }
     host.innerHTML = items.map(function (it, i) {
-      return '<a class="loved-card" href="' + esc(it.url || '/') + '">' +
+      return '<a class="loved-card" href="' + esc(safeLink(it.url)) + '">' +
         '<span class="loved-rank">' + (i + 1) + '</span>' +
         '<b>' + esc(it.name || it.item) + '</b>' +
         '<span class="loved-n"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" ' +

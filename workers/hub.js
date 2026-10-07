@@ -1,3 +1,4 @@
+import { localLink, preferences, ownerAnswer } from "./public-controls.mjs";
 import { dashboardDispatch } from "./dashboard-store.mjs";
 /**
  * hub.js — MotorJury's account and engagement store.
@@ -83,6 +84,9 @@ export class HubDO {
       user_id TEXT, item TEXT, overall INTEGER, reliability INTEGER, running_cost INTEGER,
       would_buy_again INTEGER, years_owned INTEGER, comment TEXT, created INTEGER,
       PRIMARY KEY(user_id, item))`);
+    if (!this.rows('PRAGMA table_info(survey)').some(c => c.name === 'owner_attested')) {
+      s.exec('ALTER TABLE survey ADD COLUMN owner_attested INTEGER NOT NULL DEFAULT 0');
+    }
     s.exec(`CREATE TABLE IF NOT EXISTS survey_rollup(
       item TEXT PRIMARY KEY, n INTEGER, overall REAL, reliability REAL,
       running_cost REAL, again_pct REAL, updated INTEGER)`);
@@ -153,9 +157,13 @@ export class HubDO {
     return n;
   }
 
+  surveyAggregate(item) {
+    return this.one(`SELECT COUNT(*) n, AVG(overall) o, AVG(reliability) rel,
+      AVG(running_cost) rc, AVG(would_buy_again)*100 again FROM survey WHERE item=? AND owner_attested=1`, item);
+  }
+
   rollupSurvey(item) {
-    const r = this.one(`SELECT COUNT(*) n, AVG(overall) o, AVG(reliability) rel,
-      AVG(running_cost) rc, AVG(would_buy_again)*100 again FROM survey WHERE item=?`, item);
+    const r = this.surveyAggregate(item);
     this.sql.exec(`INSERT INTO survey_rollup(item,n,overall,reliability,running_cost,again_pct,updated)
       VALUES(?,?,?,?,?,?,?) ON CONFLICT(item) DO UPDATE SET n=excluded.n, overall=excluded.overall,
       reliability=excluded.reliability, running_cost=excluded.running_cost,
@@ -186,7 +194,8 @@ export class HubDO {
         const email = String(b.email || "").trim().toLowerCase();
         const pw = String(b.password || "");
         if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error("That email address does not look right.");
-        if (pw.length < 8) throw new Error("Use at least 8 characters.");
+        if (pw.length < 8 || pw.length > 1024) throw new Error("Use between 8 and 1024 characters.");
+        preferences(b.prefs || {});
         if (!this.limit("signup:" + (b.ip || "?"), 8, 3600)) throw new Error("Too many attempts. Try again later.");
         if (this.one(`SELECT id FROM users WHERE email=?`, email)) throw new Error("That email already has an account. Sign in instead.");
         const salt = randomHex(16);
@@ -201,11 +210,11 @@ export class HubDO {
 
       case "login": {
         const email = String(b.email || "").trim().toLowerCase();
-        if (!this.limit("login:" + email, 10, 900)) throw new Error("Too many attempts. Try again in a few minutes.");
+        if (!this.limit("login-ip:" + (b.ip || "?"), 40, 900) || !this.limit("login:" + email, 10, 900)) throw new Error("Too many attempts. Try again in a few minutes.");
         const u = this.one(`SELECT * FROM users WHERE email=?`, email);
         // Same message either way: a different one tells a stranger which emails exist here.
         const bad = new Error("Email or password is not right.");
-        if (!u || !u.pw_hash) throw bad;
+        if (!u || !u.pw_hash || String(b.password || "").length > 1024) throw bad;
         if (!same(await hashPassword(String(b.password || ""), u.pw_salt), u.pw_hash)) throw bad;
         return { token: await this.newSession(u.id), user: this.publicUser(u) };
       }
@@ -242,7 +251,7 @@ export class HubDO {
       case "prefs": {
         const u = await this.userForToken(b.token);
         if (!u) throw new Error("Not signed in.");
-        if (JSON.stringify(b.prefs || {}).length > 100000) throw new Error("Preferences are too large.");
+        preferences(b.prefs || {});
         const merged = Object.assign(u.prefs ? JSON.parse(u.prefs) : {}, b.prefs || {});
         this.sql.exec(`UPDATE users SET prefs=? WHERE id=?`, JSON.stringify(merged), u.id);
         return { prefs: merged };
@@ -257,7 +266,7 @@ export class HubDO {
         const has = this.one(`SELECT item FROM likes WHERE user_id=? AND item=?`, u.id, item);
         if (has) this.sql.exec(`DELETE FROM likes WHERE user_id=? AND item=?`, u.id, item);
         else this.sql.exec(`INSERT INTO likes(user_id,item,name,url,created) VALUES(?,?,?,?,?)`,
-          u.id, item, String(b.name || "").slice(0, 120), String(b.url || "").slice(0, 200), now);
+          u.id, item, String(b.name || "").slice(0, 120), localLink(String(b.url || "").slice(0, 200)), now);
         return { count: this.recountLike(item), loved: !has };
       }
 
@@ -285,28 +294,32 @@ export class HubDO {
         if (!u) throw new Error("Sign in to add your car — one response per owner, which is the only way the averages mean anything.");
         const item = String(b.item || "").slice(0, 160);
         if (!item) throw new Error("No car given.");
-        const n = (x, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+x || 0)));
+        const answer = ownerAnswer(b);
         this.sql.exec(`INSERT INTO survey(user_id,item,overall,reliability,running_cost,
-          would_buy_again,years_owned,comment,created) VALUES(?,?,?,?,?,?,?,?,?)
+          would_buy_again,years_owned,comment,created,owner_attested) VALUES(?,?,?,?,?,?,?,?,?,1)
           ON CONFLICT(user_id,item) DO UPDATE SET overall=excluded.overall,
           reliability=excluded.reliability, running_cost=excluded.running_cost,
           would_buy_again=excluded.would_buy_again, years_owned=excluded.years_owned,
-          comment=excluded.comment, created=excluded.created`,
-          u.id, item, n(b.overall, 1, 5), n(b.reliability, 1, 5), n(b.running_cost, 1, 5),
-          b.would_buy_again ? 1 : 0, n(b.years_owned, 0, 40),
+          comment=excluded.comment, created=excluded.created, owner_attested=1`,
+          u.id, item, answer.overall, answer.reliability, answer.running_cost,
+          answer.would_buy_again, answer.years_owned,
           String(b.comment || "").slice(0, 900), now);
         return { rollup: this.rollupSurvey(item), saved: true };
       }
 
       case "survey-read": {
         const item = String(q.item || "");
-        const r = this.one(`SELECT * FROM survey_rollup WHERE item=?`, item) || { n: 0 };
+        // Recompute with attested answers so inherited quick-star defaults cannot leak
+        // through an old aggregate. Prior records remain editable by their account.
+        const aggregate = this.surveyAggregate(item);
+        const r = { n:aggregate.n, overall:aggregate.o, reliability:aggregate.rel,
+          running_cost:aggregate.rc, again_pct:aggregate.again };
         let mine = null;
         const u = await this.userForToken(q.token);
         if (u) mine = this.one(`SELECT * FROM survey WHERE user_id=? AND item=?`, u.id, item);
         const comments = this.rows(
           `SELECT comment, years_owned, overall, created FROM survey
-           WHERE item=? AND comment <> '' ORDER BY created DESC LIMIT 8`, item);
+           WHERE item=? AND owner_attested=1 AND comment <> '' ORDER BY created DESC LIMIT 8`, item);
         return { rollup: r, mine, comments };
       }
 
