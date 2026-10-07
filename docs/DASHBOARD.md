@@ -1,0 +1,13 @@
+# MotorJury private project dashboard
+
+Online route: https://motorjury.com/dashboard. Password checks, protected data and session revocation run in the Worker / Hub durable database. The password is never part of the repository or browser script. A one-time 256-bit token provisions a salted PBKDF2 verifier through HTTPS; only the token digest is bundled, and provisioning locks after success. Sessions last eight hours and use a Secure, HttpOnly, SameSite=Strict host cookie. Login attempts are bounded; private responses are no-store and noindex, with same-origin JSON writes.
+
+The baseline contains 54 current tasks, 57 historical Mission Control entries and 11 metric definitions. All 15 named findings from the supplied August audit map to current tasks. The artifact's nine unnamed findings cannot be reconstructed; its claimed 24 findings and local 73/100 remain historical claims.
+
+Build generation refreshes catalogue coverage, HTML page count, source commit and build time. Authenticated refresh checks 12 asset routes, provider availability, current database counters and latest public GitHub main CI. Results are cached up to 60 seconds. Edge asset response times are not browser performance; availability is not real answer quality; database row counts do not verify ownership; AI quota reservations are not successful answers or cost. No history of uptime is inferred.
+
+Primary outcomes: useful consented reader sessions, returning cohort rate, and net advertising contribution. Drivers and guardrails include search clicks, action rate, AdSense page RPM, field LCP/INP/CLS, AI feedback and confirmed invalid traffic. Unknown source values stay absent. No short-session or engagement-based bot estimate is shown. Targets without baseline evidence remain unset. Core Web Vitals thresholds are operating guardrails, not an AdSense approval test.
+
+Task edits and report entry persist in the Hub database, with the last 200 changes retained. Verified tasks require evidence/date. Reports require a valid measured value, completed date window, source and scope; they are labelled owner-entered rather than automatic connections. Actual GA4/Search Console/AdSense/provider integrations remain a blocked task until property access or credentials are available. The dashboard is usable without inventing those values.
+
+The historical archive is retained separately and is not counted toward current completion. Public source links contain no password or sessions. Ads remain paused, AI coverage remains narrow, missing photos and human validation remain open. Use the task acceptance checks before marking work verified. The dashboard does not grant Google approval or alter the car collection.

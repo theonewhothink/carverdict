@@ -1,7 +1,7 @@
 {
   "date": "2026-10-07",
-  "production_modified": false,
-  "stage": "validated collection release candidate; CI and live deployment checks pending",
+  "production_modified": true,
+  "stage": "Production reader-value release verified; private dashboard in verification",
   "baseline_commit": "d507e35",
   "implemented": [
     "primary-source RAV4 guide",
@@ -31,9 +31,11 @@
   "pending": [
     "ten real buyers",
     "qualified mechanic review",
-    "Search Console and analytics access",
-    "public catalogue and image-permission review",
-    "deployed Worker, live AI answer quality and consent validation",
+    "Search Console, analytics, AdSense and provider cost reports",
+    "remaining photograph coverage and licence/generation review",
+    "physical-device and cross-browser validation",
+    "end-to-end accounts and genuine owner evidence",
+    "verified consent management and current AdSense account decision",
     "measured acquisition and advertising economics",
     "completed checklist download and operating-system printing verification"
   ],
@@ -45,17 +47,18 @@
     "organic_visits": null
   },
   "constraints": [
-    "GSC connector subscription unavailable",
-    "remaining legacy catalogue metadata originated in Wikidata",
-    "sitemap baseline is not a complete historical URL inventory",
-    "live AI service reports disabled; secure provider activation required"
+    "business-report access unavailable; measurements remain unknown",
+    "reference catalogue is not verified complete coverage of every car ever made",
+    "reviewed editorial coverage remains narrow",
+    "Apple provider currently unavailable",
+    "advertisements paused; AdSense approval unverified"
   ],
   "verification": {
-    "javascript_tests": 54,
-    "python_tests": 12,
-    "html_pages": 14791,
+    "javascript_tests": 87,
+    "python_tests": 19,
+    "html_pages": 14794,
     "distinct_catalogue_entries": 15888,
-    "distinct_photo_references": 12609,
+    "distinct_photo_references": 13034,
     "raw_entries": 16235,
     "raw_photo_references": 12859,
     "baseline_routes_preserved": 2979,
@@ -65,7 +68,9 @@
       1280
     ],
     "physical_device_tests": 0,
-    "live_ai_enabled": false,
-    "production_deployment": "pending"
-  }
+    "live_ai_enabled": true,
+    "production_deployment": "verified for reader-value release; dashboard pending",
+    "live_public_routes_sampled": 25
+  },
+  "source_commit": "2ce2ae722ee1524d0274639f3fc2c14a999bdcaf"
 }

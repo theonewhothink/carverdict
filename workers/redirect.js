@@ -28,6 +28,7 @@ export { HubDO } from "./hub.js";
 // file as splat rules, and its nightly growth crossed the platform's 100-dynamic-rule cap —
 // which rejected every deploy and silently froze production. In code there is no cap: the
 // same JSON the generator writes is bundled here and prefix-matched per request.
+import { handleDashboard } from "./dashboard.mjs";
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
 import { geniusEnabled, handleGenius } from "./genius.mjs";
@@ -383,6 +384,11 @@ export default {
       url.hostname = "motorjury.com";
       url.protocol = "https:";
       return Response.redirect(url.toString(), 301);
+    }
+
+    if (url.pathname === "/dashboard" || url.pathname.startsWith("/dashboard/") || url.pathname.startsWith("/api/dashboard/")) {
+      try { return await handleDashboard(req, url, env); }
+      catch { return new Response(JSON.stringify({error:"Dashboard is temporarily unavailable."}), { status:503, headers:{"Content-Type":"application/json", "Cache-Control":"no-store", "X-Robots-Tag":"noindex,nofollow"} }); }
     }
 
     const moved = modelRedirect(url);

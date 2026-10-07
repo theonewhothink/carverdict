@@ -62,6 +62,7 @@ PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" -c "from build_record_page
 "$PY" scripts/localize.py
 "$PY" scripts/polish.py
 "$PY" scripts/publication_policy.py
+"$PY" scripts/build_dashboard.py
 "$PY" scripts/qa_site.py
 "$PY" scripts/qa_publication.py
 "$PY" -m unittest discover -s tests -v
