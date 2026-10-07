@@ -153,9 +153,7 @@ def person_page(p, group, shell):
 <a class="btn ghost" href="/legends/">All legends</a></div>
 </div></div></div></div>
 <div class="wrap" style="display:grid;gap:22px;padding:26px 0">
-<div class="card"><h2>Who they were</h2><p>{esc(p["extract"])}</p>
-<p class="lib-note">Biography from <a href="{esc(p.get("wp") or "https://en.wikipedia.org")}"
-rel="noopener">Wikipedia</a>, used under CC BY-SA. Photograph via Wikimedia Commons.</p></div>
+<div class="card"><h2>Follow the cars</h2><p>This reference entry preserves the name and portrait in our motoring directory. Follow the car collection to explore the projects; a researched biography has not yet been published.</p></div>
 <div class="card"><h2>Keep going</h2><div class="rel-grid">
 <a href="/legends/">The Legends<small>every name in this collection</small></a>
 <a href="/library/">The Car Library<small>every model ever catalogued</small></a>
@@ -166,7 +164,7 @@ rel="noopener">Wikipedia</a>, used under CC BY-SA. Photograph via Wikimedia Comm
     # them read as a scraped encyclopaedia, which is what a low-value-content review looks
     # for. The /legends/ collection page itself stays indexable.
     html_out = shell(f"{p['name']} — {group} | {BRAND}",
-                     (p.get("desc") or group) + f". {p['extract'][:130]}",
+                     (p.get("desc") or group) + ". Motoring reference directory.",
                      f"{ORIGIN}/legends/{slug(p['name'])}/", body)
     return html_out.replace("</head>",
                             '<meta name="robots" content="noindex,follow"></head>', 1)
@@ -234,8 +232,7 @@ def main():
 <h1>The Legends</h1><p class="sub">The {len(people)} people who built, drew, drove and financed
 the car — founders, engineers, designers, champions and industrialists.</p></div></div>
 <div class="wrap">{blocks}
-<p class="lib-note">Biographies from Wikipedia (CC BY-SA), photographs via Wikimedia Commons.
-Each name links to the full article.</p></div>"""
+<p class="lib-note">A reference directory of motoring figures. Researched car stories are in <a href="/discover/">Discover</a>.</p></div>"""
     (SITE / "legends").mkdir(parents=True, exist_ok=True)
     # The roster and its 99 one-paragraph Wikipedia biographies are a gallery, not
     # editorial. Online for readers, out of the index like the person pages beneath it.

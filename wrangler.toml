@@ -10,6 +10,10 @@ main = "workers/redirect.js"
 # client "MotorJury web sign-in", origin https://motorjury.com.
 [vars]
 GOOGLE_CLIENT_ID = "519984973200-q94tosv123gmigjvknvtmnotilhs30ak.apps.googleusercontent.com"
+GENIUS_DAILY_CAP = "20"
+
+[ai]
+binding = "AI"
 
 [assets]
 directory = "./site"

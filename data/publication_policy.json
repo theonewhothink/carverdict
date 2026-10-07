@@ -22,7 +22,11 @@
     "/library/mazda/mazda-mx-5/",
     "/library/bmw/bmw-m3/",
     "/library/honda/honda-nsx/",
-    "/library/mercedes-benz/mercedes-benz-300-sl/"
+    "/library/mercedes-benz/mercedes-benz-300-sl/",
+    "/guides/",
+    "/guides/before-a-used-car-viewing/",
+    "/guides/what-car-photos-cannot-tell-you/",
+    "/guides/recalls-history-and-inspections/"
   ],
   "index_policy": "preserve_template_gates"
 }

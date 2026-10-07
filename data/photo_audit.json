@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-10-07",
+  "unique_files": 12884,
+  "files_found": 12882,
+  "missing_files": [
+    "Citroen Osee.jpg",
+    "Pindad MV 3 Garuda Limousine.webp"
+  ],
+  "lookup_failures": [],
+  "redirected_files": {
+    "Auto 2024, Zurich (PANA0713).jpg": "Ferrari 512 BBi, Auto 2024, Zurich (PANA0713).jpg",
+    "Chery Fulwin A9 001.jpg": "Chery Fulwin A9 sedan 001.jpg",
+    "Cupra Raval IMG 6967.jpg": "Cupra Raval VZ IMG 6967.jpg",
+    "Talbot 8-18 1923w.jpg": "Talbot 8-18 1922.jpg",
+    "Taunton Garage - First 63699 (BN75NWG).JPG": "Taunton Bus Depot - First 63699 (BN75NWG).jpg",
+    "Techno-Classica 2018, Essen (IMG 9761).jpg": "Seat 600, Techno-Classica 2018, Essen (IMG 9761).jpg"
+  },
+  "method": "All original stored filenames checked through Commons imageinfo; additional files checked with imageinfo and an exact Wikidata image or Commons depicts identity. This verifies public file records, not every browser download or individual vehicle condition.",
+  "additional_licence_checked_files": 393
+}

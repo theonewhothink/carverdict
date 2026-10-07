@@ -10,16 +10,15 @@
    the same tab. Every question is sent with the path of the page the reader is on, so "is
    this year a good buy?" means this page's car. Answers stream from /api/genius.
 
-   Nothing renders until /api/genius/status says the assistant is switched on, so a site
-   without the key shows no dead buttons. */
+   The conversation is always visible. Provider errors stay in the conversation. */
 (function () {
   var L = {
-    en: { brief: 'AI Brief', ask: 'Ask Car Genius', ph: 'Ask about any car, year or cost…', send: 'Send',
+    en: { brief: 'AI Brief', ask: 'Ask Car Genius', ph: 'Ask about a car, design story or viewing check…', send: 'Send',
           newc: 'New chat', close: 'Close', copy: 'Copy', copied: 'Copied', share: 'Share',
           think: 'Thinking…', look: 'Checking the records…', guide: 'Reading the guides…', pages: 'Finding pages…',
           briefq: 'AI Brief of this page', err: 'Something went wrong. Try again.', stop: 'Stop',
           note: 'Answers come from MotorJury data. AI can be wrong — check the linked page.',
-          hi: 'Ask me which years to avoid, what breaks, what a car costs to own, or how two cars compare.' },
+          hi: 'What caught your eye? Ask about a design story, compare ideas, or prepare questions for a used-car viewing.' },
     pt: { brief: 'Resumo IA', ask: 'Perguntar ao Car Genius', ph: 'Pergunte sobre qualquer carro, ano ou custo…', send: 'Enviar',
           newc: 'Nova conversa', close: 'Fechar', copy: 'Copiar', copied: 'Copiado', share: 'Partilhar',
           think: 'A pensar…', look: 'A consultar os registos…', guide: 'A ler os guias…', pages: 'A procurar páginas…',
@@ -55,7 +54,7 @@
   var T = L[lang] || L.en;
   var PATH = location.pathname;
   var ON_ASK = /^\/ask\/?$/.test(PATH);
-  var KEY = 'mj-genius-v1';
+  var KEY = 'mj-genius-v2';
 
   var SPARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 2.5c.3 0 .5.2.6.5l1.2 3.7a4 4 0 0 0 2.5 2.5l3.7 1.2c.6.2.6 1 0 1.2l-3.7 1.2a4 4 0 0 0-2.5 2.5l-1.2 3.7c-.2.6-1 .6-1.2 0L9.2 15.3a4 4 0 0 0-2.5-2.5L3 11.6c-.6-.2-.6-1 0-1.2l3.7-1.2a4 4 0 0 0 2.5-2.5L10.4 3c.1-.3.3-.5.6-.5zm7.5 12c.2 0 .3.1.4.3l.5 1.4c.2.5.6.9 1.1 1.1l1.4.5c.4.1.4.6 0 .8l-1.4.5c-.5.2-.9.6-1.1 1.1l-.5 1.4c-.1.4-.6.4-.8 0l-.5-1.4a1.8 1.8 0 0 0-1.1-1.1l-1.4-.5c-.4-.1-.4-.6 0-.8l1.4-.5c.5-.2.9-.6 1.1-1.1l.5-1.4c.1-.2.2-.3.4-.3z"/></svg>';
   var SEND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6l-.1 6.5L15 12 3.3 13.9z"/></svg>';
@@ -128,10 +127,10 @@
 
   function suggestions() {
     var s;
-    if (/^\/cars\/[^/]+\/[^/]+\/\d{4}\/$/.test(PATH)) s = ['Is this year a good buy?', 'What breaks most on this car?', 'Is the year before or after better?'];
-    else if (/^\/cars\/[^/]+\/[^/]+\/$/.test(PATH)) s = ['Which years should I avoid?', 'What is the best year to buy?', 'What does it cost to own?'];
-    else if (/^\/guides\//.test(PATH)) s = ['Summarise this guide', 'Which year is the safest buy here?'];
-    else s = ['Which used SUVs have the fewest complaints?', 'Honda CR-V: which years to avoid?', 'Toyota Camry vs Honda Accord, 2015-2018'];
+    if (/^\/cars\/[^/]+\/[^/]+\/\d{4}\/$/.test(PATH)) s = ['What do these records establish?', 'What should I ask at the viewing?'];
+    else if (/^\/cars\/[^/]+\/[^/]+\/$/.test(PATH)) s = ['What information is reviewed here?', 'How do I compare ownership costs?'];
+    else if (/^\/guides\//.test(PATH)) s = ['Summarise this guide', 'What should I check first?'];
+    else s = ['Why are the Miura and F40 so different?', 'Which MX-5 generation is in the photo?', 'What should I check on a 2020 RAV4 Hybrid?'];
     return lang === 'en' ? s : [];
   }
 
@@ -165,7 +164,16 @@
       if ((t = e.target.closest('[data-g-copy]'))) { copyMsg(t); return; }
       if ((t = e.target.closest('[data-g-share]'))) { shareMsg(t); return; }
     });
-    if (!host) document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+    if (!host) document.addEventListener('keydown', function (e) {
+      if (!panel.classList.contains('open')) return;
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key === 'Tab' && panel.getAttribute('aria-modal') === 'true') {
+        var controls = Array.from(panel.querySelectorAll('button:not(:disabled), textarea, a[href]')).filter(function(n){return n.getClientRects().length;});
+        var first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+      }
+    });
     render();
   }
 
@@ -234,8 +242,10 @@
     panel.classList.add('open');
     document.documentElement.classList.add('genius-open');
     state.open = true; save();
+    panel.setAttribute('aria-modal',String(window.matchMedia('(max-width:767px)').matches));
     setTimeout(function () { input.focus(); }, 60);
   }
+  window.addEventListener('resize',function(){if(panel&&!inline_&&panel.classList.contains('open'))panel.setAttribute('aria-modal',String(window.matchMedia('(max-width:767px)').matches));});
   function close() {
     if (!panel || inline_) return;
     panel.classList.remove('open');
@@ -264,8 +274,8 @@
   var STATUS = { search_cars: T.look, get_model_history: T.look, search_guides: T.guide, read_guide: T.guide, search_pages: T.pages };
 
   function ask(mode) {
-    var history = state.m.filter(function (m) { return !m.error && m.content; })
-      .map(function (m) { return { role: m.role, content: m.content }; });
+    var history = state.m.filter(function (m) { return !m.error && m.content; }).slice(-6)
+      .map(function (m) { return { role: m.role, content: m.content.slice(0,1200) }; });
     var a = { role: 'assistant', content: '', pending: true };
     state.m.push(a);
     render();
@@ -280,7 +290,7 @@
       var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
       function pump() {
         return reader.read().then(function (r) {
-          if (r.done) { if (buf) feed(buf, a); return; }
+          if (r.done) { buf += dec.decode(); if (buf) feed(buf, a); return; }
           buf += dec.decode(r.value, { stream: true });
           var cut = buf.lastIndexOf('\n\n');
           if (cut >= 0) { feed(buf.slice(0, cut), a); buf = buf.slice(cut + 2); }
@@ -289,7 +299,8 @@
       }
       return pump();
     }).catch(function (e) {
-      if (!(e && e.name === 'AbortError') && !a.content) { a.content = T.err; a.error = true; }
+      if (e && e.name === 'AbortError') { a.content = 'Answer stopped. Send your question again to continue.'; a.error = true; }
+      else { a.content = T.err; a.error = true; }
     }).then(function () {
       a.pending = false;
       if (!a.content) { a.content = T.err; a.error = true; }
@@ -304,7 +315,7 @@
       var o; try { o = JSON.parse(line); } catch (e) { return; }
       if (o.t === 'text') { a.content += o.d; a.status = ''; }
       else if (o.t === 'status') { a.status = STATUS[String(o.d).split(',')[0]] || T.think; }
-      else if (o.t === 'error') { if (!a.content) a.error = true; a.content += (a.content ? '\n\n' : '') + o.d; }
+      else if (o.t === 'error') { a.error = true; a.content = o.d; }
       updateLast();
     });
   }
@@ -312,6 +323,7 @@
   /* ---------- boot ---------- */
   function enable() {
     document.documentElement.classList.add('genius-on');
+    document.querySelectorAll('[data-chat-entry]').forEach(function(form){form.addEventListener('submit',function(e){e.preventDefault();var field=form.querySelector('textarea');open();input.value=field.value;field.value='';submit();});});
     document.querySelectorAll('[data-genius-brief]').forEach(function (b) {
       b.hidden = false;
       var s = b.querySelector('span'); if (s) s.textContent = T.brief;
@@ -337,16 +349,16 @@
 
   function unavailable() {
     var host = document.querySelector('[data-genius-page]');
-    if (host) host.innerHTML = '<div class="card"><p>Car Genius is not available right now. Every figure it would give you is on the ' +
-      '<a href="/buying-brief/">reviewed RAV4 brief</a>. You can also <a href="/discover/">explore the design stories without AI</a>.</p></div>';
+    if (host) {var note=host.querySelector('.g-note');if(note) note.textContent='AI is temporarily unavailable. You can still browse the source pages; try chat again shortly.';}
   }
 
+  enable();
   var cached = null;
-  try { cached = JSON.parse(sessionStorage.getItem('mj-genius-status') || 'null'); } catch (e) {}
-  if (cached && Date.now() - cached.at < 300000) { cached.enabled ? enable() : unavailable(); return; }
+  try { cached = JSON.parse(sessionStorage.getItem('mj-genius-status-v2') || 'null'); } catch (e) {}
+  if (cached && Date.now() - cached.at < 300000) { if(!cached.enabled) unavailable(); return; }
   fetch('/api/genius/status', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : { enabled: false }; })
     .then(function (j) {
-      try { sessionStorage.setItem('mj-genius-status', JSON.stringify({ enabled: !!j.enabled, at: Date.now() })); } catch (e) {}
-      j.enabled ? enable() : unavailable();
+      try { sessionStorage.setItem('mj-genius-status-v2', JSON.stringify({ enabled: !!j.enabled, at: Date.now() })); } catch (e) {}
+      if(!j.enabled) unavailable();
     }).catch(unavailable);
 })();

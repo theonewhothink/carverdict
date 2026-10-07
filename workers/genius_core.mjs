@@ -17,7 +17,7 @@ export const SITE_NAME = "MotorJury";
 export function norm(s) {
   return String(s || "")
     .normalize("NFKD").replace(/[̀-ͯ]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    .toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
 const STOP = new Set(("a an and are best buy by can car cars cost costs do does for from good has have how i " +

@@ -8,7 +8,7 @@ Generates:
 Photo policy: hotlink Wikimedia Commons via Special:FilePath (redirects to upload.wikimedia.org),
 Each reference links to its Commons file page. Hotlinking does not remove attribution or licence obligations.
 """
-import json, os, re, sys, html, urllib.parse
+import json, os, re, sys, html, urllib.parse, hashlib
 from pathlib import Path
 from collections import defaultdict, Counter
 
@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
 DATA = json.load(open(ROOT / "data" / "car_library.json"))
+PHOTO_ADDITIONS = json.loads((ROOT / 'data/photo_additions.json').read_text()) if (ROOT / 'data/photo_additions.json').exists() else {}
+PHOTO_DELIVERY = json.loads((ROOT / 'data/photo_delivery.json').read_text()) if (ROOT / 'data/photo_delivery.json').exists() else {}
 for _x in DATA:  # low-precision Wikidata inceptions harvested as literal 1950 / 2005
     if str(_x.get("y") or "") in ("1950", "2005"):
         _x["y"] = ""
@@ -55,10 +57,11 @@ def esc(s):
 
 
 def commons_thumb(fname, w=480):
-    # URL-encode the filename: Commons names carry quotes, hashes and non-ASCII,
-    # any of which silently kills the raw src on part of the catalogue.
-    return ("https://commons.wikimedia.org/wiki/Special:FilePath/"
-            + urllib.parse.quote(fname.replace(" ", "_")) + f"?width={w}")
+    record=PHOTO_DELIVERY.get(fname.replace('_',' '),{})
+    if record.get('url'):return record['url']
+    fn=fname.replace(' ','_');digest=hashlib.md5(fn.encode()).hexdigest()
+    encoded=urllib.parse.quote(fn,safe='')
+    return f'https://thumb.wikimedia.org/wikipedia/commons/thumb/{digest[0]}/{digest[:2]}/{encoded}/960px-{encoded}'
 
 
 def commons_page(fname):
@@ -155,23 +158,25 @@ def norm_brand(m):
 
 
 def build_dataset():
+    rows = [dict(x) for x in DATA]
     # pass 1: brands that Wikidata states explicitly
     known = {}
-    for x in DATA:
+    for x in rows:
         m = (x.get("m") or "").strip()
         if m and not is_qid(m):
             k = BRAND_ALIAS.get(m, m)
             known[k.lower()] = k
-    n_fixed = resolve_qid_brands(DATA, known)
+    n_fixed = resolve_qid_brands(rows, known)
     if n_fixed:
         print(f"  brand labels recovered from unlabelled Wikidata ids: {n_fixed} models")
     brands = defaultdict(list)
-    for x in DATA:
+    for x in rows:
         name = x["n"].strip()
         if name.startswith("Q") and name[1:].isdigit():
             continue  # unlabeled junk
         b = brand_of(name, x["m"], known)
-        brands[b].append({"n": name, "p": x["p"], "y": x["y"], "q": x["q"]})
+        photo = x['p'] or PHOTO_ADDITIONS.get(x['q'], {}).get('filename', '')
+        brands[b].append({"n": name, "p": photo, "y": x["y"], "q": x["q"]})
     # Wikidata can return the same model through several class/manufacturer paths.  Those
     # rows collapse to the same URL slug, so rendering all of them creates duplicate DOM
     # ids and ambiguous search anchors.  Keep the richest representative for each slug and

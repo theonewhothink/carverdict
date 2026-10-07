@@ -9,7 +9,7 @@
       "checks": {
         "complaints": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:39.659877+00:00",
+          "checked_at": "2026-10-07T09:59:51.777192+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=LEXUS&modelYear=2020&issueType=c",
           "urls": [
             "https://api.nhtsa.gov/complaints/complaintsByVehicle?make=LEXUS&model=RX+350&modelYear=2020"
@@ -88,7 +88,7 @@
         },
         "recalls": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:41.097196+00:00",
+          "checked_at": "2026-10-07T09:59:52.002118+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=LEXUS&modelYear=2020&issueType=r",
           "urls": [
             "https://api.nhtsa.gov/recalls/recallsByVehicle?make=LEXUS&model=RX350&modelYear=2020"
@@ -126,7 +126,7 @@
       "checks": {
         "complaints": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:41.750350+00:00",
+          "checked_at": "2026-10-07T09:59:52.171405+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=TOYOTA&modelYear=2019&issueType=c",
           "urls": [
             "https://api.nhtsa.gov/complaints/complaintsByVehicle?make=TOYOTA&model=RAV4&modelYear=2019"
@@ -273,7 +273,7 @@
         },
         "recalls": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:43.155105+00:00",
+          "checked_at": "2026-10-07T09:59:52.532080+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=TOYOTA&modelYear=2019&issueType=r",
           "urls": [
             "https://api.nhtsa.gov/recalls/recallsByVehicle?make=TOYOTA&model=RAV4&modelYear=2019"
@@ -407,7 +407,7 @@
       "checks": {
         "complaints": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:44.141158+00:00",
+          "checked_at": "2026-10-07T09:59:52.718753+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=TOYOTA&modelYear=2020&issueType=c",
           "urls": [
             "https://api.nhtsa.gov/complaints/complaintsByVehicle?make=TOYOTA&model=RAV4&modelYear=2020"
@@ -526,7 +526,7 @@
         },
         "recalls": {
           "status": "matched",
-          "checked_at": "2026-10-07T07:56:44.885131+00:00",
+          "checked_at": "2026-10-07T09:59:52.979795+00:00",
           "menu_url": "https://api.nhtsa.gov/products/vehicle/models?make=TOYOTA&modelYear=2020&issueType=r",
           "urls": [
             "https://api.nhtsa.gov/recalls/recallsByVehicle?make=TOYOTA&model=RAV4&modelYear=2020"

@@ -4,13 +4,38 @@ import html
 import re
 from collections import Counter
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 from publication_policy import ROOT, verify
+
+class ReaderReferences(HTMLParser):
+    def __init__(self):
+        super().__init__();self.hidden=0;self.text=[];self.links=[]
+    def handle_starttag(self,tag,attrs):
+        if tag in ('script','style'):self.hidden+=1
+        if tag=='a':self.links.append(dict(attrs).get('href',''))
+    def handle_endtag(self,tag):
+        if tag in ('script','style'):self.hidden=max(0,self.hidden-1)
+    def handle_data(self,text):
+        if not self.hidden:self.text.append(text)
+
+def verify_reader_references(text,url):
+    if url.strip('/').split('/')[-1:] == ['terms']:return
+    parser=ReaderReferences();parser.feed(text)
+    if re.search(r'\bwikipedia\b',' '.join(parser.text),re.I) or any(re.search(r'https?://[^/]*wikipedia\.org(?:/|$)',link,re.I) for link in parser.links):
+        raise ValueError('Retired encyclopedia text or link: '+url)
 
 
 def verify_collection(site):
     from catalogue_experience import rows
     expected,_=rows()
+    again,_=rows()
+    if expected!=again:raise ValueError('Catalogue generation mutates its own input')
+    additions=json.loads((ROOT/'data/photo_additions.json').read_text())
+    credits=json.loads((ROOT/'data/photo_credits.json').read_text())
+    for entry in additions.values():
+        credit=credits.get(entry['filename'],{})
+        if not all(credit.get(k) for k in ('author','licence','licence_url','thumb','checked_at')):raise ValueError('Recovered photograph lacks checked attribution')
     actual=json.loads((site/'assets/catalogue-data.json').read_text())
     if actual != expected:raise ValueError('Search omitted or changed catalogue records')
     coverage=json.loads((site/'assets/catalogue-coverage.json').read_text())
@@ -61,6 +86,9 @@ def main():
     pages=list(site.rglob('*.html'));dead=set()
     for f in pages:
         text=f.read_text()
+        url='/'+f.relative_to(site).as_posix().removesuffix('index.html')
+        verify_reader_references(text,url)
+        if 'data-buying-product' in text and text.count('src="/assets/genius.js')!=1:raise ValueError('Modern page lost or duplicated its chat: '+url)
         for match in re.finditer(r'''(?:href|src)=["'](/[^"'#?]*)''',text):
             url=match.group(1)
             if url.startswith(('/api','/cdn-cgi')):continue

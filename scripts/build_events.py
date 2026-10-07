@@ -327,8 +327,8 @@ def build_rows(wiki):
         rows.append({
             "n": name, "c": cat, "s": series, "co": country, "p": place,
             "m": mon, "mo": MONTHS[mon], "w": window, "u": "/events/" + slug(name) + "/",
-            "site": site, "wiki": "https://en.wikipedia.org/wiki/" + urllib.parse.quote(wt.replace(" ", "_")),
-            "ex": (w.get("extract") or "").strip(),
+            "site": site,
+            "ex": "",
             "d": d[0] if d else "", "dh": d[1] if d else "",
         })
     rows.sort(key=lambda r: (r["m"], r["n"]))
@@ -350,8 +350,7 @@ def shell(title, desc, canon, body, extra_head="", extra_js=""):
 <nav class="nav"><a href="/cars/">Browse</a><a href="/library/">Library</a><a href="/events/" class="cur">Events</a><a href="/play/">Play</a><a href="/calculators/">Calculators</a></nav>
 </div></header>
 {body}
-<footer><div class="wrap"><p>Event descriptions from Wikipedia (CC BY-SA). Dates and ticketing are
-confirmed by the organiser — always check the official site before booking travel. ·
+<footer><div class="wrap"><p>Event listings link directly to the organisers. Check current dates, venue access and ticket availability on the official site before booking travel. ·
 <a href="/methodology/">Methodology</a></p></div></footer>
 <script src="/assets/site.js" defer></script>{extra_js}</body></html>"""
 
@@ -377,9 +376,7 @@ then each event shows the window it always occupies.</p></div></div>
 </div>
 <p class="muted" id="ev-count"></p>
 <div class="ev-grid" id="ev-grid"></div>
-<p class="lib-note">Descriptions from Wikipedia (CC BY-SA). Dates are taken from the organiser or the
-event's Wikipedia article and re-checked on every deploy; motorsport calendars change, so the official
-site is always the last word.</p></div>
+<p class="lib-note">Use this directory to find the organiser. Recorded seasonal windows are planning hints, not confirmed dates or ticket availability. Check the official site for the edition you want to attend.</p></div>
 <script id="ev-data" type="application/json">{json.dumps(rows, ensure_ascii=False)}</script>"""
     return shell("Motor Events Calendar — Races, Concours, Auctions & Motor Shows Worldwide | " + BRAND,
                  f"A searchable calendar of {len(rows)} motoring events worldwide: Formula 1, Le Mans, "
@@ -425,7 +422,7 @@ def event_page(r, rows):
 </div>
 <div class="ev-cta">
 <a class="btn" href="{esc(r["site"])}" rel="nofollow noopener" target="_blank">Official site and tickets</a>
-<a class="btn ghost" href="{esc(r["wiki"])}" rel="noopener" target="_blank">Read the full history</a>
+
 <a class="btn ghost" href="https://www.google.com/maps/search/{urllib.parse.quote(r["p"] + ", " + r["co"])}" rel="nofollow noopener" target="_blank">Find the venue</a>
 </div>
 <h2>About the event</h2>{ex}

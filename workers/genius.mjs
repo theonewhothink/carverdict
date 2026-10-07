@@ -20,6 +20,7 @@
  * Cloudflare's cache afterwards, without touching the quota or the model.
  */
 import Anthropic from "@anthropic-ai/sdk";
+import {cloudflareChat} from './genius_cloudflare.mjs';
 import { privateQuestion } from '../assets/buying-guide-core.mjs';
 import { BRIEF_INSTRUCTION, SYSTEM_PROMPT, TOOLS, cleanHistory, makeIndex, pageText,
          runTool, safePagePath, sse } from "./genius_core.mjs";
@@ -37,9 +38,10 @@ async function loadIndex(env, origin) {
     const r = await env.ASSETS.fetch(new Request(`${origin}/assets/${name}`));
     return r.ok ? r.json() : [];
   };
-  const [cars, guides, pages] = await Promise.all([
-    get("genius-cars.json"), get("genius-guides.json"), get("genius-pages.json")]);
+  const [cars, guides, pages, catalogue] = await Promise.all([
+    get("genius-cars.json"), get("genius-guides.json"), get("genius-pages.json"),get('catalogue-data.json')]);
   INDEX = makeIndex({ cars, guides, pages });
+  INDEX.catalogue=catalogue;
   return INDEX;
 }
 
@@ -55,7 +57,7 @@ async function sha(s) {
 }
 
 export function geniusEnabled(env) {
-  return Boolean(env.ANTHROPIC_API_KEY);
+  return Boolean(env.ANTHROPIC_API_KEY||env.AI?.run);
 }
 
 /**
@@ -74,7 +76,14 @@ export async function handleGenius(req, url, env, quota, ctx) {
   };
   if (!geniusEnabled(env)) return oneShot({ t: "error", d: "Car Genius is not switched on yet." }, 503);
 
-  const body = await req.json().catch(() => ({}));
+  if(Number(req.headers.get('Content-Length'))>32768)return oneShot({t:'error',d:'That request is too large. Start a new chat.'},413);
+  const raw=await req.text();
+  if(raw.length>32768)return oneShot({t:'error',d:'That request is too large. Start a new chat.'},413);
+  let body;try{body=JSON.parse(raw);}catch{return oneShot({t:'error',d:'The question could not be read. Try again.'},400);}
+  if(!body||typeof body!=='object'||Array.isArray(body))return oneShot({t:'error',d:'Ask a question first.'},400);
+  if(!env.ANTHROPIC_API_KEY&&env.AI?.run){
+    return cloudflareChat(req,url,env,quota,await loadIndex(env,url.origin),body,ctx);
+  }
   const buying = body.mode === 'buying';
   const mode = body.mode === "brief" ? "brief" : "chat";
   const path = buying ? '/buying-brief/' : body.page ? safePagePath(body.page) : null;
