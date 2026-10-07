@@ -1,5 +1,6 @@
-import unittest,json
+import unittest,json,sys
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from collection_stories import PROFILES,story
 R=Path(__file__).resolve().parent.parent
 class Profiles(unittest.TestCase):
