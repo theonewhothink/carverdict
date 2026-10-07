@@ -35,6 +35,11 @@
     });
   }
 
+  function safeLink(value) {
+    if (typeof value !== 'string' || !/^\/(?!\/)/.test(value) || /[\\\u0000-\u0020]/.test(value)) return '/';
+    try { var u = new URL(value, location.origin); return u.origin === location.origin ? u.pathname + u.search + u.hash : '/'; } catch (e) { return '/'; }
+  }
+
   /* ---------------------------------------------------------- header chip -- */
 
   function chip() {
@@ -93,6 +98,7 @@
      (an owner response) side by side, both account-backed, both from the same database.
      The star row writes the "overall" field of the owner survey below it, so a quick tap
      and the full form are one record, not two rating systems. */
+  var PENDING_RATING = {};
   var RATING = {};   // item -> {mine: overall|null, n, avg}
 
   function quickStars(item) {
@@ -155,19 +161,18 @@
         return;
       }
       var v = +star.getAttribute('data-quick-star');
-      var prev = (RATING[id] && RATING[id].mineRow) || {};
-      api('/api/survey', {
-        item: id, overall: v,
-        reliability: prev.reliability || v, running_cost: prev.running_cost || v,
-        years_owned: prev.years_owned || 0, would_buy_again: prev.would_buy_again ? true : v >= 4,
-        comment: prev.comment || '',
-      }).then(function (j) {
-        var r = j.rollup || {};
-        RATING[id] = { mine: v, n: r.n || 0, avg: r.o || r.overall || 0,
-                       mineRow: Object.assign({}, prev, { overall: v }) };
-        document.dispatchEvent(new CustomEvent('cv:rating', { detail: { item: id } }));
-        document.dispatchEvent(new CustomEvent('cv:survey-saved', { detail: { item: id } }));
-      }).catch(function () {});
+      var survey = [].slice.call(document.querySelectorAll('[data-survey]')).find(function (x) { return x.getAttribute('data-survey') === id; });
+      var field = survey && survey.querySelector('[data-star-name="overall"][data-star-value="' + v + '"]');
+      PENDING_RATING[id] = v;
+      if (field) {
+        delete PENDING_RATING[id];
+        field.click();
+        survey.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+        field.focus();
+        var msg = survey.querySelector('[data-sv-msg]');
+        if (msg) msg.textContent = 'Overall selected. Choose your other answers, then save.';
+      }
+
     });
 
     document.addEventListener('click', function (e) {
@@ -208,7 +213,7 @@
 
     function render(j) {
       var r = j.rollup || { n: 0 };
-      RATING[item] = { mine: j.mine ? +j.mine.overall : 0, n: r.n || 0, avg: r.overall || 0, mineRow: j.mine || null };
+      RATING[item] = { mine: j.mine && j.mine.owner_attested ? +j.mine.overall : 0, n: r.n || 0, avg: r.overall || 0, mineRow: j.mine || null };
       document.dispatchEvent(new CustomEvent('cv:rating', { detail: { item: item } }));
       var head;
       if (r.n >= MIN_RESPONSES) {
@@ -243,9 +248,15 @@
         ? formHtml(j.mine)
         : '<p class="sv-cta"><a class="btn" href="/login/?next=' +
           encodeURIComponent(location.pathname) + '&why=survey">Sign in to rate ' + esc(name) + '</a>' +
-          '<small>One response per owner — that is the only way the averages mean anything.</small></p>';
-      host.innerHTML = '<h2>Owner satisfaction</h2>' + head + comments + form;
-      if (ME) bindForm(item, host);
+          '<small>One response per account — that is the only way the averages mean anything.</small></p>';
+      host.innerHTML = '<h2>Owner satisfaction</h2><p class="note">Self-reported experiences. Ownership is not independently verified. Unconfirmed earlier answers are excluded from averages.</p>' + head + comments + form;
+      if (ME) {
+        bindForm(item, host);
+        if (PENDING_RATING[item]) {
+          var pending = host.querySelector('[data-star-name="overall"][data-star-value="' + PENDING_RATING[item] + '"]');
+          if (pending) { pending.click(); pending.focus(); delete PENDING_RATING[item]; }
+        }
+      }
     }
 
     function score(label, v) {
@@ -255,32 +266,32 @@
     }
 
     function stars(nm, label, mine) {
-      var chosen = mine ? +mine[nm] : 5;
+      var chosen = mine ? +mine[nm] : 0;
       var buttons = '';
       for (var i = 1; i <= 5; i++) buttons += '<button type="button" data-star data-star-name="' + nm +
         '" data-star-value="' + i + '" class="' + (i <= chosen ? 'on' : '') + '" aria-label="' +
         i + ' out of 5" aria-pressed="' + (i === chosen ? 'true' : 'false') + '">★</button>';
       return '<div class="star-field"><span>' + label + '</span><input type="hidden" name="' + nm +
-        '" value="' + chosen + '"><div class="stars" role="radiogroup" aria-label="' + label +
+        '" value="' + chosen + '"><div class="stars" role="group" aria-label="' + label +
         '">' + buttons + '</div></div>';
     }
 
     function formHtml(mine) {
       return '<form class="sv-form" data-sv-form>' +
-        '<p>' + (mine ? 'You have rated this car. Change anything and save again.' : 'Own one? Rate it.') + '</p>' +
+        '<p>' + (mine ? 'Review your answers, confirm ownership and save. Earlier answers are excluded from averages until confirmed.' : 'Own one? Rate it.') + '</p>' +
         '<div class="sv-grid">' +
         stars('overall', 'Overall', mine) +
         stars('reliability', 'Reliability', mine) +
         stars('running_cost', 'Running cost', mine) +
-        '<label>Years owned<input type="number" name="years_owned" min="0" max="40" value="' +
+        '<label>Years owned<input type="number" name="years_owned" min="0" max="40" step="1" required value="' +
           (mine ? (mine.years_owned || 0) : '') + '"></label>' +
-        '<label class="sv-check"><input type="checkbox" name="would_buy_again"' +
-          (mine && mine.would_buy_again ? ' checked' : '') + '> I would buy it again</label>' +
+        '<label>Would you buy it again?<select name="would_buy_again" required><option value="">Choose your answer</option><option value="yes"' + (mine && mine.would_buy_again ? ' selected' : '') + '>Yes</option><option value="no"' + (mine && !mine.would_buy_again ? ' selected' : '') + '>No</option></select></label>' +
+        '<label class="sv-check"><input type="checkbox" name="owned" required> I have owned this car. These answers describe my experience.</label>' +
         '</div>' +
-        '<textarea name="comment" rows="3" maxlength="900" placeholder="What should the next buyer know?">' +
-          esc(mine ? mine.comment : '') + '</textarea>' +
+        '<label>What should the next buyer know? (optional)<textarea name="comment" rows="3" maxlength="900" placeholder="What should the next buyer know?">' +
+          esc(mine ? mine.comment : '') + '</textarea></label>' +
         '<button class="btn" type="submit">Save my answer</button>' +
-        '<span class="sv-msg" data-sv-msg></span></form>';
+        '<span class="sv-msg" role="status" aria-live="polite" data-sv-msg></span></form>';
     }
 
     function bindForm(itemId, root) {
@@ -301,12 +312,13 @@
         e.preventDefault();
         var d = new FormData(f);
         var msg = f.querySelector('[data-sv-msg]');
+        if (['overall','reliability','running_cost'].some(function (key) { return +d.get(key) < 1; })) { msg.textContent = 'Choose all three ratings before saving.'; return; }
         msg.textContent = 'Saving…';
         api('/api/survey', {
           item: itemId,
           overall: d.get('overall'), reliability: d.get('reliability'),
           running_cost: d.get('running_cost'), years_owned: d.get('years_owned'),
-          would_buy_again: !!d.get('would_buy_again'), comment: d.get('comment'),
+          would_buy_again: d.get('would_buy_again') === 'yes', owned: !!d.get('owned'), comment: d.get('comment'),
         }).then(function () {
           msg.textContent = 'Saved — thank you.';
           load();
@@ -467,14 +479,14 @@
         '<section><h2>Cars you love <span class="cnt">' + likes.length + '</span></h2>' +
         (likes.length
           ? '<div class="acct-grid">' + likes.map(function (l) {
-              return '<a class="acct-card" href="' + esc(l.url || '/') + '"><b>' + esc(l.name || l.item) + '</b></a>';
+              return '<a class="acct-card" href="' + esc(safeLink(l.url)) + '"><b>' + esc(l.name || l.item) + '</b></a>';
             }).join('') + '</div>'
           : '<p class="muted">Nothing yet. The heart on any car page adds it here.</p>') +
         '</section>' +
         '<section><h2>Your garage <span class="cnt">' + garage.length + '</span></h2>' +
         (garage.length
           ? '<div class="acct-grid">' + garage.map(function (g) {
-              return '<a class="acct-card" href="' + esc(g.u || '/') + '"><b>' + esc(g.n || g.t || 'Saved car') + '</b></a>';
+              return '<a class="acct-card" href="' + esc(safeLink(g.u)) + '"><b>' + esc(g.n || g.t || 'Saved car') + '</b></a>';
             }).join('') + '</div>'
           : '<p class="muted">Add a car from any model page and it follows you to every device.</p>') +
         '</section>' +
@@ -488,7 +500,7 @@
         '<section><h2>Recently viewed <span class="cnt">' + recent.length + '</span></h2>' +
         (recent.length
           ? '<div class="acct-grid">' + recent.slice(0, 12).map(function (r) {
-              return '<a class="acct-card" href="' + esc(r.u || '/') + '"><b>' + esc(r.t || 'Viewed car') + '</b></a>';
+              return '<a class="acct-card" href="' + esc(safeLink(r.u)) + '"><b>' + esc(r.t || 'Viewed car') + '</b></a>';
             }).join('') + '</div>'
           : '<p class="muted">Cars you inspect will appear here and follow you across signed-in devices.</p>') +
         '</section>';

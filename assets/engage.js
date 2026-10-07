@@ -6,6 +6,13 @@
   var prefs = read();
   var me = null, syncTimer = null;
 
+  function escapeHTML(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]; });
+  }
+  function safeLink(value) {
+    if (typeof value !== 'string' || !/^\/(?!\/)/.test(value) || /[\\\u0000-\u0020]/.test(value)) return '/';
+    try { var u = new URL(value, location.origin); return u.origin === location.origin ? u.pathname + u.search + u.hash : '/'; } catch (e) { return '/'; }
+  }
   function read() {
     try { return JSON.parse(localStorage.getItem(P) || '{}'); } catch (e) { return {}; }
   }
@@ -212,7 +219,7 @@
     if (!host) return;
     var g = prefs.garage || [];
     host.innerHTML = g.length
-      ? '<div class="rel-grid">' + g.map(function (x) { return '<a href="' + x.u + '">' + x.t + '<small>saved</small></a>'; }).join('') + '</div>'
+      ? '<div class="rel-grid">' + g.map(function (x) { return '<a href="' + escapeHTML(safeLink(x.u)) + '">' + escapeHTML(x.t) + '<small>saved</small></a>'; }).join('') + '</div>'
       : '<p class="muted">Nothing saved yet — hit ☆ Save on any car page. Sign in and your garage follows you to every device.</p>';
   }
 
@@ -221,7 +228,7 @@
     if (!host) return;
     var rows = prefs.recent || [];
     host.innerHTML = rows.length
-      ? rows.map(function (x) { return '<a href="' + x.u + '">' + x.t + '<small>viewed</small></a>'; }).join('')
+      ? rows.map(function (x) { return '<a href="' + escapeHTML(safeLink(x.u)) + '">' + escapeHTML(x.t) + '<small>viewed</small></a>'; }).join('')
       : '<p class="muted">No history yet.</p>';
   }
 
