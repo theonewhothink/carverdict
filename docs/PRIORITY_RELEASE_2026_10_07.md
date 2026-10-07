@@ -9,6 +9,8 @@
 5. Three original practical guides add independent inspection-report questions, an everyday EV charging plan and tire-evidence questions. Official FTC, DOE and NHTSA guidance was checked on 7 October. No vehicle testing, specialist review or electrical assessment is claimed. Each adds a responsive diagram and copyable questions.
 6. A reproducible production audit checks every indexable candidate's HTTP delivery, canonical, title, indexing directives and response headers, plus sitemap coverage and eleven public API/error-route checks. It does not infer search indexing, real crawler identity, field performance or approval.
 
+7. Retired the regional-price selector on 93 legacy pages and stopped loading inactive automatic-location and proportional resale scripts across the site. The generated pages have no active regional proxy-price fields. The reader’s explicit currency/unit choices and actual-quote budget tools remain available. A publication gate prevents the unsupported layer returning.
+
 ## Acceptance evidence
 
 The full publication build retains 15,888 catalogue entries, 1,096 marques, 13,034 photo references and 133 A–Z directory pages. The raw catalogue is unchanged. Generated checks pass for all 14,800 HTML pages (14,799 normal-page QA checks plus the intentional 404). The sitemap has 72 eligible URLs and the technical inventory has no findings. All 2,979 baseline sitemap routes remain available. All 6,500 standalone model pages retain saving and community controls. Article paragraph repetition is 8.1%.

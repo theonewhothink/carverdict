@@ -56,6 +56,8 @@ def main():
             issues.append(f"hash_lightbox_links={parser.bad_lightbox_links}")
         if '$0<' in text or '$0–' in text or '$0 /' in text:
             issues.append("zero_price_placeholder")
+        if any(marker in text for marker in ('data-geo-chip', 'data-usd=', 'data-tco', '/assets/geo.js', '/assets/tco.js')):
+            issues.append("retired_regional_proxy_cost_layer")
         if "Loading owner responses" in text:
             issues.append("owner_responses_loading_placeholder")
         if "Rate your love" in text or "Ratings are kept on your device" in text:
