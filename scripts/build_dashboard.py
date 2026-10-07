@@ -7,6 +7,7 @@ seed['business_plan']=json.loads((root/'docs/business-plan.json').read_text())
 seed['seo']=json.loads((root/'workers/dashboard-seo.json').read_text())
 for metric in seed['metrics']:
  if metric['id']=='organic_clicks':metric['view']='seo'
+ if metric['id'] in ('page_rpm','net_contribution'):metric['view']='money'
 extra=json.loads((root/'docs/dashboard-metrics.json').read_text())
 ids={m['id'] for m in seed['metrics']}
 seed['metrics'].extend(m for m in extra if m['id'] not in ids)

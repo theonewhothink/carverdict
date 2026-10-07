@@ -20,8 +20,8 @@ export function validateMetric(input,ids){
  if(!input||!ids.includes(input.id))throw Error('Unknown metric.');
  const value=Number(input.value);
  if(input.value===''||input.value==null||!Number.isFinite(value)||Math.abs(value)>1e12)throw Error('Enter a finite measured value.');
- if(input.id!=='net_contribution'&&value<0)throw Error('This metric cannot be negative.');
- if(['return_rate','task_rate','ai_usefulness','invalid_traffic','subscription_churn'].includes(input.id)&&value>100)throw Error('A percentage must be between 0 and 100.');
+ if(!['net_contribution','subscription_contribution'].includes(input.id)&&value<0)throw Error('This metric cannot be negative.');
+ if(['return_rate','task_rate','ai_usefulness','invalid_traffic','subscription_churn','paid_conversion'].includes(input.id)&&value>100)throw Error('A percentage must be between 0 and 100.');
  if(!validDate(input.start)||!validDate(input.end)||input.start>input.end||input.end>new Date().toISOString().slice(0,10))throw Error('Use a valid completed reporting period.');
  const source=String(input.source||'').trim().slice(0,500),notes=String(input.notes||'').trim().slice(0,1500);
  if(!source)throw Error('Name the source report and scope.');
