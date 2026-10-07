@@ -3,6 +3,14 @@ import json,subprocess,datetime,hashlib
 from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 seed=json.loads((root/'docs/dashboard-register.json').read_text())
+seed['business_plan']=json.loads((root/'docs/business-plan.json').read_text())
+seed['seo']=json.loads((root/'workers/dashboard-seo.json').read_text())
+for metric in seed['metrics']:
+ if metric['id']=='organic_clicks':metric['view']='seo'
+ if metric['id'] in ('page_rpm','net_contribution'):metric['view']='money'
+extra=json.loads((root/'docs/dashboard-metrics.json').read_text())
+ids={m['id'] for m in seed['metrics']}
+seed['metrics'].extend(m for m in extra if m['id'] not in ids)
 coverage=json.loads((root/'site/assets/catalogue-coverage.json').read_text()) if (root/'site/assets/catalogue-coverage.json').exists() else {}
 rows=json.loads((root/'site/assets/catalogue-data.json').read_text()) if (root/'site/assets/catalogue-data.json').exists() else []
 try:sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()

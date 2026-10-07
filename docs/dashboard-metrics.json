@@ -1,0 +1,90 @@
+[
+  {
+    "id": "indexed_pages",
+    "title": "Indexed eligible pages",
+    "unit": "pages",
+    "kind": "guardrail",
+    "view": "seo",
+    "source": "Verified Search Console page-indexing report",
+    "definition": "Indexed URLs in the verified property, reconciled against the eligible sitemap. This is not the number of generated pages.",
+    "target": "Resolve accidental exclusions; no promise to index every reference page.",
+    "decision": "Investigate mismatched canonicals and low-value eligible pages."
+  },
+  {
+    "id": "paid_customers",
+    "title": "Active paying customers",
+    "unit": "customers",
+    "kind": "driver",
+    "view": "money",
+    "source": "Billing subscription report",
+    "definition": "Unique customers with an active paid entitlement at the period end. Registered accounts and email subscribers do not count.",
+    "target": "Validate repeat value before setting a acquisition target.",
+    "decision": "Observe retention, support load and product usefulness."
+  },
+  {
+    "id": "subscription_mrr",
+    "title": "Recurring subscription revenue",
+    "unit": "USD",
+    "kind": "primary",
+    "view": "money",
+    "source": "Billing MRR report with currency normalisation",
+    "definition": "Monthly recurring revenue for active recurring subscriptions, excluding one-off buying passes, taxes, unpaid trials and refunds. State currency conversion method.",
+    "target": "Positive retained revenue with affordable service cost.",
+    "decision": "Separate recurring demand from one-time purchase demand."
+  },
+  {
+    "id": "subscription_churn",
+    "title": "Paid customer churn",
+    "unit": "percent",
+    "kind": "guardrail",
+    "view": "money",
+    "source": "Billing cohort report",
+    "definition": "Customers whose paid entitlement ended during the month divided by paid customers at the beginning of that month. State reactivation treatment; do not mix cohorts.",
+    "target": "Establish a baseline; investigate reasons rather than inventing a threshold.",
+    "decision": "Improve usefulness or change the offer before expanding acquisition."
+  },
+  {
+    "id": "ai_cost",
+    "title": "Actual AI provider cost",
+    "unit": "USD",
+    "kind": "guardrail",
+    "view": "money",
+    "source": "Provider billing export",
+    "definition": "Attributed billed model usage for the same period and MotorJury workload, with currency and allocation method stated. Quota reservations are not cost.",
+    "target": "Stay within a deliberate spend cap while measuring answer usefulness.",
+    "decision": "Change quotas, retrieval or pricing when service margin is unsustainable."
+  },
+  {
+    "id": "ad_revenue",
+    "title": "Actual advertising revenue",
+    "unit": "USD",
+    "kind": "driver",
+    "view": "money",
+    "source": "Finalised AdSense earnings report",
+    "definition": "Finalised earnings for the selected property and period in USD, with adjustments and currency method stated. Estimated earnings and scenario RPM do not count as finalised revenue.",
+    "target": "Approval, consent and reader value precede a monetisation target.",
+    "decision": "Compare finalised revenue with service and content cost before expanding ad load."
+  },
+  {
+    "id": "paid_conversion",
+    "title": "Free-to-paid conversion",
+    "unit": "percent",
+    "kind": "driver",
+    "view": "money",
+    "source": "Account and billing cohort report",
+    "definition": "Eligible free accounts in a stated cohort that obtain a paid entitlement within the stated follow-up window divided by eligible free accounts in that same cohort. Exclude internal tests; do not divide cumulative payments by current visitors.",
+    "target": "Establish a genuine pilot cohort before choosing a target.",
+    "decision": "Compare the buying pass and recurring offer on usefulness, conversion and retained value."
+  },
+  {
+    "id": "subscription_contribution",
+    "title": "Actual subscription contribution",
+    "unit": "USD",
+    "kind": "primary",
+    "view": "money",
+    "source": "Billing receipts and attributed service-cost report",
+    "definition": "Subscription receipts net of refunds and processor fees minus attributed paid-service AI, support and stated operating costs for the same period. State allocation method; MRR is not cash and unallocated free-tier costs must remain visible.",
+    "target": "Positive measured contribution without weakening reader outcomes.",
+    "decision": "Fix service costs or offer value when each paid customer loses money; do not confuse receipts with profit."
+  }
+]

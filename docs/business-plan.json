@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-07",
+  "title": "MotorJury: a useful car collection and decision workspace",
+  "status": "Operating plan with explicit hypotheses; no revenue, traffic or market-size forecast is claimed.",
+  "sections": [
+    {
+      "title": "What we are building",
+      "points": [
+        "MotorJury helps people enjoy cars and prepare better buying and ownership questions. The collection attracts curiosity; useful original guides, scoped evidence and saved work turn a visit into an outcome.",
+        "The promise is specific: explain what the sources establish, show what remains unknown, and help the reader choose the next check. No invented reliability verdicts, owner experience, market prices or mechanic endorsements.",
+        "Build trust and a returning audience before scaling ads or paid features. Catalogue size is an asset, not proof of editorial quality or demand."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Readers, problems and initial market",
+      "points": [
+        "Buyer: needs to distinguish year, generation, powertrain and market; prepare seller questions and an inspection; compare their own costs; retain research between visits.",
+        "Enthusiast: wants understandable design stories, strong photography, comparisons with explicit generation scope, diagrams and a saved collection.",
+        "Owner: may value sourced model updates, maintenance/recall next steps and useful community evidence once reliable coverage and delivery exist.",
+        "Initial technical buying coverage is 2019–2020 US RAV4. Six scoped manufacturer-archive design stories serve the enthusiast journey. Confirm geography and the primary paying segment through interviews rather than assuming that all catalogue visitors are buyers."
+      ],
+      "assumptions": [
+        "Market size, active audience, country mix and willingness to pay are currently unknown. No TAM/SAM/SOM number is invented."
+      ],
+      "sources": []
+    },
+    {
+      "title": "Positioning and alternatives",
+      "points": [
+        "Alternatives include manufacturer manuals/archives, official safety and economy services, listings, automotive publishers, owner communities and general AI chat.",
+        "MotorJury must earn a place by linking a clear car identity to useful interpretation and a saved, private workflow. Mere fact aggregation and an unrestricted chatbot are easily substituted.",
+        "Conduct a documented comparison against five current alternatives using the same buyer tasks. Record source scope, friction, update cadence and price from direct current evidence; no superiority claim is made before that work."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Editorial product and visual experience",
+      "points": [
+        "Publish practical buyer dilemmas, engineering/design explanations and genuinely contributed owner experiences. Each piece has one clear question, a useful takeaway, a source/date, accurate scope and a correction route.",
+        "First expansion wave is twelve reviewed guides in at least three useful clusters. Work in small batches; the first three focus on fuel-economy labels, written warranty promises and interpreting complaint counts. A 50-guide roadmap is conditional on demand and source quality, not a filler quota.",
+        "Use car photographs with checked identity and licensing. Add responsive decision diagrams, sourced timelines and reader-input cost visuals. Supply accessible explanations/tables, units and uncertainty; preserve the full catalogue.",
+        "No Wikipedia-derived editorial pipeline. Use independent primary research and original interpretation. Required image creator/licence credits remain until legally suitable replacement assets exist."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "AI product and coverage",
+      "points": [
+        "Answers use reviewed MotorJury material, identify scope and provide source links. When a model or market is unsupported, the service says so and points to a useful guide.",
+        "Free users receive a bounded starter allowance. A paid allowance is a hypothesis until answer cost, usefulness and model coverage justify it. Never promise unlimited AI.",
+        "Usage belongs to verified accounts, with atomic quota/concurrency checks, token/context caps, transparent balance, fair provider-failure handling and a total operating budget.",
+        "Keep VINs, contact details and private budget values out of chat. Reader-entered budgets stay in the private planning workflow. Training/retrieval choices and analytics consent remain separate."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Discovery: search, AI engines and directories",
+      "points": [
+        "Technical foundations: honest canonical URLs, indexability gates, crawlable HTML and links, accurate sitemaps, distinctive page titles/descriptions, relevant structured data, accessible images and mobile performance.",
+        "Verify Google Search Console and Bing Webmaster Tools ownership, current sitemap acceptance, crawler logs and index reports. IndexNow applies only to supported engines and eligible changed URLs. The restricted Google Indexing API is not the route for ordinary car articles.",
+        "Prepare a daily queue of up to 8–10 new or materially improved reviewed URLs when real quota permits. Log request outcomes and later crawl/index evidence separately. There is no verified baseline of 26 indexed pages in the current evidence.",
+        "Check Google/Bing and AI search crawlers such as OAI-SearchBot, Claude search and Perplexity against official documentation, robots and WAF delivery. Search availability does not prove that a crawler visited or an answer cited us.",
+        "Select directories for real relevance and eligibility. Keep consistent identity, canonical links and ownership records; no bulk link-building or invented local-business qualification."
+      ],
+      "assumptions": [
+        "Search/AI inclusion and rankings cannot be guaranteed. Training crawler access does not establish search visibility."
+      ],
+      "sources": [
+        {
+          "title": "Google: generative AI discovery guidance",
+          "url": "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide"
+        },
+        {
+          "title": "Google: Indexing API scope",
+          "url": "https://developers.google.com/search/apis/indexing-api/v3/quickstart"
+        },
+        {
+          "title": "IndexNow documentation",
+          "url": "https://www.indexnow.org/documentation"
+        }
+      ]
+    },
+    {
+      "title": "Social distribution and return visits",
+      "points": [
+        "Confirm existing MotorJury account ownership before creating TikTok, Instagram and Facebook profiles. Use the owner-authorised address where supported. Adir performs final human verification and terms acceptance.",
+        "After accounts launch, run a four-week pilot: three original short-video concepts per week adapted to the platforms, two useful still/carousel posts, and weekly review of audience questions. Drafts alone and footer links are not active social operations.",
+        "Content comes from useful guides, car design stories, photo comparisons and diagrams. Every asset needs appropriate rights; distinguish original reporting from desk research and disclose sponsorship where applicable.",
+        "Measure qualified visits, saves, useful actions and return visits, alongside platform reach. Newsletter delivery and opt-in journeys need a configured provider. Never fabricate posts, comments or engagement."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Free, paid and a buying pass",
+      "points": [
+        "Free: the complete current collection, core original articles, visible sources, essential viewing/recall guidance, basic shortlist and a small chat allowance. Free content must be useful by itself.",
+        "Paid prototype: account-synced research, richer scoped comparisons, practical exports, reliable updates when data supports them and a higher bounded grounded-chat allowance. Advanced tools must actually improve an outcome before becoming an entitlement.",
+        "Test a 30-day buying pass against a recurring enthusiast/ownership membership. Buying can be episodic; a monthly membership needs recurring benefits. Avoid an annual commitment before retention and service quality are established.",
+        "Prices, included answers, currency, trial rules and ad-free treatment are decisions to validate. Interview at least ten target readers, then run an explicit offer/pilot. No live checkout or charge is enabled by this plan."
+      ],
+      "assumptions": [
+        "No price or conversion target is presented as validated. Paid model coverage and genuine willingness to pay remain open."
+      ],
+      "sources": []
+    },
+    {
+      "title": "Revenue channels and advertiser value",
+      "points": [
+        "Advertising remains paused pending account approval, consent verification and page eligibility. After approval, test a bounded placement with quality guardrails rather than flooding reading and chat journeys with ads.",
+        "Advertiser value comes from a clear automotive audience, useful intent, legitimate engagement, consent and accurate placement/context. Reader trust and invalid-traffic controls matter more than publishing a large number of pages.",
+        "Subscriptions fund verified workflow value. Consider affiliates only after actual demand, partner terms and clear disclosures. Do not let commission decide factual conclusions.",
+        "Report advertising, subscription receipts and contribution separately. Unknown earnings, RPM and subscriber counts remain unknown until a dated source report exists."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Financial model and funding discipline",
+      "points": [
+        "Use monthly scenarios in the Money tab, explicitly labelled assumptions. Required inputs include free/paid users, price excluding indirect taxes, free/paid answer use, cost per answer, processor percentage/fixed fees, support per paid user, other operating costs, ad pageviews and RPM.",
+        "Contribution equals subscription receipts plus advertising receipts, minus free/paid AI, processor fees, support and specified other costs. This is not audited profit and excludes costs/taxes that are not entered.",
+        "Calculate paid-unit contribution and break-even subscribers. If each paid subscriber loses money, no subscriber volume solves that unit problem. Include free-tier costs when evaluating sustainability.",
+        "Collect actual AI provider usage, payment fees, source licences, support time and hosting costs. Run conservative/base/stretch scenarios from sourced ranges only after those inputs exist; do not invent a three-year revenue forecast.",
+        "Before commercial launch, decide the operating entity, merchant/provider, supported countries/currencies, invoicing/tax responsibilities and a monthly spend ceiling. No subscription purchases or financial commitments are authorised by the scenario tool."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Billing, data and service operations",
+      "points": [
+        "Prefer hosted checkout and a customer billing portal. Map payments to verified accounts; enforce feature access on the server.",
+        "Handle signed/idempotent notifications for purchase, renewals, failed payment, cancellation, refund and dispute. Reconcile provider records and test delayed/failure paths. A browser success redirect is not proof of entitlement.",
+        "Monitor source freshness, error rates, quota reservations versus successful answers and current asset availability. Keep rollback, backups and recovery drills documented.",
+        "Prepare support, corrections, account recovery, cancellation and deletion journeys. Actual regional tax and consumer requirements must be confirmed for the chosen merchant and countries before charging."
+      ],
+      "assumptions": [],
+      "sources": [
+        {
+          "title": "Stripe subscription lifecycle",
+          "url": "https://docs.stripe.com/billing/subscriptions/overview"
+        },
+        {
+          "title": "Stripe signed subscription notifications",
+          "url": "https://docs.stripe.com/billing/subscriptions/webhooks"
+        },
+        {
+          "title": "Stripe customer portal",
+          "url": "https://docs.stripe.com/customer-management"
+        }
+      ]
+    },
+    {
+      "title": "Metrics, decisions and review cadence",
+      "points": [
+        "Primary product outcomes: useful consented reader sessions and 30-day return cohorts. Primary commercial outcome: contribution with defined costs and a dated source report.",
+        "Drivers: search clicks and relevant impressions/CTR, valuable task completion, AI referrals, free-to-paid conversion and actual subscription MRR. Guardrails: field LCP/INP/CLS, answer usefulness, refunds/disputes, churn, cost and invalid ad traffic.",
+        "Weekly review selects the next useful article/product fix from source evidence. Monthly review compares cohorts, margin and whether the paid offer creates recurring value. Reporting periods and populations must match.",
+        "Current measured audience and commercial baselines are missing. Work delivery goals such as twelve guides are operational milestones, not guaranteed traffic or Google-approval thresholds."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Execution roadmap and owners",
+      "points": [
+        "A · Protect and measure: private dashboard boundaries, full build SEO inventory, metadata/schema fixes, truthful source/report labels and an ordered task register.",
+        "B · Add useful value: three original guides first, then the twelve-guide batch, licensed photo repair, useful charts, accessibility and core buyer/account journeys.",
+        "C · Connect sources: search properties, actual crawling/index reports, field performance, advertising reports, email and account/provider access. Show unavailable evidence as unavailable.",
+        "D · Validate with people: ten real buyer tests, mechanic review, ownership authenticity and social registration/verified publishing. Adir supplies final human account steps and commercial choices; agent prepares and implements authorised work.",
+        "E · Monetise cautiously: validated offer and costs, hosted billing and entitlements, bounded paid pilot, then recurring retention/scale tests. Optional features follow evidence rather than precede it.",
+        "The Tasks tab ranks every current task and displays whether it can be executed now, needs account/data access, needs people or has a prerequisite. Existing verified states are preserved; planning does not count as completion."
+      ],
+      "assumptions": [],
+      "sources": []
+    },
+    {
+      "title": "Risks and go/no-go gates",
+      "points": [
+        "Editorial gate: original interpretation, checked sources, real model/market scope, licensed media and truthful experience claims. More words cannot compensate for weak evidence.",
+        "Discovery gate: public technical eligibility plus actual console/log evidence; never substitute a spoofed bot user-agent check for a real crawler visit.",
+        "Paid gate: readers demonstrate a useful outcome and willingness to pay, supported coverage matches the promise, billing/cancellation work, and conservative costs leave positive contribution.",
+        "Scale gate: returning usage and renewal evidence, reliable sources/support, acceptable performance and sustainable acquisition. Stop or change the offer if users do not find repeat value.",
+        "Material current risks are limited reviewed coverage, unavailable business reporting, missing verified photos, absent real buyer/mechanic validation, licensing gaps and external account/approval dependencies. No 100/100 or guaranteed Google outcome is promised."
+      ],
+      "assumptions": [],
+      "sources": []
+    }
+  ],
+  "sources_checked_at": "2026-10-07"
+}

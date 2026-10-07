@@ -1,5 +1,6 @@
 import BASELINE from './dashboard-data.json' with {type:'json'};
 import { HTML, LOGIN, CSS, CLIENT } from './dashboard-ui.mjs';
+import { prioritiseTasks } from './dashboard-control.mjs';
 import { geniusEnabled } from './genius.mjs';
 const COOKIE='__Host-mj_dashboard';
 const headers={'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow, noarchive','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"};
@@ -51,7 +52,7 @@ export async function handleDashboard(req,url,env){
   if(post)return reply({error:'Use GET.'},405);
   const state=await call(env,'dashboard-state',{token:token(req)});if(state.error)return reply({error:state.error},state.status||503);
   const overrides=state.tasks||{};const tasks=BASELINE.tasks.map(t=>({...t,...overrides[t.id]}));for(const [id,t]of Object.entries(overrides))if(!BASELINE.tasks.some(x=>x.id===id))tasks.push({...t,source:'Owner-added task'});
-  return reply({...BASELINE,tasks,metric_values:state.metrics,history:state.history,stats:state.stats,live:await health(env,url.origin),served_at:new Date().toISOString()});
+  return reply({...BASELINE,tasks:prioritiseTasks(tasks),metric_values:state.metrics,history:state.history,stats:state.stats,live:await health(env,url.origin),served_at:new Date().toISOString()});
  }
  if(path==='/api/dashboard/tasks'||path==='/api/dashboard/metrics'){
   if(!post)return reply({error:'Use POST.'},405);

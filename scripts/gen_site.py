@@ -550,6 +550,8 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
         raise TypeError("page(jsonld=...) takes a list of objects, not a JSON string")
     if isinstance(jsonld, dict):
         jsonld = [jsonld]
+    if 'og:image' not in extra_head:
+        extra_head += f'<meta property="og:image" content="{ORIGIN}/assets/og/default.png"><meta property="og:image:alt" content="MotorJury car collection and reader guides">'
     blocks = list(jsonld or []) + [_org_ld()]
     ld = "".join(f'<script type="application/ld+json">{json.dumps(x, separators=(",", ":"))}</script>' for x in blocks)
     return f"""<!doctype html>
