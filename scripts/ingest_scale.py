@@ -30,6 +30,7 @@ Budget is explicit: MODEL_YEAR_BUDGET caps the run so a deploy cannot hang. Rais
 build minutes allow; the selection is ordered so the most-searched cars are always covered.
 """
 import concurrent.futures as cf
+from nhtsa_records import records as nhtsa_records, record_check
 import json
 import os, os, re, shutil, sqlite3, sys, time, urllib.parse, urllib.request
 from pathlib import Path
@@ -230,7 +231,9 @@ def _fetch_one(t):
     mk, mo, yr = urllib.parse.quote(t["make"]), urllib.parse.quote(t["model"]), t["year"]
     row = dict(t)
 
-    c = get(f"{NHTSA}/complaints/complaintsByVehicle?make={mk}&model={mo}&modelYear={yr}")
+    c_check = nhtsa_records(t["make"], t["model"], yr, "complaints", get)
+    c = c_check if c_check["status"] in ("matched", "empty") else None
+    row["source_checks"] = {"complaints": c_check}
     results = (c.get("results") or []) if isinstance(c, dict) else []
     comp = {}
     if isinstance(c, dict):
@@ -254,17 +257,20 @@ def _fetch_one(t):
             break
     row["quotes"] = quotes
 
-    rc = get(f"{NHTSA}/recalls/recallsByVehicle?make={mk}&model={mo}&modelYear={yr}")
+    rc_check = nhtsa_records(t["make"], t["model"], yr, "recalls", get)
+    row["source_checks"]["recalls"] = rc_check
+    rc = rc_check if rc_check["status"] in ("matched", "empty") else None
     recalls = []
     if isinstance(rc, dict):
-        for r in (rc.get("results") or [])[:12]:
+        for r in (rc.get("results") or []):
             part = r.get("Component") or ""
             recalls.append({"campaign": r.get("NHTSACampaignNumber") or "",
                             "date": r.get("ReportReceivedDate") or "",
                             "component": part[:120],
                             "summary": (r.get("Summary") or "")[:400],
-                            "severe": 1 if SEVERE.search(part) else 0})
+                            "severe": 1 if SEVERE.search(part + " " + (r.get("Summary") or "") + " " + (r.get("Consequence") or "")) else 0})
     row["recalls"] = recalls
+    row["recall_count"] = rc_check["count"] if rc is not None else None
 
     row["epa"] = fetch_epa(yr, t["make"], t["model"])
     return row
@@ -356,7 +362,8 @@ def main():
               f"first: {errs[0].get('make')} {errs[0].get('model')} {errs[0].get('year')} "
               f"-> {errs[0]['error']}")
 
-    got = [r for r in rows if r.get("complaints") or r.get("recalls") or r.get("epa")]
+    got = [r for r in rows if r.get('epa') or any(
+        c.get('status') in ('matched', 'empty') for c in r.get('source_checks', {}).values())]
     print(f"fetched {len(rows)}; {len(got)} carry data ({time.time()-t0:.0f}s)")
     floor = 50 if not have else max(5, len(targets) // 20)
     if len(got) < floor:
@@ -399,20 +406,29 @@ def main():
         fuel_type = (e.get("fuelType") or "").strip()
         is_ev = 1 if "electric" in fuel_type.lower() else 0
         severe = sum(x["severe"] for x in r["recalls"])
-        vals = (r.get("complaints") or 0, r.get("complaints") or 0, len(r["recalls"]), severe,
-                is_ev, None if r.get("complaints") is not None else "complaints", today)
+        gaps = [kind for kind, check in r["source_checks"].items()
+                if check["status"] not in ("matched", "empty")]
         con.execute("""INSERT OR IGNORE INTO model_years
             (model_id,year,complaint_count,complaint_sample,recall_count,severe_recalls,is_ev,data_gap)
             VALUES(?,?,0,0,0,0,?,NULL)""", (mo_id[key], r["year"], is_ev))
         my = con.execute("SELECT id FROM model_years WHERE model_id=? AND year=?",
                          (mo_id[key], r["year"])).fetchone()[0]
+        previous = con.execute("SELECT complaint_count,complaint_sample,recall_count,severe_recalls FROM model_years WHERE id=?", (my,)).fetchone()
+        vals = (r["complaints"] if "complaints" not in gaps else previous[0],
+                r["complaints"] if "complaints" not in gaps else previous[1],
+                r["recall_count"] if "recalls" not in gaps else previous[2],
+                severe if "recalls" not in gaps else previous[3], is_ev, ",".join(gaps) or None, today)
+        for kind, check in r["source_checks"].items():
+            record_check(con, my, kind, check)
         # A refreshed model-year must overwrite, not stack: without this the row keeps its
         # first-ever counts and its complaint and recall children double on every re-fetch.
         con.execute("""UPDATE model_years SET complaint_count=?, complaint_sample=?,
             recall_count=?, severe_recalls=?, is_ev=?, data_gap=?, ingested_at=?
             WHERE id=?""", vals + (my,))
-        con.execute("DELETE FROM complaints WHERE my_id=?", (my,))
-        con.execute("DELETE FROM recalls WHERE my_id=?", (my,))
+        if "complaints" not in gaps:
+            con.execute("DELETE FROM complaints WHERE my_id=?", (my,))
+        if "recalls" not in gaps:
+            con.execute("DELETE FROM recalls WHERE my_id=?", (my,))
 
         for part, n in r["components"]:
             con.execute("INSERT INTO complaints(my_id,component,count,sample) VALUES(?,?,?,?)",
@@ -520,6 +536,5 @@ def _trigger_site_rebuild():
 
 if __name__ == "__main__":
     code = main()
-    _deep_harvest()
     _trigger_site_rebuild()
     sys.exit(code)

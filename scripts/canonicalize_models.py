@@ -116,6 +116,10 @@ def canonical(make, name):
 
 def merge_year(con, keep_id, drop_id):
     """Fold one model-year record into another: complaints add, recalls de-duplicate."""
+    # A merged legacy count is not an independently matched source response. Keep
+    # the records, but invalidate eligibility until the canonical identity is refreshed.
+    if con.execute("SELECT 1 FROM sqlite_master WHERE name='source_checks'").fetchone():
+        con.execute("DELETE FROM source_checks WHERE my_id IN (?,?)", (keep_id, drop_id))
     seen = {r[0] for r in con.execute(
         "SELECT campaign FROM recalls WHERE my_id=?", (keep_id,))}
     for r in con.execute("SELECT id, campaign FROM recalls WHERE my_id=?", (drop_id,)).fetchall():

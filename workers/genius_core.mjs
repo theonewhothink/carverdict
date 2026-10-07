@@ -219,7 +219,7 @@ export const TOOLS = [
     name: "search_cars",
     description:
       "Search MotorJury's model-year records (US federal NHTSA complaints and recalls, EPA fuel economy, " +
-      "MotorJury's reliability score 0-100, BUY/CAUTION/AVOID verdict, price and insurance estimates in USD). " +
+      "Checked model-level records only; predictive scores, buying verdicts and market-price estimates are suspended). " +
       "Use it for any question about a specific car, a year range, or a ranking such as the most reliable or " +
       "most complained-about cars. Name the car in `query` (e.g. '2016 Honda Civic') or leave the car out and " +
       "use the filters and `sort` to rank the whole dataset.",
@@ -280,7 +280,7 @@ export const TOOLS = [
     name: "search_pages",
     description:
       "Find other MotorJury pages by topic: head-to-head comparisons, data stories, problem pages, " +
-      "superlatives, marque hubs, the car library, calculators, the VIN check, events and methodology.",
+      "reviewed car design stories, the buying brief, the collection and methodology.",
     input_schema: {
       type: "object",
       properties: { query: { type: "string" }, limit: { type: "integer" } },
@@ -288,8 +288,14 @@ export const TOOLS = [
       additionalProperties: false,
     },
   },
+  {name:'read_page',description:'Read one reviewed page with its exact version scope and source links. Use the exact url returned by search_pages.',input_schema:{type:'object',properties:{url:{type:'string'}},required:['url'],additionalProperties:false}},
 ];
 
+export function readIndexedPage(idx,{url='' }={}){
+  const path=safePagePath(url);
+  const page=path&&idx.pages.find(p=>p.url===path);
+  return page?.text?{url:page.url,title:page.title,text:page.text.slice(0,10000)}:{error:'This path has no reviewed readable reference.'};
+}
 const TOOL_NAMES = new Set(TOOLS.map((t) => t.name));
 
 /** Checks a parsed tool input against its schema's shape. Returns an error string or null. */
@@ -321,6 +327,7 @@ export function runTool(idx, name, input) {
     case "search_guides": return searchGuides(idx, input);
     case "read_guide": return readGuide(idx, input);
     case "search_pages": return searchPages(idx, input);
+    case "read_page": return readIndexedPage(idx,input);
   }
   return { error: "unreachable" };
 }
@@ -377,10 +384,11 @@ export function pageText(html, max = 28000) {
 
 /* --------------------------------------------------------------- prompt --- */
 
-export const SYSTEM_PROMPT = `You are Car Genius, the assistant on ${SITE_NAME} (motorjury.com), a site that computes what a car really costs to own and whether a used model year is worth buying.
+export const SYSTEM_PROMPT = `You are Car Genius, the assistant on ${SITE_NAME} (motorjury.com), helping readers investigate documented concerns and prepare for a used-car viewing.
 
 Where your facts come from:
-- Answer from ${SITE_NAME}'s data only, which you reach through your tools: US federal NHTSA complaint and recall records, EPA fuel economy, ${SITE_NAME}'s 0-100 reliability score and BUY / CAUTION / AVOID verdict, ${SITE_NAME}'s price, depreciation and insurance estimates (USD, class-level estimates, not quotes), and the site's signed buyer's guides.
+- Answer from checked records, reviewed guides and reviewed design stories returned by tools. For history or design, use search_pages then read_page before making factual claims. Preserve the original-generation scope and any warning that a photograph shows a later car. Manufacturer accounts describe project history; they do not independently prove ownership quality. Reliability scores, automatic BUY / CAUTION / AVOID labels and market-price estimates are suspended. Do not reconstruct them from complaint counts or describe synthetic class estimates as vehicle prices.
+- NHTSA records are US model-level records. A campaign does not prove VIN applicability or remedy completion. Source-matching coverage is limited; do not turn missing data into zero, a safety clearance, or a recommendation.
 - Look things up before answering any question about a specific car, year, ranking or cost. Do not state a score, count, price or verdict you did not get from a tool in this conversation.
 - If the data does not cover something (a car or market the dataset lacks, a live listing price, a repair quote, legal or financial advice), say so plainly in one sentence and give what the site does have. General car knowledge is fine for explaining a term or a mechanism, labelled as general knowledge, never as a ${SITE_NAME} figure.
 - Complaint counts are raw federal records, not failure rates: a car that sold more gets more complaints. Say this when it matters to a comparison.

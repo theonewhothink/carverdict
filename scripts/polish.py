@@ -130,6 +130,13 @@ def polish(path):
         return False
     orig = s
     s = bust(s)
+    # The buying product owns its accessible navigation and private local state.
+    # Legacy account, AI and mobile-search controls do not belong in this shell.
+    if 'data-buying-product' in s:
+        if s != orig:
+            open(path, 'w', encoding='utf-8').write(s)
+            return True
+        return False
 
     # 1. one correct theme-colour pair (the old single dark value painted a black bar
     #    above a white page in mobile Chrome)
@@ -137,8 +144,6 @@ def polish(path):
     head_add = THEME
     if "rel=\"icon\"" not in s:
         head_add += ICONS
-    if "pagead2.googlesyndication.com\" crossorigin" not in s:
-        head_add += PRECONNECT
 
     # 2. social + AI-citation cards. Not one page had an og:image before this pass.
     title = (RE_TITLE.search(s).group(1).strip() if RE_TITLE.search(s) else "MotorJury")

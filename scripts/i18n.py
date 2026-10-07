@@ -17,7 +17,7 @@ S = {
 "lib_title":       {"en":"The Car Library — every model ever made","pt":"A Biblioteca de Carros — todos os modelos de sempre","es":"La Biblioteca del Automóvil — todos los modelos de la historia","fr":"La Bibliothèque Auto — tous les modèles de l'histoire","de":"Die Auto-Bibliothek — jedes je gebaute Modell","he":"ספריית הרכב — כל דגם שיוצר אי פעם"},
 "lib_sub":         {"en":"models indexed across","pt":"modelos indexados de","es":"modelos indexados de","fr":"modèles indexés couvrant","de":"Modelle indexiert über","he":"דגמים באינדקס מתוך"},
 "lib_brands":      {"en":"brands","pt":"marcas","es":"marcas","fr":"marques","de":"Marken","he":"מותגים"},
-"lib_photos":      {"en":"with original photography","pt":"com fotografia original","es":"con fotografía original","fr":"avec photographie d'origine","de":"mit Originalfotografie","he":"עם צילום מקורי"},
+"lib_photos":      {"en":"with credited reference photographs","pt":"com fotografias de referência creditadas","es":"con fotografías de referencia acreditadas","fr":"avec photographies de référence créditées","de":"mit belegten Referenzfotos","he":"עם תמונות עיון מיוחסות"},
 "lib_all_brands":  {"en":"All brands A–Z","pt":"Todas as marcas A–Z","es":"Todas las marcas A–Z","fr":"Toutes les marques A–Z","de":"Alle Marken A–Z","he":"כל המותגים א-ת"},
 "lib_top_brands":  {"en":"Major marques","pt":"Grandes marcas","es":"Grandes marcas","fr":"Grandes marques","de":"Große Marken","he":"מותגים מובילים"},
 "lib_models":      {"en":"models","pt":"modelos","es":"modelos","fr":"modèles","de":"Modelle","he":"דגמים"},

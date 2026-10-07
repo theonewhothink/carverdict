@@ -136,7 +136,7 @@
         }
         return '<button type="button" class="' + cls + ' lb-trigger" data-lb aria-label="Enlarge ' +
           name.replace(/"/g, '&quot;') + '" data-credit="' +
-          ((meta[f] || {}).artist || '') + ' · ' + ((meta[f] || {}).licence || '') + '">' +
+          String(((meta[f] || {}).artist || '') + ' · ' + ((meta[f] || {}).licence || '')).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">' +
           '<img loading="lazy" referrerpolicy="no-referrer" src="' + thumb(f, w) + '" alt="' +
           name.replace(/"/g, '&quot;') + '">' + '</button>';
       }

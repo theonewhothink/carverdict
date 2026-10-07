@@ -62,7 +62,10 @@ def cars(con):
         if comp and comp not in lst and len(lst) < 3:
             lst.append(comp)
     out = []
+    checked = {(r["my_id"], r["service"]): r["status"] for r in con.execute("SELECT * FROM source_checks")}
     for r in rows:
+        if any(checked.get((r["my_id"], kind)) not in ("matched", "empty") for kind in ("complaints", "recalls")):
+            continue
         year_url = gen_site.url_my(r)
         model_url = f"/cars/{r['kslug']}/{r['mslug']}/"
         try:
@@ -74,7 +77,6 @@ def cars(con):
             "url": year_url if exists(year_url) else (model_url if exists(model_url) else None),
             "verdict": r["verdict"], "score": r["score"], "confidence": r.get("confidence"),
             "complaints": r["complaint_count"] or 0, "recalls": r["recall_count"] or 0,
-            "severe_recalls": r["severe_recalls"] or 0,
             "top_complaints": top.get(r["my_id"], []), "recall_areas": rec.get(r["my_id"], []),
             "why": reasons,
         }
@@ -89,14 +91,7 @@ def cars(con):
             row["fuel_cost_usd_year"] = r["annual_fuel_cost"]
         if r.get("segment"):
             row["segment"] = r["segment"]
-        if r.get("price_new"):
-            row["price_new_usd"] = [r["price_new_low"], r["price_new_high"]]
-        if r.get("price_today"):
-            row["value_today_usd"] = [r["price_today_low"], r["price_today_high"]]
-        if r.get("depreciation_per_year"):
-            row["depreciation_usd_year"] = r["depreciation_per_year"]
-        if r.get("insurance_low"):
-            row["insurance_usd_year"] = [r["insurance_low"], r["insurance_high"]]
+        row['scope'] = 'US model-level; complaint counts are not failure rates; VIN applicability and remedy completion are not established.'
         out.append({k: v for k, v in row.items() if v not in (None, [], "")})
     return out
 
@@ -105,6 +100,8 @@ def guides():
     out = []
     for f in sorted((ROOT / "data" / "guides").glob("*.md")):
         meta, body = build_guides.parse(f.read_text())
+        if not meta.get("source_review"):
+            continue
         url = f"/guides/{meta['slug']}/"
         if not exists(url):
             continue
@@ -119,6 +116,7 @@ def guides():
 
 def pages():
     out = []
+    reviewed = set(json.loads((ROOT / 'data' / 'publication_policy.json').read_text()).get('index_pages', []))
     for p in sorted(SITE.rglob("index.html")):
         url = "/" + str(p.parent.relative_to(SITE)).replace("\\", "/").strip(".") + "/"
         url = url.replace("//", "/")
@@ -127,13 +125,21 @@ def pages():
             continue
         # model-year and library model pages are covered, with their data, by the cars
         # index; listing them twice only dilutes the search
-        if re.match(r"^/cars/[^/]+/[^/]+/\d{4}/$", url) or re.match(r"^/library/[^/]+/[^/]+/$", url):
+        if re.match(r"^/cars/[^/]+/[^/]+/\d{4}/$", url):
             continue
-        s = p.read_text(encoding="utf-8", errors="ignore")[:6000]
+        if url not in reviewed:
+            continue
+        s = p.read_text(encoding="utf-8", errors="ignore")
         t, d = RE_TITLE.search(s), RE_DESC.search(s)
         if not t:
             continue
-        out.append({"url": url, "title": unesc(t.group(1)).replace(" | MotorJury", "").replace(" — MotorJury", ""),
+        main=re.search(r'<main\b[^>]*>(.*?)</main>',s,re.S)
+        body=main.group(1) if main else ''
+        body=re.sub(r'<(script|style|nav|button|select|svg)\b[^>]*>.*?</\1>', ' ', body, flags=re.S|re.I)
+        body=re.sub(r'<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>',lambda a:re.sub(r'<[^>]+>','',a[2])+' ('+a[1]+')',body,flags=re.S)
+        readable=unesc(re.sub(r'<[^>]+>',' ',body))
+        readable=re.sub(r'\s+',' ',readable).strip()[:10000]
+        out.append({"text":readable,"url": url, "title": unesc(t.group(1)).replace(" | MotorJury", "").replace(" — MotorJury", ""),
                     "description": unesc(d.group(1)) if d else ""})
     return out
 
@@ -141,15 +147,14 @@ def pages():
 ASK_BODY = """<div class="wrap genius-page">
 <nav class="crumbs"><a href="/">Home</a> › Car Genius</nav>
 <h1>Car Genius</h1>
-<p class="lede">Ask anything about a car: which years to avoid, what breaks, what it costs to own, how two cars compare.
-Every answer comes from MotorJury's own data — federal complaint and recall records, EPA fuel figures, our price
-estimates and our signed guides — and links to the page it came from.</p>
+<p class="lede">Explore the checked public records and our first RAV4 buying brief. Coverage is limited.
+Reliability scores, automatic buying verdicts and market-price estimates are suspended.</p>
 <div data-genius-page></div>
 <noscript><p>Car Genius needs JavaScript. The same data is on every <a href="/cars/">car page</a> and in the
 <a href="/guides/">guides</a>.</p></noscript>
 <p class="src-note">Car Genius is an AI assistant. It can be wrong — check the figures on the linked page before
 you buy. Questions are sent to our AI provider to be answered and are not stored with your account.
-<a href="/methodology/">How the verdicts are computed</a>.</p>
+<a href="/methodology/">How the evidence is checked</a>.</p>
 </div>"""
 
 
@@ -162,13 +167,9 @@ def main():
     (ASSETS / "genius-guides.json").write_text(dump(g), encoding="utf-8")
     (ASSETS / "genius-pages.json").write_text(dump(pg), encoding="utf-8")
     canon = gen_site.ORIGIN + "/ask/"
-    html = gen_site.page("Car Genius — ask anything about a car | MotorJury",
-                         "Ask Car Genius which years to avoid, what breaks and what a car costs to own. "
-                         "Answers from federal complaint and recall data, with links to the source page.",
-                         canon, ASK_BODY,
-                         # an app screen, not an article: kept out of the index so a reviewer
-                         # sampling pages never lands on an empty chat box
-                         extra_head=gen_site.NOINDEX)
+    from build_buying_brief import shell
+    body='<section class="collection-hero compact"><p class="eyebrow">Start with a useful question</p><h1>Explore the evidence.</h1><p class="lede">For a viewing, use the reviewed RAV4 brief. For the cars that fascinate you, follow the design stories.</p><div class="actions"><a class="button" href="/buying-brief/">Prepare for a viewing →</a><a class="button secondary" href="/discover/">Explore design stories →</a></div></section><section class="card"><h2>Car Genius</h2><p>When the AI service is available, answers can consult our reviewed records and six design profiles. Check the linked source and exact version. Do not enter a VIN, contact details or private documents.</p><div data-genius-page></div><p class="note">AI questions are sent to our provider. Private checklist and budget inputs are not supplied. <a href="/privacy/">Privacy details</a>.</p></section>'
+    html=shell('Explore the evidence with Car Genius','/ask/',body,'<script src="/assets/genius.js" defer></script>').replace('</head>','<link rel="stylesheet" href="/assets/genius.css">'+gen_site.NOINDEX+'</head>')
     gen_site.write("ask/index.html", html)
     linked = sum(1 for r in c if r.get("url"))
     print(f"GENIUS OK: {len(c)} model-years ({linked} linked), {len(g)} guides, {len(pg)} pages indexed; /ask/ written")

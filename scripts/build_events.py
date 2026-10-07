@@ -444,7 +444,9 @@ so a confirmed date appears here as soon as it is public.</p>
 
 
 def main():
-    wiki = harvest()
+    # Imported article extracts and inferred dates are withheld. The static
+    # reference roster keeps existing routes and links readers to organisers.
+    wiki = {}
     rows = build_rows(wiki)
     (SITE / "events").mkdir(parents=True, exist_ok=True)
     (SITE / "events" / "index.html").write_text(index_page(rows))

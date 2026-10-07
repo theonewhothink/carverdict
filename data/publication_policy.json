@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "ads_enabled": false,
+  "ad_pages": {},
+  "review_note": "Ads are paused while low-value pages, evidence and buyer journeys are repaired. An explicit page review and account approval are required before enabling them.",
+  "index_pages": [
+    "/",
+    "/buying-brief/",
+    "/guides/toyota-rav4-years-to-avoid/",
+    "/guides/rav4-gasoline-vs-hybrid/",
+    "/methodology/",
+    "/editorial-policy/",
+    "/cars/toyota/rav4/2019/",
+    "/cars/toyota/rav4/2020/",
+    "/cars/lexus/rx-350/2020/",
+    "/library/",
+    "/all-cars/",
+    "/catalogue-notes/",
+    "/discover/",
+    "/library/ferrari/ferrari-f40/",
+    "/library/lamborghini/lamborghini-miura/",
+    "/library/mazda/mazda-mx-5/",
+    "/library/bmw/bmw-m3/",
+    "/library/honda/honda-nsx/",
+    "/library/mercedes-benz/mercedes-benz-300-sl/"
+  ],
+  "index_policy": "preserve_template_gates"
+}

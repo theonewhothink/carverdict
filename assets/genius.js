@@ -338,7 +338,7 @@
   function unavailable() {
     var host = document.querySelector('[data-genius-page]');
     if (host) host.innerHTML = '<div class="card"><p>Car Genius is not available right now. Every figure it would give you is on the ' +
-      '<a href="/cars/">car pages</a> and in the <a href="/guides/">guides</a>.</p></div>';
+      '<a href="/buying-brief/">reviewed RAV4 brief</a>. You can also <a href="/discover/">explore the design stories without AI</a>.</p></div>';
   }
 
   var cached = null;

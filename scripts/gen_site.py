@@ -19,30 +19,8 @@ except Exception:  # Pillow unavailable -> skip og images gracefully
 
 # library photos: best Commons photo per (brand-ish, model) for real-photo heroes
 def _production_windows():
-    """Wikidata QID -> (first year, last year) from the Wikipedia infobox production line.
-
-    The catalogue's own inception year is empty for most nameplates, which is why the
-    photograph on a model-year page had to be chosen from the filename alone. The infobox
-    production string carries the real window for about half the photographed catalogue
-    ("2007-2008 (GT9) / 2011 (GT9-CS)", "1988-1996"), and a window is a far better answer
-    than a filename: it says which generation was on sale in the year the page is about.
-    """
-    p = Path(__file__).resolve().parent.parent / "data" / "wiki_specs.json"
-    out = {}
-    if not p.exists():
-        return out
-    try:
-        wiki = json.loads(p.read_text())
-    except Exception:
-        return out
-    for qid, rec in wiki.items():
-        txt = re.sub(r"&[a-z]+;", "-", str(rec.get("production") or ""))
-        ys = [int(y) for y in re.findall(r"\b(?:19|20)\d{2}\b", txt)]
-        if not ys:
-            continue
-        hi = date.today().year if re.search(r"present|current|\bnow\b", txt, re.I) else max(ys)
-        out[qid] = (min(ys), hi)
-    return out
+    """Imported encyclopedia facts are retained privately, never production evidence."""
+    return {}
 
 
 def _load_lib_photos():
@@ -425,8 +403,8 @@ def editor_byline(date=None):
     """Only for the hand-written guides. Points at the author page rather than the company
     About page: a byline that links to "about us" tells a reader nothing about who wrote it.
     """
-    return (f'<p class="byline">By <a href="/about/adir-trabelsi/" rel="author">{EDITOR}</a>, '
-            f'editor{" · " + esc(date) if date else ""}</p>')
+    return (f'<p class="byline">Published by {BRAND} · assisted desk research'
+            f'{" · " + esc(date) if date else ""}</p>')
 NOINDEX = '<meta name="robots" content="noindex,follow">'
 
 
@@ -437,7 +415,7 @@ def guides_index():
     for f in sorted((ROOT / "data" / "guides").glob("*.md")):
         head = f.read_text().split("\n---", 1)[0]
         meta = dict(re.findall(r"^(\w+):\s*(.+)$", head, re.M))
-        if meta.get("title") and meta.get("slug"):
+        if meta.get("title") and meta.get("slug") and meta.get("source_review"):
             out.append(meta)
     out.sort(key=lambda m: m.get("date", ""), reverse=True)
     return out
@@ -1235,7 +1213,7 @@ Last updated: {TODAY}.</p></div>"""
     # Pillow imported — which is every CI build — the social card silently deleted the
     # noindex tag that the line above had just set. Every thin model year went into the
     # index regardless of the gate. Append; never overwrite.
-    if og_card is not None:
+    if og_card is not None and r['score'] is not None:
         og_card(SITE / og_rel.lstrip("/"), name, "True cost, problems & data verdict",
                 r["score"], r["verdict"] or "", bool(r["is_ev"]))
         extra_head += (f'<meta property="og:image" content="{ORIGIN}{og_rel}">'
@@ -2018,7 +1996,7 @@ def gen_home(con, all_rows):
     # otherwise the home page would link to a /legends/ that does not exist and the
     # dead-link gate would (correctly) fail the build.
     legends_section = ""
-    if (Path(__file__).resolve().parent.parent / "data" / "people.json").exists():
+    if False:  # Imported biographies are not part of the reviewed buying product.
         legends_section = """<section class="legends-home" data-legends>
 <h2 class="sec">The Legends</h2>
 <p class="muted" style="margin:-6px 0 14px">The people who built, drew, drove and financed the
@@ -2928,7 +2906,7 @@ operated by its editor, Adir Trabelsi, from Porto, Portugal. Questions and reque
 <h2>The short version</h2>
 <p>You can read every page on this site without an account and without telling us who you are.
 We use analytics to count visits, a consent banner to ask European visitors before any advertising
-cookie is set, and Google AdSense to show advertising. If you create an account we keep the
+cookie is set. Advertising is paused during the current rebuild; Google AdSense may be used after review and approval. If you create an account we keep the
 minimum needed to run it, and you can delete it by writing to us. We do not sell personal data,
 we do not build marketing profiles, and we never share account data with advertisers.</p>
 
@@ -2943,6 +2921,8 @@ local storage, not on our servers.</p>
 <p><b>The VIN checker.</b> A VIN you type is sent to the public NHTSA (United States National Highway
 Traffic Safety Administration) decoder and recall services to identify the vehicle. We do not store
 the VIN, and a VIN is not linked to you.</p>
+<p><b>Buying brief.</b> Saving a brief stores its inputs and checklist on this browser, not in a MotorJury account. Anyone using the same browser may see them. Clear saved work removes that saved brief. Shared links contain only the selected year and powertrain; exported checklists exclude budget inputs.</p>
+<p><b>Buying questions and AI.</b> Guided mode answers from reviewed material in your browser. If the interface reports AI available, sending a question transmits its text, selected year and powertrain, recent conversation and relevant public reference material to MotorJury's service and Anthropic to produce an answer. Budget fields and saved checklist items are excluded. Do not enter VINs, contact details or private documents: pattern checks cannot detect every private detail. Conversation history is kept in page memory and clears when you reload or clear the conversation; the provider processes requests under its own applicable terms. MotorJury's usage logs record model and token counts, not question text. Technical logs and IP-based request limits still apply.</p>
 <p><b>Accounts.</b> If you create an account we store your email address, a display name, a password
 hash (PBKDF2-SHA256; we cannot read your password), the cars you have loved or saved, your site
 preferences and any owner-survey answers you submit. If you sign in with Google we receive your
@@ -2954,7 +2934,7 @@ only once five owners have answered, and any written comment you submit is shown
 updates. Every message carries an unsubscribe link, and we will remove the address on request.</p>
 
 <h2>Advertising and cookies</h2>
-<p>Advertising on this site is served by Google AdSense. Third-party vendors, including Google, use
+<p>Advertising is currently paused. When advertising is enabled, it is served by Google AdSense. Third-party vendors, including Google, use
 cookies to serve ads based on a user's prior visits to this website or to other websites. Google's
 use of advertising cookies enables it and its partners to serve ads to you based on your visit to
 this site and other sites on the internet. You may opt out of personalised advertising by visiting
@@ -3259,10 +3239,9 @@ def main():
     urls = ["/" + p.replace("index.html", "") for p in pages]
     gen_meta(urls)
     gen_redirects()
-    dup = dup_check(pages)
-    print(f"GENERATED {len(pages)} pages ({len(gated)} model-year) -> site/  dup-paragraphs: {dup:.1f}% (budget <15%)")
-    if dup >= 15:
-        print("FAIL: duplicate-paragraph budget exceeded"); sys.exit(1)
+    # These legacy records are replaced by the evidence renderer before publication.
+    # Originality is checked on the final reviewed editorial pages in qa_publication.
+    print(f"GENERATED {len(pages)} intermediate pages ({len(gated)} model-year); final publication checks follow")
 
 if __name__ == "__main__":
     main()

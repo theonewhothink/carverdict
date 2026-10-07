@@ -151,6 +151,14 @@ def main():
         canon = ORIGIN + url
         words = len(re.sub(r"\{\{.*?\}\}", "", body).split())
         article = md(body, tables)
+        if not meta.get("source_review"):
+            article = ('<section data-editorial-hold><h2>This guide is being rechecked</h2>'
+                       '<p>The previous guide used score-based recommendations that the available evidence cannot validate. '
+                       'Those recommendations are withheld while the sources and version-specific checks are reviewed.</p>'
+                       '<p>Before a purchase, confirm the actual VIN, ask for remedy and service records, '
+                       'and arrange an independent inspection.</p>'
+                       '<p><a href="https://www.nhtsa.gov/recalls">Check the VIN with NHTSA</a> · '
+                       '<a href="/buying-brief/">See the complete RAV4 example</a></p></section>')
         # A guide may name a year that has no page of its own (the year fell under the
         # model-year gate). Point that link at the nameplate hub, which lists every year,
         # instead of shipping a dead link.
@@ -167,13 +175,14 @@ def main():
         related = [g for g in guides if g[2] != url][:0]
         # cross-links: guides that share a model, else the newest six
         mine = set(meta["models"])
-        rel = [g for g in guides if g[2] != url and mine & set(g[0]["models"])]
+        rel = [g for g in guides if g[0].get("source_review") and g[2] != url and mine & set(g[0]["models"])]
         if len(rel) < 4:
-            rel += [g for g in guides if g[2] != url and g not in rel][:4 - len(rel)]
+            rel += [g for g in guides if g[0].get("source_review") and g[2] != url and g not in rel][:4 - len(rel)]
         rel_html = ('<div class="card"><h2>More guides</h2><div class="rel-grid">' + "".join(
             f'<a href="{g[2]}">{esc(g[0]["title"])}<small>{esc(g[0].get("date", ""))}</small></a>'
             for g in rel[:6]) + "</div></div>")
-        byline = gen_site.editor_byline(meta.get("date", gen_site.TODAY))
+        byline = ('<p class="byline">Published by <a href="/about/">MotorJury</a> · '
+                  'desk research from linked sources. No vehicle test or specialist review is claimed.</p>')
         # A photograph of the car the guide is about. Guides carried no image at all —
         # the one page type a reviewer reads end to end was the one with nothing to look
         # at. The photograph comes from the same licensed catalogue as the car pages, for
@@ -207,7 +216,7 @@ def main():
 <h1>{esc(meta["title"])}</h1>
 <p class="sub">{esc(meta.get("description", ""))}</p>
 {byline}
-<p class="src-note">{words:,} words · about {minutes} minutes · every figure checked against the federal record on {gen_site.TODAY}</p>
+<p class="src-note">Published {esc(meta.get('date', 'date not recorded'))} · editorial revision {esc(meta.get('updated', meta.get('date', 'date not recorded')))}. Tables are generated from cached records; rebuilding this page does not recheck its prose.</p>
 </div>{hero_img}</div></div>
 <div class="wrap" style="display:grid;gap:20px;padding:28px 0;max-width:860px">
 <article class="card prose guide">{article}
@@ -218,8 +227,7 @@ def main():
         jsonld = [{"@context": "https://schema.org", "@type": "Article", "headline": meta["title"],
                    "description": meta.get("description", ""), "datePublished": meta.get("date", gen_site.TODAY),
                    "dateModified": meta.get("updated", meta.get("date", gen_site.TODAY)),
-                   "author": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
-                   "editor": {"@type": "Person", "name": EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
+                   "author": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
                    "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
                    "mainEntityOfPage": canon, "wordCount": words,
                    **({"image": image_url} if image_url else {})},
@@ -230,8 +238,9 @@ def main():
               if image_url else "")
         write(url.lstrip("/") + "index.html",
               page(f"{meta['title']} | {BRAND}", meta.get("description", meta["title"]), canon, body_html,
-                   jsonld, extra_head=og, og_type="article"))
+                   jsonld, extra_head=og + ('' if meta.get('source_review') else gen_site.NOINDEX), og_type="article"))
 
+    guides = [g for g in guides if g[0].get("source_review")]
     guides.sort(key=lambda g: (g[0].get("date", ""), g[0]["title"]), reverse=True)
     total = sum(g[4] for g in guides)
 

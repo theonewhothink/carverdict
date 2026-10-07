@@ -63,8 +63,8 @@ def main():
         if "class=\"model-story\"" in text:
             if "data-love=" not in text or "data-survey=" not in text:
                 issues.append("incomplete_account_engagement")
-            if "adsbygoogle.js" not in text:
-                issues.append("biography_missing_adsense")
+            if "adsbygoogle" in text:
+                issues.append("unreviewed_biography_requests_ads")
             # Check the reader-visible article copy, not HTML attributes such as
             # class="bio-card", which naturally contain an equals sign.
             story = re.search(r'<article class="model-story">(.*?)</article>', text, re.I | re.S)
@@ -83,20 +83,17 @@ def main():
         home = open("site/index.html", encoding="utf-8").read()
         library = open("site/library/index.html", encoding="utf-8").read()
         follow = open("site/follow/index.html", encoding="utf-8").read()
-        hm = re.search(r'<span class="hh-kicker">([\d,]+) models', home)
-        lm = re.search(r'<p class="sub"><b>([\d,]+)</b>', library)
+        hm = re.search(r'<p class="collection-stats"><b>([\d,]+)</b>', home)
+        lm = re.search(r'<p class="collection-stats"><b>([\d,]+)</b>', library)
         fm = re.search(r'The library — ([\d,]+) models from ([\d,]+) marques', follow)
+        count_data = json.load(open("site/assets/catalogue-data.json", encoding="utf-8"))
         counts = [int(x.group(1).replace(",", "")) for x in (hm, lm, fm) if x]
-        if len(counts) != 3 or len(set(counts)) != 1:
-            failures.append(("catalogue counts", f"home/library/follow={counts}"))
-        if "typical price" not in home or "/yr fuel + maintenance" not in home:
-            failures.append(("site/index.html", "homepage_cards_missing_price_or_running_cost"))
+        if not hm or not lm or any(n != len(count_data) for n in counts):
+            failures.append(("catalogue counts", f"home/library/follow={counts}; searchable={len(count_data)}"))
         search = open("site/search/index.html", encoding="utf-8").read()
-        if "typical price" not in search or "/yr insurance" not in search or "/yr depreciation" not in search:
-            failures.append(("site/search/index.html", "search_cards_missing_ownership_costs"))
         libdata = json.load(open("site/assets/library-data.json", encoding="utf-8"))
-        if not any(m[4] for b in libdata.values() for m in b.get("m", []) if len(m) > 4):
-            failures.append(("site/assets/library-data.json", "library_cards_have_no_cost_summaries"))
+        if any(m[4] for b in libdata.values() for m in b.get("m", []) if len(m)>4):
+            failures.append(("library pricing", "unverified synthetic cost summaries remain"))
     except Exception as e:
         failures.append(("cross-page QA", str(e)))
 

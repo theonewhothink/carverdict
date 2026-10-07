@@ -18,6 +18,7 @@ test("safety-critical recall language is flagged", () => {
 test("inspection joins decoded vehicle details to recall results", async () => {
   const responses = [
     { Results: [{ ModelYear: "2003", Make: "HONDA", Model: "ACCORD", BodyClass: "Sedan/Saloon", FuelTypePrimary: "Gasoline" }] },
+    { results: [{ model: "ACCORD" }] },
     { results: [{ NHTSACampaignNumber: "20V-001", Component: "AIR BAGS", Summary: "Inflator may rupture", Remedy: "Replace it" }] },
   ];
   const fetcher = async () => ({ ok: true, json: async () => responses.shift() });
@@ -26,6 +27,31 @@ test("inspection joins decoded vehicle details to recall results", async () => {
   assert.equal(result.recall_count, 1);
   assert.equal(result.severe_count, 1);
   assert.equal(result.recalls[0].campaign, "20V-001");
+});
+
+test("RX 350 alias mismatch cannot hide the fuel-pump campaign", async () => {
+  const calls = [];
+  const fetcher = async (url) => {
+    calls.push(url);
+    let data;
+    if (url.includes("DecodeVin")) data = { Results: [{ Make: "LEXUS", Model: "RX 350", ModelYear: "2020" }] };
+    else if (url.includes("products/vehicle")) data = { results: [{ model: "RX 350" }] };
+    else if (new URL(url).searchParams.get("model") === "RX350") data = { count: 1, results: [{ NHTSACampaignNumber: "20V682000", Summary: "Fuel pump may cause engine stall" }] };
+    else data = { count: 0, results: [] };
+    return { ok: true, json: async () => data };
+  };
+  const r = await inspectVin("1HGCM82633A004352", fetcher);
+  assert.equal(r.recall_count, 1);
+  assert.equal(r.recalls[0].campaign, "20V682000");
+  assert.match(r.scope, /does not establish VIN applicability/);
+});
+
+test("unmatched models and incomplete responses never become zero recalls", async () => {
+  for (const menu of [{ results: [] }, { results: [{ model: "ACCORD" }] }]) {
+    const responses = [{ Results: [{ Make: "HONDA", Model: "ACCORD", ModelYear: "2003" }] }, menu,
+      { count: 2, results: [{ NHTSACampaignNumber: "20V-001" }] }];
+    await assert.rejects(() => inspectVin("1HGCM82633A004352", async () => ({ ok: true, json: async () => responses.shift() })), /not a zero|incomplete/);
+  }
 });
 
 test("invalid VINs fail before any network request", async () => {
