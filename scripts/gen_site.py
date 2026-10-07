@@ -2993,11 +2993,10 @@ plus class-level estimates of prices, depreciation, insurance and running costs.
 person, and how corrections are handled.</p>
 
 <h2>Information, not advice</h2>
-<p>Everything on the site is provided for general information. A score, a verdict or a guide
-describes the pattern in the federal record for a model year across all the cars of that type; it
-is not an inspection of the particular car in front of you, and it cannot tell you whether that car
-is sound. Prices, running costs, depreciation and insurance figures are estimates, labelled as such,
-and are not quotes, valuations or offers. Nothing here is legal, financial or mechanical advice. Before
+<p>Everything on the site is provided for general information. Catalogue entries identify names and reference images. Research pages and public records have
+an explicit version and market scope; they do not inspect a particular vehicle or certify its condition.
+Predictive scores, automatic buying verdicts and synthetic market prices are suspended.
+Calculators use your stated inputs and assumptions; their results are not quotes, valuations or offers. Nothing here is legal, financial or mechanical advice. Before
 buying a car, have it inspected, check its history, and verify every open recall against NHTSA's own
 VIN lookup at nhtsa.gov/recalls, because a recall record on this site may be incomplete or out of date.</p>
 
@@ -3015,8 +3014,8 @@ anything published on it.</p>
 it came from. Bulk copying, scraping or republishing of pages, or of the underlying data files beyond
 the published data packs, requires a licence: write to <a href="/contact/">the editor</a>. Car
 photographs are the work of their credited photographers and are used under the Creative Commons
-licences stated on each image's Wikimedia Commons page; text derived from Wikipedia is used under
-CC BY-SA 4.0, as noted on the <a href="/about/">about page</a>. NHTSA and EPA data are public
+licences stated on each image's Wikimedia Commons page. Imported Wikipedia prose has been
+withheld from public editorial pages; original research links to the sources supporting its claims. NHTSA and EPA data are public
 domain works of the United States government.</p>
 
 <h2>Accounts and owner responses</h2>
@@ -3027,7 +3026,7 @@ submit them. You may delete your account at any time by writing to
 <a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a>.</p>
 
 <h2>Advertising and affiliate links</h2>
-<p>The site carries advertising served by Google AdSense and may carry affiliate links; both are
+<p>Advertising is currently paused. Future ads and any affiliate relationships will be
 described on the <a href="/disclosure/">disclosure page</a>. Advertisers and affiliate partners
 have no influence on any score, verdict or guide.</p>
 

@@ -21,6 +21,7 @@ import json
 import re
 import sqlite3
 import sys
+import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -161,6 +162,8 @@ you buy. Questions are sent to our AI provider to be answered and are not stored
 def main():
     con = sqlite3.connect(DB)
     ASSETS.mkdir(parents=True, exist_ok=True)
+    for name in ("genius.js","genius.css"):
+        shutil.copy2(ROOT/"assets"/name,ASSETS/name)
     c, g, pg = cars(con), guides(), pages()
     dump = lambda o: json.dumps(o, separators=(",", ":"), ensure_ascii=False)
     (ASSETS / "genius-cars.json").write_text(dump(c), encoding="utf-8")
@@ -168,8 +171,8 @@ def main():
     (ASSETS / "genius-pages.json").write_text(dump(pg), encoding="utf-8")
     canon = gen_site.ORIGIN + "/ask/"
     from build_buying_brief import shell
-    body='<section class="collection-hero compact"><p class="eyebrow">Start with a useful question</p><h1>Explore the evidence.</h1><p class="lede">For a viewing, use the reviewed RAV4 brief. For the cars that fascinate you, follow the design stories.</p><div class="actions"><a class="button" href="/buying-brief/">Prepare for a viewing →</a><a class="button secondary" href="/discover/">Explore design stories →</a></div></section><section class="card"><h2>Car Genius</h2><p>When the AI service is available, answers can consult our reviewed records and six design profiles. Check the linked source and exact version. Do not enter a VIN, contact details or private documents.</p><div data-genius-page></div><p class="note">AI questions are sent to our provider. Private checklist and budget inputs are not supplied. <a href="/privacy/">Privacy details</a>.</p></section>'
-    html=shell('Explore the evidence with Car Genius','/ask/',body,'<script src="/assets/genius.js" defer></script>').replace('</head>','<link rel="stylesheet" href="/assets/genius.css">'+gen_site.NOINDEX+'</head>')
+    body='<section class="collection-hero compact"><p class="eyebrow">Start with a useful question</p><h1>Explore the evidence.</h1><p class="lede">For a viewing, use the reviewed RAV4 brief. For the cars that fascinate you, follow the design stories.</p><div class="actions"><a class="button" href="/buying-brief/">Prepare for a viewing →</a><a class="button secondary" href="/discover/">Explore design stories →</a></div></section><section class="card"><h2>Car Genius</h2><p>Ask a question, then follow up as you would in a conversation. Answers read our reviewed stories and public-record evidence, with links so you can check the details. Keep private information out of chat.</p><div data-genius-page></div><p class="note">AI questions are sent to our provider. Private checklist and budget inputs are not supplied. <a href="/privacy/">Privacy details</a>.</p></section>'
+    html=shell('Explore the evidence with Car Genius','/ask/',body,'').replace('</head>',gen_site.NOINDEX+'</head>')
     gen_site.write("ask/index.html", html)
     linked = sum(1 for r in c if r.get("url"))
     print(f"GENIUS OK: {len(c)} model-years ({linked} linked), {len(g)} guides, {len(pg)} pages indexed; /ask/ written")

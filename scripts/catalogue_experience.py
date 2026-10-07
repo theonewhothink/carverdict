@@ -17,20 +17,34 @@ def photo_credits():
 def rows():
     lib.load_model_index();brands=lib.build_dataset();out=[]
     credits=photo_credits()
+    from collection_stories import PROFILES
     for brand,models in brands.items():
         bs=lib.slug(brand)
         for m in models:
             ms=lib.slug(m['n']);has=m['n'] in lib.MODEL_INDEX.get(bs,{})
             out.append(dict(n=m['n'],b=brand,p=m['p'],y=m['y'],q=m['q'],u=f'/library/{bs}/{ms}/' if has else f'/library/{bs}/#m-{ms}',t=credits.get(m['p'],{}).get('thumb','')))
+            if m['p']:
+                delivery=lib.PHOTO_DELIVERY.get(m['p'].replace('_',' '),{})
+                out[-1]['h']=hashlib.md5(m['p'].replace(' ','_').encode()).hexdigest()[:2]
+                if delivery.get('url'):out[-1]['t']=delivery['url']
+                if delivery.get('status')=='unavailable':out[-1]['e']='unavailable'
+            illustration=PROFILES.get(m['n'],{}).get('illustration')
+            if illustration:out[-1].update(i=illustration,it=credits[illustration]['thumb'])
+            if m['n'] in FEATURED:out[-1]['f']=FEATURED.index(m['n'])
     return sorted(out,key=lambda r:r['n'].casefold()),brands
 
 def image(filename,name,lazy=True):
     if not filename:return '<span class="collection-photo photo-missing">Photo not yet catalogued</span>'
+    if lib.PHOTO_DELIVERY.get(filename.replace('_',' '),{}).get('status')=='unavailable':return '<span class="collection-photo photo-missing">Photo reference unavailable</span>'
     credits=photo_credits()
     src=credits.get(filename,{}).get('thumb') or lib.commons_thumb(filename,640)
-    return f'<span class="collection-photo"><img src="{esc(src,quote=True)}" alt="{esc(name)} · catalogue photograph" width="640" height="400" decoding="async" {"loading=lazy" if lazy else "fetchpriority=high"} referrerpolicy="no-referrer"></span>'
+    responsive=''
+    if '/960px-' in src:
+        responsive=' srcset="'+esc(src.replace('/960px-','/330px-'),quote=True)+' 330w, '+esc(src,quote=True)+' 960w" sizes="(max-width:650px) 48vw, 400px"'
+    return f'<span class="collection-photo"><img src="{esc(src,quote=True)}"{responsive} alt="{esc(name)} · catalogue photograph" width="640" height="400" decoding="async" {"loading=lazy" if lazy else "fetchpriority=high"} referrerpolicy="no-referrer"></span>'
 
 def card(r,lazy=True):
+    r=dict(r,p=r.get('i') or r['p'])
     credit='<a class="collection-credit" href="'+esc(lib.commons_page(r['p']),quote=True)+'" rel="noopener">Photo &amp; attribution ↗</a>' if r['p'] else '<span class="collection-credit">Photo not yet catalogued</span>'
     save=f'<button type="button" class="save-car" data-save-car="{esc(r["u"],quote=True)}" data-car-name="{esc(r["n"],quote=True)}" aria-pressed="false">Save car +</button>'
     return f'<article class="collection-card"><a href="{esc(r["u"],quote=True)}">{image(r["p"],r["n"],lazy)}<div class="collection-card-body"><span class="collection-brand">{esc(r["b"])}</span><h3>{esc(r["n"])}</h3></div></a>{credit}{save}</article>'
@@ -73,13 +87,15 @@ def main(write):
     for name in ['catalogue.css','catalogue-core.mjs','catalogue.mjs']:
         shutil.copy2(ROOT/'assets'/name,SITE/'assets'/name)
     core=(ROOT/'assets/catalogue-core.mjs').read_text();core_name='catalogue-core.'+hashlib.sha256(core.encode()).hexdigest()[:10]+'.mjs';(SITE/'assets'/core_name).write_text(core)
-    app=(ROOT/'assets/catalogue.mjs').read_text().replace('./catalogue-core.mjs','./'+core_name);app_name='catalogue.'+hashlib.sha256(app.encode()).hexdigest()[:10]+'.mjs';(SITE/'assets'/app_name).write_text(app)
+    from collection_stories import catalogue_revision
+    app=(ROOT/'assets/catalogue.mjs').read_text().replace('./catalogue-core.mjs','./'+core_name).replace('__CATALOGUE_VERSION__',catalogue_revision());app_name='catalogue.'+hashlib.sha256(app.encode()).hexdigest()[:10]+'.mjs';(SITE/'assets'/app_name).write_text(app)
     script=f'<script type="module" src="/assets/{app_name}"></script>'
     search='<form class="collection-search" data-collection-entry role="search"><label for="car-search">Find a car or marque</label><div><input id="car-search" name="q" type="search" placeholder="Try Ferrari, 911 or Toyota RAV4" autocomplete="off"><button>Find cars <span aria-hidden="true">→</span></button></div></form>'
     stats=f'<p class="collection-stats"><b>{n:,}</b> catalogue entries <span>·</span> <b>{len(brands):,}</b> marques <span>·</span> <b>{photos:,}</b> photo references</p>'
     header=f'<section class="collection-hero"><p class="eyebrow">For the cars you love. And the one you might buy.</p><h1>A whole world of cars.</h1><p class="lede">Classics, icons and everyday cars. Find yours.</p>{search}{stats}</section>'
     gallery='<div class="collection-grid">'+''.join(card(r,lazy=i>0) for i,r in enumerate(featured[:12]))+'</div>'
-    home=header+'<nav class="collection-chips" aria-label="Explore by interest"><a href="/discover/">Six design stories →</a><a href="/shortlist/">My saved cars →</a><a href="/buying-brief/">Prepare for a viewing →</a></nav>'+'<section aria-label="Explore the collection">'+gallery+'<div class="collection-bottom"><a class="button" href="/library/">Explore the photo collection →</a><a href="/all-cars/">Complete A–Z directory</a></div></section><section class="collection-feature"><div><p class="eyebrow">Considering a used RAV4?</p><h2>Take better questions to the viewing.</h2><p>A source-backed 2019–2020 US RAV4 brief, a private checklist and a budget using your numbers.</p><a class="button" href="/buying-brief/">Prepare my buying brief →</a></div>'+record_photo('Toyota','RAV4')+'</section><p class="note">This is the complete current MotorJury catalogue, not a verified list of every car ever made. Reference photos may show another generation or trim. <a href="/catalogue-notes/">Coverage and photo credits</a>.</p>'
+    chat='<form class="home-chat" data-chat-entry><label for="home-car-question">Ask MotorJury AI</label><div><textarea id="home-car-question" rows="1" maxlength="1200" placeholder="Why does the Miura look so different from the F40?" required></textarea><button type="submit">Ask AI →</button></div><small>Your question goes to an AI provider using our reviewed material. Keep private details out. <a href="/ask/">Open full chat</a></small></form>'
+    home=header+chat+'<nav class="collection-chips" aria-label="Explore by interest"><a href="/discover/">Six design stories →</a><a href="/shortlist/">My saved cars →</a><a href="/guides/">Practical reader guides →</a><a href="/buying-brief/">Prepare for a viewing →</a></nav>'+'<section aria-label="Explore the collection">'+gallery+'<div class="collection-bottom"><a class="button" href="/library/">Explore the photo collection →</a><a href="/all-cars/">Complete A–Z directory</a></div></section><section class="collection-feature"><div><p class="eyebrow">Considering a used RAV4?</p><h2>Take better questions to the viewing.</h2><p>A source-backed 2019–2020 US RAV4 brief, a private checklist and a budget using your numbers.</p><a class="button" href="/buying-brief/">Prepare my buying brief →</a></div>'+record_photo('Toyota','RAV4')+'</section><p class="note">This is the complete current MotorJury catalogue, not a verified list of every car ever made. Reference photos may show another generation or trim. <a href="/catalogue-notes/">Coverage and photo credits</a>.</p>'
     write('/','Explore the world of cars',home,script)
     options=''.join(f'<option>{esc(b)}</option>' for b in sorted(brands))
     filters=f'<details class="collection-filters"><summary>Filter by marque, decade or photos</summary><div class="grid"><label>Marque<select name="brand"><option value="">All marques</option>{options}</select></label><label>Recorded decade<select name="era"><option value="">All decades, including unknown</option>'+''.join(f'<option value="{y}">{y}s</option>' for y in range(1880,2030,10))+'</select></label><label>Sort<select name="sort"><option value="featured">Photos first</option><option value="name">Name A–Z</option><option value="oldest">Oldest recorded year</option></select></label><label class="check"><input type="checkbox" name="photos">Only entries with photo references</label></div><button class="secondary" type="button" data-catalogue-reset>Reset filters</button></details>'
@@ -109,7 +125,7 @@ def main(write):
             f=SITE/path.strip('/')/'index.html';f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
     credits=photo_credits()
     credit_list=''.join(f'<li><a href="{esc(lib.commons_page(name),quote=True)}">{esc(name)}</a> — {esc(c["author"])} · <a href="{esc(c["licence_url"],quote=True)}">{esc(c["licence"])}</a>. Displayed in cropped frames.</li>' for name,c in credits.items())
-    write('/catalogue-notes/','Catalogue coverage and photography',f'<section class="collection-hero compact"><h1>A collection with room to grow.</h1></section><article class="card"><p>MotorJury preserves {len(lib.DATA):,} raw catalogue rows. Duplicate paths are merged into {n:,} distinct entries across {len(brands):,} marques. The directory includes entries without photos or reliable dates. These are catalogue identities, not independently reviewed ownership advice.</p><p>We aim to document automotive history broadly. We cannot establish that this snapshot contains every car ever made, every local badge, prototype or racing variant. Catalogue identities originated in Wikidata; buying advice uses separately linked primary evidence. Wikipedia prose is not reproduced.</p><p>Existing photo references remain accessible through the collection and marque pages. Each photograph links to its Commons file page with its author, licence and original image. Featured-image metadata below was checked on 6 October 2026. The rest of the inherited photo permissions still require review; a hotlink does not remove attribution obligations.</p><h2>Featured photographs</h2><ul>{credit_list}</ul><a href="/all-cars/">Browse every current entry</a></article>')
+    write('/catalogue-notes/','Catalogue coverage and photography',f'<section class="collection-hero compact"><h1>A collection with room to grow.</h1></section><article class="card"><p>MotorJury preserves {len(lib.DATA):,} raw catalogue rows. Duplicate paths are merged into {n:,} distinct entries across {len(brands):,} marques. The directory includes entries without photos or reliable dates. These are catalogue identities, not independently reviewed ownership advice.</p><p>We aim to document automotive history broadly. We cannot establish that this snapshot contains every car ever made, every local badge, prototype or racing variant. Buying advice and design stories use the primary sources linked beside the relevant claims.</p><p>Existing photo references remain accessible through the collection and marque pages. Each photograph links to its Commons file page with its author, licence and original image. Featured and recovered image metadata below carries its individual check date. The rest of the inherited photo permissions still require review; a hotlink does not remove attribution obligations.</p><h2>Featured photographs</h2><ul>{credit_list}</ul><a href="/all-cars/">Browse every current entry</a></article>')
     (SITE/'assets/catalogue-coverage.json').write_text(json.dumps({'raw_rows':len(lib.DATA),'distinct_entries':n,'marques':len(brands),'photo_references':photos,'directory_pages':total,'directory_page_size':size}))
     from collection_stories import main as build_stories
     build_stories(write,all_rows,card)

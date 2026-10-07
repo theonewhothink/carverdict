@@ -565,6 +565,13 @@ def main():
         selected.append((b, m, bs, ms))
         index.setdefault(bs, {})[m["n"]] = ms
 
+    # Recover illustrations after allocating pages, so adding an image never
+    # evicts an existing canonical URL from the 6,500-page deployment budget.
+    from build_library import PHOTO_ADDITIONS
+    for _brand, model, _brand_slug, _model_slug in selected:
+        if not model['p']:
+            model['p']=PHOTO_ADDITIONS.get(model['q'],{}).get('filename','')
+
     # name -> model-page URL, so predecessor/successor/designer can be real links
     global FLAT
     FLAT = {name: f"/library/{bs}/{ms}/" for bs, d in index.items() for name, ms in d.items()}
@@ -932,18 +939,25 @@ def main():
         # presenting one coherent collection journey. A reference entry is not a review.
         from collection_stories import PROFILES, story
         profile=PROFILES.get(m['n'])
+        displayed_photo=profile.get('illustration',m['p']) if profile else m['p']
+        from build_library import PHOTO_DELIVERY
+        if PHOTO_DELIVERY.get(displayed_photo.replace('_',' '),{}).get('status')=='unavailable':
+            shot='<figure class="model-shot noimg"><div class="photo-missing">Photo reference unavailable</div></figure>'
         caption=profile['photo'] if profile else 'Catalogue illustration; generation, year and trim have not been verified.'
-        credit_url='https://commons.wikimedia.org/wiki/File:'+urllib.parse.quote(m['p'].replace(' ','_')) if m['p'] else ''
+        credit_url='https://commons.wikimedia.org/wiki/File:'+urllib.parse.quote(displayed_photo.replace(' ','_')) if displayed_photo else ''
         credit='<a href="'+esc(credit_url)+'">Photographer, licence and original image ↗</a>' if credit_url else ''
         shot=shot.replace('</figure>','<figcaption>'+esc(caption)+' '+credit+' </figcaption></figure>')
-        if m['p']:
+        if displayed_photo:
             from catalogue_experience import photo_credits
-            photo_meta=photo_credits().get(m['p'],{})
+            photo_meta=photo_credits().get(displayed_photo,{})
             if photo_meta.get('thumb'):
                 shot=re.sub(r'src="[^"]+"','src="'+esc(photo_meta['thumb'])+'"',shot,count=1)
                 shot=shot.replace('data-credit="Wikimedia Commons &middot; CC"','data-credit="'+esc(photo_meta['author']+' · '+photo_meta['licence'])+'"')
                 attribution=esc(photo_meta['author'])+' · <a href="'+esc(photo_meta['licence_url'])+'">'+esc(photo_meta['licence'])+'</a>.'
                 shot=shot.replace('</figcaption>',attribution+'</figcaption>')
+        if displayed_photo!=m['p'] and m['p']:
+            inherited='https://commons.wikimedia.org/wiki/File:'+urllib.parse.quote(m['p'].replace(' ','_'))
+            shot=shot.replace('</figcaption>',' <a href="'+esc(inherited)+'">Other nameplate reference photo</a>.</figcaption>')
         scope=profile['scope'] if profile else 'Catalogue identity · research pending'
         narrative=story(m['n']) or '<section class="card"><h2>Start with the version</h2><p>This entry preserves the car’s catalogue identity and available photographs. Its history and specifications have not yet been independently reviewed. Identify the generation, market and variant before using any specifications or buying advice.</p><p><a href="/discover/">Read the researched design stories</a> or explore more cars from this marque below.</p></section>'
         if profile:

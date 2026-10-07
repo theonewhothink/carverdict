@@ -7,6 +7,11 @@ DATA=json.loads((ROOT/'data/collection_profiles.json').read_text())
 PROFILES={p['name']:p for p in DATA['profiles']}
 esc=html.escape
 
+@lru_cache(maxsize=1)
+def catalogue_revision():
+    inputs=('car_library.json','photo_additions.json','photo_delivery.json','photo_credits.json','collection_profiles.json')
+    return hashlib.sha256(b''.join((ROOT/'data'/name).read_bytes() for name in inputs)).hexdigest()[:10]
+
 def story(name):
     p=PROFILES.get(name)
     if not p:return ''
@@ -40,5 +45,5 @@ def asset_script():
         (assets/hashed).write_text(text);return hashed
     catalogue=emit('catalogue-core.mjs',(ROOT/'assets/catalogue-core.mjs').read_text())
     core=emit('collection-core.mjs',(ROOT/'assets/collection-core.mjs').read_text().replace('./catalogue-core.mjs','./'+catalogue))
-    app=emit('collection.mjs',(ROOT/'assets/collection.mjs').read_text().replace('./collection-core.mjs','./'+core))
+    app=emit('collection.mjs',(ROOT/'assets/collection.mjs').read_text().replace('./collection-core.mjs','./'+core).replace('./catalogue-core.mjs','./'+catalogue).replace('__CATALOGUE_VERSION__',catalogue_revision()))
     return '<script type="module" src="/assets/'+app+'"></script>'
