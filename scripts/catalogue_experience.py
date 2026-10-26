@@ -94,7 +94,7 @@ def main(write):
     stats=f'<p class="collection-stats"><b>{n:,}</b> catalogue entries <span>·</span> <b>{len(brands):,}</b> marques <span>·</span> <b>{photos:,}</b> photo references</p>'
     header=f'<section class="collection-hero"><p class="eyebrow">For the cars you love. And the one you might buy.</p><h1>A whole world of cars.</h1><p class="lede">Classics, icons and everyday cars. Find yours.</p>{search}{stats}</section>'
     gallery='<div class="collection-grid">'+''.join(card(r,lazy=i>0) for i,r in enumerate(featured[:12]))+'</div>'
-    home=header+'<nav class="collection-chips" aria-label="Explore by interest"><a href="/discover/">Nine design stories →</a><a href="/library/#brands">Explore every marque portal →</a><a href="/shortlist/">My saved cars →</a><a href="/guides/">Practical reader guides →</a><a href="/buying-brief/">Prepare for a viewing →</a></nav>'+'<section aria-label="Explore the collection">'+gallery+'<div class="collection-bottom"><a class="button" href="/library/">Explore the photo collection →</a><a href="/all-cars/">Complete A–Z directory</a></div></section><section class="collection-feature"><div><p class="eyebrow">Considering a used RAV4?</p><h2>Take better questions to the viewing.</h2><p>A source-backed 2019–2020 US RAV4 brief, a private checklist and a budget using your numbers.</p><a class="button" href="/buying-brief/">Prepare my buying brief →</a></div>'+record_photo('Toyota','RAV4')+'</section><p class="note">This is the complete current MotorJury catalogue, not a verified list of every car ever made. Reference photos may show another generation or trim. <a href="/catalogue-notes/">Coverage and photo credits</a>.</p>'
+    home=header+'<nav class="collection-chips" aria-label="Explore by interest"><a href="/discover/">Six design stories →</a><a href="/library/#brands">Explore every marque portal →</a><a href="/shortlist/">My saved cars →</a><a href="/guides/">Practical reader guides →</a><a href="/buying-brief/">Prepare for a viewing →</a></nav>'+'<section aria-label="Explore the collection">'+gallery+'<div class="collection-bottom"><a class="button" href="/library/">Explore the photo collection →</a><a href="/all-cars/">Complete A–Z directory</a></div></section><section class="collection-feature"><div><p class="eyebrow">Considering a used RAV4?</p><h2>Take better questions to the viewing.</h2><p>A source-backed 2019–2020 US RAV4 brief, a private checklist and a budget using your numbers.</p><a class="button" href="/buying-brief/">Prepare my buying brief →</a></div>'+record_photo('Toyota','RAV4')+'</section><p class="note">This is the complete current MotorJury catalogue, not a verified list of every car ever made. Reference photos may show another generation or trim. <a href="/catalogue-notes/">Coverage and photo credits</a>.</p>'
     write('/','Explore the world of cars',home,script)
     options=''.join(f'<option>{esc(b)}</option>' for b in sorted(brands))
     filters=f'<details class="collection-filters"><summary>Filter by marque, decade or photos</summary><div class="grid"><label>Marque<select name="brand"><option value="">All marques</option>{options}</select></label><label>Recorded decade<select name="era"><option value="">All decades, including unknown</option>'+''.join(f'<option value="{y}">{y}s</option>' for y in range(1880,2030,10))+'</select></label><label>Sort<select name="sort"><option value="featured">Photos first</option><option value="name">Name A–Z</option><option value="oldest">Oldest recorded year</option></select></label><label class="check"><input type="checkbox" name="photos">Only entries with photo references</label></div><button class="secondary" type="button" data-catalogue-reset>Reset filters</button></details>'
@@ -111,8 +111,7 @@ def main(write):
         # Retain the prior library hold until collection evidence and image permissions are reviewed.
         f=SITE/'library'/lib.slug(brand)/'index.html';f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
     # Every entry has a crawlable, usable HTML directory row; no JavaScript or photo is required.
-    from seo_templates import directory_jumps
-    size=120;total=math.ceil(n/size);jumps=directory_jumps(all_rows,size)
+    size=120;total=math.ceil(n/size)
     for page in range(1,total+1):
         path='/all-cars/' if page==1 else f'/all-cars/page/{page}/'
         subset=all_rows[(page-1)*size:page*size]
@@ -120,9 +119,7 @@ def main(write):
         prev=('/all-cars/' if page==2 else f'/all-cars/page/{page-1}/')
         nav=(f'<a class="button secondary" href="{prev}">← Previous</a>' if page>1 else '')+f'<span>Page {page} of {total}</span>'+(f'<a class="button secondary" href="/all-cars/page/{page+1}/">Next →</a>' if page<total else '')
         body=f'<section class="collection-hero compact"><p class="eyebrow">Every entry in the current catalogue</p><h1>Cars, A–Z.</h1><p>{n:,} distinct entries · {esc(subset[0]["n"])} to {esc(subset[-1]["n"])}</p><a href="/library/">Search or browse with photos →</a></section><nav class="directory-pages" aria-label="Directory pages">{nav}</nav><ol class="car-directory" start="{(page-1)*size+1}">{links}</ol><nav class="directory-pages" aria-label="More directory pages">{nav}</nav><p class="note">The full current catalogue, including missing photos and dates. Global historical completeness is not established. <a href="/catalogue-notes/">Read the coverage notes</a>.</p>'
-        body=body.replace('<ol class="car-directory"',jumps+'<ol class="car-directory"',1)
-        description=f'Cars A–Z, page {page} of {total}: {subset[0]["n"]} to {subset[-1]["n"]}. Browse {len(subset)} named entries with direct links to their car or marque pages.'
-        write(path,'Car directory — page '+str(page)+': '+subset[0]['n']+' to '+subset[-1]['n'],body,description=description)
+        write(path,'Car directory — page '+str(page),body)
         if page>1:
             f=SITE/path.strip('/')/'index.html';f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
     credits=photo_credits()
@@ -134,3 +131,4 @@ def main(write):
     from brand_portals import build as build_brand_portals
     build_brand_portals(write,all_rows)
     print(f'COLLECTION: all {n} distinct entries searchable and in {total} HTML directory pages; {photos} photo references preserved')
+
