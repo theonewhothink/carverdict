@@ -38,6 +38,10 @@ def apply_pilot(con):
 
 
 def main():
+    # New-page thresholds must not delete an already published, exact year record
+    # when complaint/recall totals change in the nightly dataset.
+    legacy=json.loads((ROOT/'data'/'legacy_routes.json').read_text())['routes']
+    published=set(legacy)
     con=sqlite3.connect(ROOT / "data" / "cars.sqlite")
     apply_pilot(con)
     con.row_factory=sqlite3.Row
@@ -55,7 +59,7 @@ def main():
     for r in rows:
         by_model[(r["kslug"],r["mslug"])].append(r)
         url=f'/cars/{r["kslug"]}/{r["mslug"]}/{r["year"]}/'
-        if not (SITE / url.strip('/') / 'index.html').exists():
+        if url not in published and not (SITE / url.strip('/') / 'index.html').exists():
             continue
         name=f'{r["year"]} {r["make"]} {r["model"]}'
         rc=checks.get((r["id"],"recalls"))
@@ -93,7 +97,6 @@ def main():
     write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p></section><section class="card"><ul>{links}</ul></section>')
     # Preserve published comparison routes, even though the unsupported ranking
     # generator no longer selects pairs. Unknown versions stay unknown.
-    legacy=json.loads((ROOT/'data'/'legacy_routes.json').read_text())['routes']
     model_keys={ks+'-'+ms:(ks,ms) for ks,ms in by_model}
     compare_links=[]
     for path in legacy:
