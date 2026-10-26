@@ -56,7 +56,17 @@ export async function dashboardDispatch(h,op,b,setupDigest=SETUP_DIGEST){
  if(op==='dashboard-logout'){h.sql.exec('DELETE FROM dashboard_sessions WHERE hash=?',tokenHash);return {ok:true};}
  if(op==='dashboard-state'){
   const period=Math.floor(now/1000/86400),counter=h.one('SELECT n,window FROM rate WHERE k=?','genius:all');
-  return {tasks:get('tasks')||{},metrics:get('metrics')||{},history:get('history')||[],stats:{users:h.one('SELECT COUNT(*) n FROM users').n,likes:h.one('SELECT COUNT(*) n FROM likes').n,surveys:h.one('SELECT COUNT(*) n FROM survey').n,subscribers:h.one('SELECT COUNT(*) n FROM subscribers').n,ai_quota_used_today:counter?.window===period?counter.n:0}};
+  return {tasks:get('tasks')||{},metrics:get('metrics')||{},history:get('history')||[],health_reports:get('health_reports')||[],stats:{users:h.one('SELECT COUNT(*) n FROM users').n,likes:h.one('SELECT COUNT(*) n FROM likes').n,surveys:h.one('SELECT COUNT(*) n FROM survey').n,subscribers:h.one('SELECT COUNT(*) n FROM subscribers').n,ai_quota_used_today:counter?.window===period?counter.n:0}};
+ }
+ // Called only by the authenticated server data handler. Keep observations apart from edits.
+ if(op==='dashboard-observation'){
+  const report=b.report;
+  if(!report||!Number.isFinite(Date.parse(report.checked_at))||!Array.isArray(report.probes)||report.probes.length>30||!report.tasks||!report.ci)return {error:'Invalid health observation.',status:400};
+  const date=new Date(now).toISOString().slice(0,10),reports=get('health_reports')||[],previous=reports.find(r=>r.date===date);
+  if(previous?.checked_at===report.checked_at)return {reports};
+  const observation={...report,date,first_seen_at:previous?.first_seen_at||new Date(now).toISOString(),last_seen_at:new Date(now).toISOString(),samples:(previous?.samples||0)+1};
+  const next=[observation,...reports.filter(r=>r.date!==date)].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,45);
+  put('health_reports',next);return {reports:next};
  }
  let change;
  if(op==='dashboard-task'){
