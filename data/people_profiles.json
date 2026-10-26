@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-26",
+  "profiles": [
+    {
+      "slug": "mate-rimac",
+      "name": "Mate Rimac",
+      "title": "Mate Rimac: from an electric BMW to the Concept_One",
+      "description": "How Mate Rimac's electric BMW project led to the Concept_One: four motors, torque control and the engineering behind the founder's story.",
+      "intro": "Mate Rimac is the founder of Rimac Automobili. His company's account traces the project to a 1984 BMW E30 whose combustion engine failed during a race. He replaced the powertrain with an electric one. The interesting question is what happened between that conversion and a car designed around electricity from the start.",
+      "sections": [
+        ["A conversion is a starting point", "Rimac's company history describes the electric BMW as the beginning of a much broader engineering effort. It identifies powertrain, battery and control-system development as work carried out inside the business. That helps explain why the founder's story belongs in a car-design collection: the shape of a finished car depends on the systems its team can build and integrate."],
+        ["What the production Concept_One changed", "Rimac presented the production Concept_One at the 2016 Geneva Motor Show. Its launch document describes four electric motors, one assigned to each wheel, with a control system that adjusts their torque separately. It also describes a dedicated vehicle platform, liquid battery thermal management and regenerative braking. These are claims about a particular production design, rather than specifications for every subsequent Rimac model."],
+        ["Read the engineering behind the headline", "Four motors make the control strategy as interesting as the combined power figure. In the Concept_One account, propulsion and braking are coordinated through individual wheel control. Our reading is that this changes the design question: how does the whole car manage the driver's request, rather than simply how large an engine can fit? Compare that question with the F40's turbocharged road-car brief and the Miura's transverse engine layout. Each is a different way to organise a dramatic sports car."],
+        ["Questions to take to the sources", "When reading a hypercar launch, separate the architecture from a performance promise. Which version is being described? Is an acceleration figure a manufacturer claim or an independently observed test? How are battery temperature and repeated use treated? The linked Concept_One release is a useful period document for asking those questions. It does not answer them for an individual used car, and this profile adds no road-test or ownership findings." ]
+      ],
+      "sources": [
+        ["Rimac Automobili: company and founder history", "https://www.rimac-automobili.com/about-us/", "The company's account of the BMW conversion and its in-house engineering. Historical background; changing staff totals and current executive roles are not reproduced."],
+        ["Production Concept_One launch, 1 March 2016", "https://www.rimac-newsroom.com/press-releases/rimac-automobili/rimac-automobili-unveils-the-production-version-of-the-concept-one-at-the-geneva", "Primary launch record for the four-motor layout, control approach and battery system. Manufacturer claims are not independent test results."]
+      ],
+      "related": [
+        ["Ferrari F40: a different supercar brief", "/library/ferrari/ferrari-f40/"],
+        ["Lamborghini Miura: packaging the engine", "/library/lamborghini/lamborghini-miura/"],
+        ["Explore the researched design stories", "/discover/"]
+      ]
+    }
+  ]
+}
