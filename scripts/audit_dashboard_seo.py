@@ -4,14 +4,16 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlsplit, unquote
+from seo_templates import metadata_issues
 import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parent.parent
 class Head(HTMLParser):
- def __init__(self):super().__init__(convert_charrefs=True);self.title='';self.in_title=False;self.description='';self.robots='';self.canonical='';self.h1=0;self.og=set();self.og_image='';self.ld=[];self.in_ld=False;self.buffer='';self.images=0;self.alt_missing=0;self.lang=''
+ def __init__(self):super().__init__(convert_charrefs=True);self.title='';self.in_title=False;self.in_body=False;self.description='';self.robots='';self.canonical='';self.h1=0;self.og=set();self.og_image='';self.ld=[];self.in_ld=False;self.buffer='';self.images=0;self.alt_missing=0;self.lang=''
  def handle_starttag(self,t,attrs):
   a=dict(attrs)
   if t=='html':self.lang=a.get('lang','')
-  if t=='title':self.in_title=True
+  if t=='body':self.in_body=True
+  if t=='title' and not self.in_body:self.in_title=True
   if t=='h1':self.h1+=1
   if t=='meta':
    n=a.get('name','').lower();p=a.get('property','')
@@ -38,15 +40,19 @@ def audit(site=ROOT/'site',origin=None):
   try:
    root=ET.fromstring(f.read_text());sitemap.update(n.text for u in root if u.tag.endswith('url') for n in u if n.tag.endswith('loc') and n.text)
   except ET.ParseError:xml_failures.append(f.name)
- pages=[];issues=[];total=0;held=0;error_pages=0;titles=collections.defaultdict(list);descs=collections.defaultdict(list)
+ pages=[];issues=[];total=0;held=0;error_pages=0;titles=collections.defaultdict(list);descs=collections.defaultdict(list);reference_issues=[]
  for f in sorted(site.rglob('*.html')):
   total+=1
   if f.relative_to(site).as_posix()=='404.html':error_pages+=1;continue
   path='/'+f.relative_to(site).as_posix().removesuffix('index.html');text=f.read_text()
-  if re.search(r'<meta\b[^>]*name=[\"\']robots[\"\'][^>]*content=[\"\'][^\"\']*noindex',text[:16000],re.I):held+=1;continue
+  if re.search(r'<meta\b[^>]*name=[\"\']robots[\"\'][^>]*content=[\"\'][^\"\']*noindex',text.split('</head>',1)[0],re.I):
+   held+=1
+   checks=metadata_issues(text)
+   if checks:reference_issues.append({'path':path,'issues':checks})
+   continue
   h=Head();h.feed(text)
   if 'noindex' in h.robots:held+=1;continue
-  flags=[]
+  flags=metadata_issues(text)
   if h.canonical!=origin+path:flags.append('Canonical differs from generated route')
   if not h.title.strip():flags.append('Missing title')
   if not h.description.strip():flags.append('Missing description')
@@ -73,6 +79,6 @@ def audit(site=ROOT/'site',origin=None):
  bots=[('Google','Googlebot'),('Bing / Copilot','bingbot'),('ChatGPT search','OAI-SearchBot'),('Claude search','Claude-SearchBot'),('Perplexity','PerplexityBot')]
  engines=[{'name':name,'agent':agent,'robots_home_allowed':rb.can_fetch(agent,origin+'/') if raw else None,'waf_delivery':'Not independently verified','crawl_visits':'Not connected','index_or_citations':'Not connected','ownership_or_submission':'Not verified'} for name,agent in bots]
  queue=sorted(pages,key=lambda r:(not r['path'].startswith('/guides/'),r['path']))
- return {'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'preview_isolated':os.environ.get('MOTORJURY_PREVIEW')=='1','scope':'Generated files in this build. Not an index report, live WAF test or verified crawler log.','summary':{'recovery_routes':recovery_routes,'html_pages':total,'indexable_candidates':len(pages),'noindex_pages':held,'excluded_error_pages':error_pages,'sitemap_urls':len(sitemap),'pages_needing_review':len(issues),'duplicate_title_groups':len(duplicate_titles),'duplicate_description_groups':len(duplicate_descriptions)},'issues':issues,'duplicate_titles':duplicate_titles,'duplicate_descriptions':duplicate_descriptions,'xml_errors':xml_failures,'pages':pages,'engines':engines,'indexing_queue':queue[:10],'remaining_checks':['Validate relevant schema with official tools and confirm that markup matches visible content.','Verify console ownership, sitemap acceptance, indexed counts and URL inspection evidence.','Check CDN/WAF access against official crawler addresses; record actual verified visits.','Measure mobile field performance; asset HEAD timings are not Core Web Vitals.','Verify translations, photo identity/licensing, editorial expertise and reader outcomes.']}
+ return {'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'preview_isolated':os.environ.get('MOTORJURY_PREVIEW')=='1','scope':'Generated files in this build. Not an index report, live WAF test or verified crawler log.','summary':{'recovery_routes':recovery_routes,'html_pages':total,'indexable_candidates':len(pages),'noindex_pages':held,'excluded_error_pages':error_pages,'sitemap_urls':len(sitemap),'pages_needing_review':len(issues),'duplicate_title_groups':len(duplicate_titles),'duplicate_description_groups':len(duplicate_descriptions),'reference_metadata_issues':len(reference_issues)},'issues':issues,'reference_issues':reference_issues,'duplicate_titles':duplicate_titles,'duplicate_descriptions':duplicate_descriptions,'xml_errors':xml_failures,'pages':pages,'engines':engines,'indexing_queue':queue[:10],'remaining_checks':['Validate relevant schema with official tools and confirm that markup matches visible content.','Verify console ownership, sitemap acceptance, indexed counts and URL inspection evidence.','Check CDN/WAF access against official crawler addresses; record actual verified visits.','Measure mobile field performance; asset HEAD timings are not Core Web Vitals.','Verify translations, photo identity/licensing, editorial expertise and reader outcomes.']}
 if __name__=='__main__':
  result=audit();(ROOT/'workers/dashboard-seo.json').write_text(json.dumps(result,ensure_ascii=False)+'\n');print('Dashboard SEO inventory:',result['summary'])

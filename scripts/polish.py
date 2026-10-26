@@ -145,6 +145,8 @@ def polish(path):
     orig = s
     from site_chrome import enhance
     s = bust(enhance(s))
+    from seo_templates import normalise_search_metadata
+    s = normalise_search_metadata(s)
     # The buying product owns its accessible navigation and private local state.
     # Legacy account, AI and mobile-search controls do not belong in this shell.
     if 'data-buying-product' in s:
@@ -279,7 +281,7 @@ def polish(path):
                        % _json.dumps(b, separators=(",", ":")) for b in blocks)
         s = s.replace("</head>", tags + "</head>", 1)
 
-    s = bust(s)   # again: the tags injected above must carry the version too
+    s = normalise_search_metadata(bust(s))
     if s != orig:
         open(path, "w", encoding="utf-8").write(s)
         return True
@@ -299,4 +301,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
