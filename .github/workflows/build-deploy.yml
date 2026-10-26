@@ -50,6 +50,7 @@ jobs:
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
           node scripts/qa_brand_portal.mjs
+          node scripts/qa_all_brand_portals.mjs
 
       - name: Save portal browser checks and screenshots
         if: always()
@@ -118,5 +119,6 @@ jobs:
                       raise RuntimeError('IndexNow did not accept the notification')
                   print(f'IndexNow acknowledged {len(batch)} published sitemap URLs (HTTP {response.status}); receipt is not indexing.')
           PY
+
 
 
