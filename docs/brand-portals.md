@@ -16,12 +16,16 @@ open the corresponding portal; the full marque directory is visible without disc
 - The gallery snapshot has 4,478 additional exact-file Commons attribution records,
   prepared through the public imageinfo API. Existing checked credits are retained.
   Selected gallery images require an author, licence, source URL and check date.
-- The initial rollout displays 4,886 credited gallery selections across 929 portals,
+- The initial rollout displays more than 4,800 credited gallery selections across 929 portals,
   with up to 24 images per page. An archive with one documented image uses a still
   hero; one with none uses a deliberate typographic cover and its real model directory.
 - Nine additional named-publisher films supplement Porsche’s six. Actual thumbnails
   are shown, and the YouTube privacy-enhanced player loads only on Play. Missing
   videos are omitted rather than represented by fabricated posters or reused IDs.
+- A photo creator may identify their originating Wikimedia project in the required
+  attribution. These credits stay intact; they are not encyclopedia article copy.
+  The publication check excludes only marked creator-credit text from its prose scan
+  and continues to reject encyclopedia article links, including inside credits.
 - The source snapshot remains separate from the build date. Recorded vehicle years
   are labelled as catalogue dates, not guaranteed introduction or production dates.
 
