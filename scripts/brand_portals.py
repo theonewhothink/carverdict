@@ -1,6 +1,6 @@
-"""The Porsche editorial pilot, layered onto the existing canonical marque URL.
+"""The Porsche editorial feature and shared portal components.
 
-No external harvest at build time; no other marque is promoted into this template.
+No external harvest at build time; other marques use their own catalogue and research.
 The complete identity roster and its existing fragment targets remain intact.
 """
 import hashlib
@@ -39,7 +39,7 @@ def load():
 
 def credit(photo):
     more = f' · <a href="{esc(photo["attribution_url"], quote=True)}">{esc(photo["attribution_label"])}</a>' if photo.get('attribution_url') else ''
-    return f'<a href="{esc(photo["page"],quote=True)}">{esc(photo["author"])}</a> · <a href="{esc(photo["licence_url"],quote=True)}">{esc(photo["licence"])}</a>{more}'
+    return f'<span data-photo-attribution><a href="{esc(photo["page"],quote=True)}">{esc(photo["author"])}</a> · <a href="{esc(photo["licence_url"],quote=True)}">{esc(photo["licence"])}</a>{more}</span>'
 
 
 def image(photo, eager=False):
@@ -52,13 +52,13 @@ def figure(photo, cls='', eager=False):
     return f'<figure class="bp-photo {cls}"><a class="bp-photo-link" href="{esc(photo["url"],quote=True)}">{image(photo,eager)}</a><figcaption><b>{esc(photo["name"])}</b><span>{esc(photo["caption"])}</span><small>{credit(photo)} · Display cropped.</small></figcaption></figure>'
 
 
-def hero_slideshow(photos):
+def hero_slideshow(photos, brand='Porsche'):
     slides, credits = [], []
     for i, photo in enumerate(photos):
         hidden = ' hidden' if i else ''
         slides.append(f'<a class="bp-hero-slide" data-hero-slide data-hero-name="{esc(photo["name"],quote=True)}" href="{esc(photo["url"],quote=True)}" aria-label="Explore {esc(photo["name"],quote=True)}"{hidden}>{image(photo,i==0)}</a>')
         credits.append(f'<span data-hero-credit{hidden}>{credit(photo)} · Display cropped.</span>')
-    return (f'<figure class="bp-hero" data-hero-carousel data-hero-interval="2000" aria-roledescription="carousel" aria-label="Porsche photo slideshow"><div class="bp-hero-frames">'
+    return (f'<figure class="bp-hero" data-hero-carousel data-hero-interval="2000" aria-roledescription="carousel" aria-label="{esc(brand,quote=True)} photo slideshow"><div class="bp-hero-frames">'
             + ''.join(slides) + f'<div class="bp-hero-tag"><span>One marque. Many obsessions.</span><b data-hero-label>{esc(photos[0]["name"])}</b></div>'
             + f'<div class="bp-hero-controls" hidden><span data-hero-count aria-live="off">1 / {len(photos)}</span><button type="button" data-hero-previous aria-label="Previous hero photograph">←</button><button type="button" data-hero-toggle aria-label="Pause hero slideshow">Pause</button><button type="button" data-hero-next aria-label="Next hero photograph">→</button></div>'
             + '</div><figcaption>' + ''.join(credits) + '</figcaption></figure>')
@@ -206,3 +206,5 @@ def build(write, all_rows):
     text = re.sub(r'(<meta property="og:image:alt" content=")[^"]+', lambda m: m.group(1)+'Porsche 992 Carrera S — the MotorJury Porsche portal', text)
     file.write_text(text)
     print(f'PORSCHE PORTAL: {len(photos)} credited photos, {len(generations)} generations, {len(data["films"])} official films, {len(entries)} retained identities')
+    from all_brand_portals import build_all
+    build_all(write, all_rows)
