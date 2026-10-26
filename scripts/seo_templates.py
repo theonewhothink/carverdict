@@ -21,6 +21,7 @@ class PageMetadata(HTMLParser):
         self.metas = {}
         self.image = None
         self.in_body = False
+        self.in_main = False
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -28,6 +29,8 @@ class PageMetadata(HTMLParser):
             self.in_title = True
         if tag == 'body':
             self.in_body = True
+        if tag == 'main':
+            self.in_main = True
         if tag == 'link' and a.get('rel') == 'canonical':
             self.canonical = a.get('href', '')
         if tag == 'meta':
@@ -40,15 +43,22 @@ class PageMetadata(HTMLParser):
         if tag == 'img' and self.in_body and self.image is None:
             src = a.get('src', '')
             width = a.get('width', '')
+            sized_photo = width.isdigit() and int(width) >= 600
+            # Model heroes deliberately omit fixed dimensions. Their explicit
+            # priority and main-content placement distinguish them from icons.
+            hero_photo = (not width and self.in_main and a.get('fetchpriority') == 'high'
+                          and urlsplit(src).path.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.avif')))
             # Use a real content photograph, never a logo, avatar or tiny icon.
             if (a.get('alt', '').strip() and not a.get('aria-hidden') == 'true'
-                    and not 'hidden' in a and width.isdigit() and int(width) >= 600
+                    and not 'hidden' in a and (sized_photo or hero_photo)
                     and urlsplit(src).scheme in ('', 'https') and not src.startswith('//')):
                 self.image = {'url': urljoin(self.canonical, src), 'alt': a['alt']}
 
     def handle_endtag(self, tag):
         if tag == 'title':
             self.in_title = False
+        if tag == 'main':
+            self.in_main = False
 
     def handle_data(self, text):
         if self.in_title:
