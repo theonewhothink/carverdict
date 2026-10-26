@@ -49,14 +49,52 @@ jobs:
         if: github.ref == 'refs/heads/main'
         continue-on-error: true
         env:
-          ORIGIN: ${{ vars.SITE_ORIGIN }}
-          KEY: ${{ secrets.INDEXNOW_KEY }}
+          ORIGIN: ${{ vars.SITE_ORIGIN || 'https://motorjury.com' }}
         run: |
-          set -u
-          if [ -n "$ORIGIN" ] && [ -n "$KEY" ]; then
-            curl -s -X POST "https://api.indexnow.org/indexnow" \
-              -H "Content-Type: application/json" \
-              -d "{\"host\":\"${ORIGIN#https://}\",\"key\":\"${KEY}\",\"urlList\":[\"${ORIGIN}/\"]}" || true
-          else
-            echo "SITE_ORIGIN or INDEXNOW_KEY not set - skipping."
-          fi
+          python3 - <<'PY'
+          import json, os, re, time, urllib.request, urllib.parse
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          origin = os.environ['ORIGIN'].rstrip('/')
+          host = urllib.parse.urlsplit(origin)
+          if host.scheme != 'https' or not host.netloc or host.path:
+              raise ValueError('IndexNow requires the canonical HTTPS origin')
+          # This published verification file authorises URL notifications only;
+          # it is not a hosting, account, or search-console credential.
+          key = Path('static/4496abb8fd9de5938fb8c59a06f34eb1.txt').read_text().strip()
+          if not re.fullmatch(r'[0-9a-f]{32}', key):
+              raise ValueError('Invalid IndexNow verification file')
+          location = origin + '/' + key + '.txt'
+          for attempt in range(12):
+              try:
+                  with urllib.request.urlopen(location, timeout=10) as response:
+                      if response.read().decode().strip() == key:
+                          break
+              except OSError:
+                  pass
+              if attempt == 11:
+                  raise RuntimeError('Published IndexNow verification file is not available; no URLs submitted')
+              time.sleep(10)
+          # GitHub's build is an isolated preview. Submit the LIVE production
+          # sitemap only after the public verification file has been deployed.
+          with urllib.request.urlopen(origin + '/sitemap-0.xml', timeout=20) as response:
+              sitemap = ET.fromstring(response.read())
+          urls = list(dict.fromkeys(node.text for node in sitemap.iter()
+                     if node.tag.endswith('}loc') and node.text
+                     and urllib.parse.urlsplit(node.text).scheme == 'https'
+                     and urllib.parse.urlsplit(node.text).netloc == host.netloc
+                     and not urllib.parse.urlsplit(node.text).query
+                     and not urllib.parse.urlsplit(node.text).fragment))
+          if not urls:
+              raise RuntimeError('Live sitemap has no eligible URLs; no notification sent')
+          for offset in range(0, len(urls), 10000):
+              batch = urls[offset:offset + 10000]
+              payload = json.dumps({'host': host.netloc, 'key': key, 'keyLocation': location, 'urlList': batch}).encode()
+              request = urllib.request.Request('https://api.indexnow.org/indexnow', data=payload,
+                        headers={'Content-Type': 'application/json; charset=utf-8'}, method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status not in (200, 202):
+                      raise RuntimeError('IndexNow did not accept the notification')
+                  print(f'IndexNow acknowledged {len(batch)} published sitemap URLs (HTTP {response.status}); receipt is not indexing.')
+          PY
+
