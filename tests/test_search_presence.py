@@ -9,6 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from search_presence import build_sources, machine_guide, page_entities
 import build_buying_brief
+import polish
 
 
 class SearchPresenceTest(unittest.TestCase):
@@ -56,6 +57,21 @@ class SearchPresenceTest(unittest.TestCase):
             self.assertIn('not a representative reliability study', export['scope'])
             self.assertIn('recommendations are suspended', (root / 'site/llms.txt').read_text())
 
+    def test_changed_share_card_gets_a_new_public_url(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            site = Path(tmp); (site / "og").mkdir()
+            source = site / "og/default.png"
+            source.write_bytes(b"first card")
+            first = polish.social_card_version(site)
+            self.assertEqual(polish.social_card_version(site), first)
+            source.write_bytes(b"corrected card")
+            second = polish.social_card_version(site)
+            self.assertNotEqual(first, second)
+            self.assertEqual((site / second.lstrip("/")).read_bytes(), b"corrected card")
+            with patch.object(polish, "SOCIAL_CARD", second):
+                self.assertIn(second, polish.bust('<meta property="og:image" content="https://motorjury.com/og/default.png">'))
+                self.assertIn("/og/specific-car.png", polish.bust('<meta property="og:image" content="/og/specific-car.png">'))
+
     def test_machine_guide_references_current_reviewed_material(self):
         guide = machine_guide()
         self.assertIn('https://motorjury.com/sources/', guide)
@@ -66,3 +82,4 @@ class SearchPresenceTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

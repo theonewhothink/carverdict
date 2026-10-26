@@ -104,6 +104,19 @@ SOCIAL_ROW = (
 # stayed invisible. Each asset reference now carries ?v=<content hash>: unchanged files
 # keep their cached copy, changed files fetch immediately.
 ASSET_VERSIONS = {}
+SOCIAL_CARD = DEFAULT_OG
+
+
+def social_card_version(site=Path("site")):
+    """Give revised share-card content a new URL despite immutable image caches."""
+    import hashlib
+    source = site / DEFAULT_OG.lstrip("/")
+    if not source.is_file():
+        return DEFAULT_OG
+    content = source.read_bytes()
+    versioned = source.with_name("default-" + hashlib.sha256(content).hexdigest()[:12] + ".png")
+    versioned.write_bytes(content)
+    return "/og/" + versioned.name
 
 
 def asset_versions():
@@ -121,7 +134,8 @@ def bust(s):
     def rep(m):
         v = ASSET_VERSIONS.get(m.group(2))
         return m.group(1) + m.group(2) + (f"?v={v}" if v else "") + m.group(4)
-    return RE_ASSET.sub(rep, s)
+    s = RE_ASSET.sub(rep, s)
+    return s.replace(ORIGIN + DEFAULT_OG, ORIGIN + SOCIAL_CARD)
 
 
 def polish(path):
@@ -272,6 +286,8 @@ def polish(path):
 
 
 def main():
+    global SOCIAL_CARD
+    SOCIAL_CARD = social_card_version()
     asset_versions()
     pages = glob.glob("site/**/*.html", recursive=True)
     n = sum(1 for p in pages if polish(p))
@@ -282,3 +298,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
