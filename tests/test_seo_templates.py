@@ -70,6 +70,19 @@ class SearchTemplates(unittest.TestCase):
         self.assertEqual(links[-1], '/all-cars/page/133/')
         self.assertIn('Car 15840 – Car 15887', text)
 
+    def test_dimensionless_model_hero_is_used_without_selecting_header_icons(self):
+        text = self.fixture().replace(
+            '<img src="https://images.example/car.jpg" width="960" alt="A photographed car">',
+            '<img src="/header-logo.png" fetchpriority="high" alt="Site logo">'
+            '<main><img src="/tiny.png" width="32" fetchpriority="high" alt="Small icon">'
+            '<figure><img src="https://images.example/model.jpg" fetchpriority="high" alt="Model hero"></figure></main>')
+        result = normalise_search_metadata(text)
+        p = PageMetadata(); p.feed(result)
+        self.assertEqual(p.metas['og:image'], 'https://images.example/model.jpg')
+        nodes = json.loads(re.search(r'application/ld\+json">(.*?)</script>', result).group(1))
+        self.assertEqual(nodes[1]['image'], p.metas['og:image'])
+        self.assertEqual(normalise_search_metadata(result), result)
+
     def test_svg_accessibility_titles_do_not_change_the_document_title(self):
         text = self.fixture().replace('<body>', '<body><svg><title>EV badge</title></svg>')
         result = normalise_search_metadata(text)
