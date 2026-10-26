@@ -52,7 +52,9 @@ export async function handleDashboard(req,url,env){
   if(post)return reply({error:'Use GET.'},405);
   const state=await call(env,'dashboard-state',{token:token(req)});if(state.error)return reply({error:state.error},state.status||503);
   const overrides=state.tasks||{};const tasks=BASELINE.tasks.map(t=>({...t,...overrides[t.id]}));for(const [id,t]of Object.entries(overrides))if(!BASELINE.tasks.some(x=>x.id===id))tasks.push({...t,source:'Owner-added task'});
-  return reply({...BASELINE,tasks:prioritiseTasks(tasks),metric_values:state.metrics,history:state.history,stats:state.stats,live:await health(env,url.origin),served_at:new Date().toISOString()});
+  const live=await health(env,url.origin),active=tasks.filter(t=>t.status!=='retired');
+  const journal=await call(env,'dashboard-observation',{token:token(req),report:{checked_at:live.checked_at,source_sha:BASELINE.build.sha,probes:live.probes,ci:{status:live.ci.status,sha:live.ci.sha||''},ai_enabled:live.ai_enabled,tasks:{total:active.length,verified:active.filter(t=>t.status==='verified').length,blocked:active.filter(t=>t.status==='blocked').length}}});
+  return reply({...BASELINE,tasks:prioritiseTasks(tasks),metric_values:state.metrics,history:state.history,stats:state.stats,live,health_reports:journal.reports||state.health_reports||[],health_report_error:journal.error?'Daily observation could not be saved. Current checks are still shown.':null,served_at:new Date().toISOString()});
  }
  if(path==='/api/dashboard/tasks'||path==='/api/dashboard/metrics'){
   if(!post)return reply({error:'Use POST.'},405);

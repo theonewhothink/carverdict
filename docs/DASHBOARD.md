@@ -1,5 +1,15 @@
 # MotorJury private project dashboard
 
+## Geniuses-style control room · 26 October 2026
+
+The private dashboard uses the Geniuses.Club system-health presentation: compact dark panels, a health strip, the 1M audience target, a semicircular execution gauge, eight operating areas and a prioritised daily plan. Social, Mobile, Collection & play, Ask Car Genius, Revenues and The Funnel have dedicated views. Tasks, reader metrics, the complete business plan, source evidence, export and the scenario calculator remain available.
+
+The gauge is explicitly **verified task completion**, not a traffic-readiness prediction. Only tasks with completion evidence and a non-future verification date count; retired tasks are excluded. The audience target uses a saved 28–31-day GA4 users report with its dates and consent scope. Missing users remain unmeasured; clicks, sessions and engagement never become estimated people. Source reports and historical Search Console snapshots keep their own dates.
+
+Daily health observations are recorded only on an authenticated dashboard refresh. One record per UTC day retains the first and latest observation, distinct cached-check count, route results, serving source, latest CI and current task-status counts. The latest 45 observed days are retained in a separate database key; skipped days are not fabricated. This is not continuous uptime monitoring or a scheduled daily report. A journal save failure does not suppress current checks. Owner task edits, metric reports and change history are retained independently.
+
+`workers/dashboard-growth.mjs` defines the display model, `dashboard-views.mjs` supplies the new authenticated views and `dashboard-theme.mjs` defines presentation. The existing session, password, same-origin and private-cache controls remain enforced. The test-only Chromium harness in `scripts/qa_dashboard.mjs` exercises all tabs, small screens, keyboard tabs, saved task edits, measured/unknown audience states, degraded health and the existing financial calculator using isolated fixtures.
+
 Online route: https://motorjury.com/dashboard. Password checks, protected data and session revocation run in the Worker / Hub durable database. The password is never part of the repository or browser script. A one-time 256-bit token provisions a salted PBKDF2 verifier through HTTPS; only the token digest is bundled, and provisioning locks after success. Sessions last eight hours and use a Secure, HttpOnly, SameSite=Strict host cookie. Login attempts are bounded; private responses are no-store and noindex, with same-origin JSON writes.
 
 The baseline contains 54 current tasks, 57 historical Mission Control entries and 11 metric definitions. All 15 named findings from the supplied August audit map to current tasks. The artifact's nine unnamed findings cannot be reconstructed; its claimed 24 findings and local 73/100 remain historical claims.

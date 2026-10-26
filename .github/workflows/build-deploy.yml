@@ -51,6 +51,7 @@ jobs:
           npx playwright install --with-deps chromium
           node scripts/qa_brand_portal.mjs
           node scripts/qa_all_brand_portals.mjs
+          node scripts/qa_dashboard.mjs
 
       - name: Save portal browser checks and screenshots
         if: always()
@@ -58,6 +59,15 @@ jobs:
         with:
           name: porsche-portal-browser-qa
           path: verification/brand-portal/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Save dashboard browser checks and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-browser-qa
+          path: verification/dashboard/
           if-no-files-found: ignore
           retention-days: 14
 
