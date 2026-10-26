@@ -50,19 +50,19 @@ def shell(title, path, body, script="", description=None, jsonld=None, og_type="
         para=re.search(r'<p(?:\s[^>]*)?>(.*?)</p>',body,re.S)
         summary=html.unescape(re.sub(r'<[^>]+>',' ',para.group(1))) if para else ''
         description=(title+'. '+re.sub(r'\s+',' ',summary).strip())[:190].rsplit(' ',1)[0]
-    webpage={"@context":"https://schema.org","@type":"WebPage","name":title,"description":description,"url":ORIGIN+path,"isPartOf":{"@type":"WebSite","name":"MotorJury","url":ORIGIN+'/'}}
-    blocks=[webpage]+(jsonld or [])
+    from search_presence import page_entities
+    blocks=page_entities(title,description,path,jsonld,ORIGIN)
     ld=''.join('<script type="application/ld+json">'+json.dumps(x).replace('<','\\u003c')+'</script>' for x in blocks)
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#12685e">
 <title>{esc(title)} | MotorJury</title><meta name="description" content="{esc(description,quote=True)}">
-<link rel="canonical" href="{ORIGIN}{path}"><meta property="og:title" content="{esc(title,quote=True)} | MotorJury"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:url" content="{ORIGIN}{path}"><meta property="og:type" content="{esc(og_type)}"><meta property="og:image" content="{ORIGIN}/assets/og/default.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="{ORIGIN}{path}"><meta property="og:title" content="{esc(title,quote=True)} | MotorJury"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:url" content="{ORIGIN}{path}"><meta property="og:type" content="{esc(og_type)}"><meta property="og:site_name" content="MotorJury"><meta property="og:image" content="{ORIGIN}/og/default.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="MotorJury — car design stories and used-car viewing guides"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
 {styles}<meta name="twitter:card" content="summary_large_image">{ld}</head><body>
 <a class="skip" href="#content">Skip to content</a><header><div class="wrap"><a class="logo" href="/">Motor<span>Jury</span></a>
 <nav aria-label="Main"><a href="/library/">Car collection</a><a href="/discover/">Discover</a><a href="/ask/">Ask AI</a><a href="/guides/">Guides</a><a href="/buying-brief/">Buying brief</a><a href="/shortlist/">Saved cars<span data-saved-count></span></a></nav></div></header>
 <main id="content" data-buying-product><div class="wrap">{body}</div></main>
 <footer><div class="wrap"><p>Design stories from manufacturer archives. Buying brief: 2019–2020 US RAV4. No road test or specialist endorsement is claimed.</p>
-<p><a href="/methodology/">How the evidence works</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/contact/">Send a correction</a> · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <a href="/disclosure/">Advertising</a> · <a href="/catalogue-notes/">Catalogue &amp; photo credits</a></p></div></footer>{script}<script src="{chat_script}" defer></script></body></html>'''
+<p><a href="/sources/">Sources &amp; research</a> · <a href="/about/">About MotorJury</a> · <a href="/methodology/">How the evidence works</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/contact/">Send a correction</a> · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <a href="/disclosure/">Advertising</a> · <a href="/catalogue-notes/">Catalogue &amp; photo credits</a></p></div></footer>{script}<script src="{chat_script}" defer></script></body></html>'''
 
 
 def guide_widget():

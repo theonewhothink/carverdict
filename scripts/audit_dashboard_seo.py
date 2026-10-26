@@ -3,10 +3,11 @@ import datetime,json,os,collections,re
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.robotparser import RobotFileParser
+from urllib.parse import urlsplit, unquote
 import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parent.parent
 class Head(HTMLParser):
- def __init__(self):super().__init__(convert_charrefs=True);self.title='';self.in_title=False;self.description='';self.robots='';self.canonical='';self.h1=0;self.og=set();self.ld=[];self.in_ld=False;self.buffer='';self.images=0;self.alt_missing=0;self.lang=''
+ def __init__(self):super().__init__(convert_charrefs=True);self.title='';self.in_title=False;self.description='';self.robots='';self.canonical='';self.h1=0;self.og=set();self.og_image='';self.ld=[];self.in_ld=False;self.buffer='';self.images=0;self.alt_missing=0;self.lang=''
  def handle_starttag(self,t,attrs):
   a=dict(attrs)
   if t=='html':self.lang=a.get('lang','')
@@ -17,6 +18,7 @@ class Head(HTMLParser):
    if n=='description':self.description=a.get('content','')
    if n=='robots':self.robots=a.get('content','').lower()
    if p.startswith('og:') and a.get('content'):self.og.add(p)
+   if p=='og:image':self.og_image=a.get('content','')
   if t=='link' and a.get('rel')=='canonical':self.canonical=a.get('href','')
   if t=='script' and a.get('type')=='application/ld+json':self.in_ld=True;self.buffer=''
   if t=='img':self.images+=1;self.alt_missing+=int('alt' not in a)
@@ -50,6 +52,8 @@ def audit(site=ROOT/'site',origin=None):
   if not h.description.strip():flags.append('Missing description')
   if h.h1!=1:flags.append('Expected exactly one main heading')
   if not {'og:title','og:description','og:url','og:image'}<=h.og:flags.append('Incomplete social preview metadata')
+  image_url=urlsplit(h.og_image)
+  if h.og_image and image_url.netloc==urlsplit(origin).netloc and not (site/unquote(image_url.path).lstrip('/')).is_file():flags.append('Social preview image points to a missing generated asset')
   if origin+path not in sitemap:flags.append('Not present in generated sitemap')
   if h.alt_missing:flags.append('Image missing alt attribute')
   schema_types=[]

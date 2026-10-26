@@ -149,9 +149,9 @@ def og_card():
         return ImageFont.load_default()
 
     d.text((84, 320), "MotorJury", font=font(84), fill=(255, 255, 255))
-    d.text((84, 424), "What that car really costs to own.", font=font(40), fill=(255, 209, 102))
-    d.text((84, 486), "Price · depreciation · repairs · insurance · verdict,", font=font(30), fill=(190, 205, 225))
-    d.text((84, 528), "computed from NHTSA and EPA public data.", font=font(30), fill=(190, 205, 225))
+    d.text((84, 424), "Explore the cars. Check the evidence.", font=font(40), fill=(255, 209, 102))
+    d.text((84, 486), "Car design stories and used-car viewing guides.", font=font(30), fill=(190, 205, 225))
+    d.text((84, 528), "Primary sources. Clear scope. Your next question.", font=font(30), fill=(190, 205, 225))
     d.rounded_rectangle([84, 596, 384, 604], radius=4, fill=(255, 176, 46))
     return img
 

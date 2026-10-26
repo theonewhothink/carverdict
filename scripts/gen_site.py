@@ -500,12 +500,10 @@ def _org_ld():
             "@context": "https://schema.org", "@type": "Organization",
             "@id": ORIGIN + "/#organization", "name": BRAND, "url": ORIGIN + "/",
             "logo": ORIGIN + "/icon-512.png",
-            "description": "Per-model-year car ownership costs, problems and verdicts computed from "
-                           "NHTSA and EPA public data.",
+            "description": "A car catalogue, sourced design stories and practical used-car viewing guides.",
             "founder": {"@type": "Person", "name": "Adir Trabelsi"},
-            "publishingPrinciples": ORIGIN + "/methodology/",
+            "publishingPrinciples": ORIGIN + "/editorial-policy/",
             "email": "hello@motorjury.com",
-            "sameAs": [ORIGIN + "/about/"],
         }
     return ORG_LD
 
@@ -3132,19 +3130,8 @@ User-agent: Google-Extended
 Allow: /
 Sitemap: {ORIGIN}/sitemap.xml
 """)
-    (SITE / "llms.txt").write_text(f"""# {BRAND}
-> Per-model-year car ownership data: NHTSA complaints (component-clustered), recalls,
-> EPA fuel economy, computed reliability scores and BUY/CAUTION/AVOID verdicts.
-> All numbers trace to NHTSA/EPA public APIs; estimates are labeled. Methodology: {ORIGIN}/methodology/
-
-Canonical citation format: "{BRAND} ({CURRENT_YEAR}), {ORIGIN}<page-url>, based on NHTSA/EPA public data."
-
-## Key pages
-- {ORIGIN}/cars/ — brand index
-- {ORIGIN}/vin-check/ — free VIN decoder and NHTSA recall check
-- {ORIGIN}/calculators/ — true-cost calculator
-- {ORIGIN}/methodology/ — scoring formula
-""")
+    from search_presence import machine_guide
+    (SITE / "llms.txt").write_text(machine_guide(ORIGIN))
     # sitemap index + shard (spec: sharded <=10K URLs/file)
     shard = "".join(f"<url><loc>{ORIGIN}{u}</loc><lastmod>{TODAY}</lastmod></url>" for u in urls)
     (SITE / "sitemap-0.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{shard}</urlset>')
