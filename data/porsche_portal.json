@@ -1,0 +1,373 @@
+{
+  "reviewed_at": "2026-10-26",
+  "title": "Porsche: history, iconic cars, photos & films",
+  "description": "Explore Porsche through original stories, 24 credited photographs, eight generations of the 911, official films and the complete MotorJury Porsche directory.",
+  "sources": [
+    [
+      "beginnings",
+      "Nine decades of Porsche Engineering",
+      "https://www.porscheengineering.com/en/peg/newsroom/pem-21-2/90-years-of-future/",
+      "Engineering office, 356 No. 1 and the rear-engined production 356."
+    ],
+    [
+      "history",
+      "Porsche: people, models and milestones",
+      "https://newsroom.porsche.com/en/2023/history/porsche-75-years-people-models-milestones-31874.html",
+      "Historical introductions and brand milestones; not a current product list."
+    ],
+    [
+      "901",
+      "The original 911: 1963–1973",
+      "https://newsroom.porsche.com/en/press-kits/60-Years-Porsche-911/1.-Generation-Porsche-911-%28Ur-Elfer%29%2C-1963-1973.html",
+      "901 debut, 1964 name change and rear-mounted flat-six."
+    ],
+    [
+      "generations",
+      "Porsche 911: seven generations",
+      "https://newsroom.porsche.com/en/products/porsche-one-millionth-911-milestone-seven-generations-13735.html",
+      "Historical generation changes; introduction years can differ from model years."
+    ],
+    [
+      "993",
+      "The 993: the last air-cooled 911",
+      "https://newsroom.porsche.com/en/history/porsche-911-seven-generations-part-4-type-993-16486.html",
+      "1993 introduction and the end of air-cooled 911 production in 1998."
+    ],
+    [
+      "996",
+      "The 996: first water-cooled 911",
+      "https://newsroom.porsche.com/en/history/porsche-911-seven-generations-part-5-typ-996-16487.html",
+      "1997 introduction, parts sharing and the business and regulatory context."
+    ],
+    [
+      "992",
+      "The eighth-generation 911",
+      "https://newsroom.porsche.com/en/products/porsche-911-new-eigth-generation-992-timeless-machine-design-icon-world-premiere-los-angeles-2018-16522.html",
+      "992 premiere and continuity of the 911 concept."
+    ],
+    [
+      "racing",
+      "Porsche's motorsport milestones",
+      "https://newsroom.porsche.com/en/2023/history/porsche-75-years-porsche-sports-car-motorsports-history-31940.html",
+      "1951 Le Mans class victory, 1970 overall victory and 1986 Dakar result."
+    ],
+    [
+      "dakar",
+      "Preserving the 959 Paris-Dakar",
+      "https://newsroom.porsche.com/en/2023/history/porsche-959-paris-dakar-recommissioning-restoration-fair-retro-classics-31125.html",
+      "1986 rally cars and the museum's conservation of their original wear."
+    ],
+    [
+      "boxster",
+      "Opening Gambit: 25 years of Boxster",
+      "https://newsroom.porsche.com/christophorus/en/2021/398/boxster-25-years.html",
+      "1993 concept, August 1996 production and mid-engine layout."
+    ],
+    [
+      "cayenne",
+      "The third Porsche: the Cayenne",
+      "https://newsroom.porsche.com/en/2022/products/porsche-cayenne-anniversary-20-years-success-story-28443.html",
+      "2002 debut, commercial expansion and the SUV's engineering brief."
+    ],
+    [
+      "taycan",
+      "The 2019 Taycan world premiere",
+      "https://newsroom.porsche.com/en/2019/products/porsche-taycan-world-premiere-live-all-electric-sports-car-18445.html",
+      "First electric production Porsche and its 800-volt architecture."
+    ],
+    [
+      "past",
+      "The engineering office and National Socialism",
+      "https://newsroom.porsche.com/en/company/porsche-1931-1951-history-study-book-design-office-ferdinand-porsche-14144.html",
+      "Porsche's account of research into its Nazi-era involvement and forced labour."
+    ],
+    [
+      "surprise",
+      "The Cayenne convertible that stayed a one-off",
+      "https://newsroom.porsche.com/en/2022/products/porsche-cayenne-anniversary-20-years-open-top-one-off-convertible-29272.html",
+      "A full-size open-top design study, not a production model."
+    ],
+    [
+      "films",
+      "Raceborn Moments: the 1952 356 SL",
+      "https://newsroom.porsche.pt/en/2026/history/porsche-raceborn-moments-356-sl-43338.html",
+      "Archive research and Porsche's official film series; episode links checked on its verified channel."
+    ]
+  ],
+  "photographs": [
+    {
+      "id": "992",
+      "model": "Porsche 992",
+      "name": "911 Carrera S · 992",
+      "group": "911",
+      "file": "Porsche 992 Carrera S coupe IMG 5838.jpg",
+      "author": "Alexander Migl",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "A familiar roofline, redrawn for another generation."
+    },
+    {
+      "id": "356",
+      "model": "Porsche 356",
+      "name": "356 No. 1 Roadster",
+      "group": "Origins",
+      "file": "Porsche 356 No. 1 Roadster IMG 0814.jpg",
+      "credit_key": "Porsche 356 No. 1 Roadster IMG 0814.jpg",
+      "caption": "The mid-engined first car. The production 356 took a different layout."
+    },
+    {
+      "id": "speedster",
+      "model": "Porsche 356 Speedster",
+      "name": "356 Speedster",
+      "group": "Origins",
+      "file": "Porsche 356 Speedster.jpg",
+      "author": "FaceMePLS",
+      "licence": "CC BY 2.0",
+      "licence_url": "https://creativecommons.org/licenses/by/2.0/",
+      "original_width": 1024,
+      "caption": "A small windscreen and a big invitation to go outside."
+    },
+    {
+      "id": "original",
+      "model": "1963-1989 Porsche 911",
+      "name": "Early 911 E",
+      "group": "911",
+      "file": "Porsche 911E ca 1969.jpg",
+      "author": "Charles01",
+      "licence": "Public domain",
+      "licence_url": "https://commons.wikimedia.org/wiki/File:Porsche_911E_ca_1969.jpg",
+      "caption": "The early 911's light, upright glasshouse."
+    },
+    {
+      "id": "gseries",
+      "model": "1974-1989 Porsche 911",
+      "name": "911 SC · G-series",
+      "group": "911",
+      "file": "Porsche911sc.jpg",
+      "author": "Dcooke",
+      "licence": "Public domain",
+      "licence_url": "https://commons.wikimedia.org/wiki/File:Porsche911sc.jpg",
+      "original_width": 800,
+      "caption": "The impact-bumper era: the silhouette survives a tougher suit."
+    },
+    {
+      "id": "964",
+      "model": "Porsche 964",
+      "name": "911 · 964",
+      "group": "911",
+      "file": "Porsche 964 front 20080515.jpg",
+      "author": "Rudolf Stricker",
+      "licence": "CC BY-SA 3.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "caption": "Smoother bumpers make an old outline look newly purposeful."
+    },
+    {
+      "id": "993",
+      "model": "Porsche 993",
+      "name": "911 · 993",
+      "group": "911",
+      "file": "Porsche, Techno-Classica 2018, Essen (IMG 9729).jpg",
+      "author": "Matti Blume",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "The final air-cooled 911 generation, seen at Techno-Classica."
+    },
+    {
+      "id": "996",
+      "model": "Porsche 996",
+      "name": "911 Carrera 4 · 996",
+      "group": "911",
+      "file": "Porsche 996 (1999 model year).JPG",
+      "author": "Ultegra",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "A 1999-model-year Carrera 4 at Goodwood. The headlamps divide opinion."
+    },
+    {
+      "id": "997",
+      "model": "Porsche 997",
+      "name": "911 Carrera S · 997",
+      "group": "911",
+      "file": "2008 Porsche 911 Carrera S coupe.jpg",
+      "credit_key": "2008 Porsche 911 Carrera S coupe.jpg",
+      "caption": "Round headlights return; the modern proportions remain."
+    },
+    {
+      "id": "991",
+      "model": "Porsche 991",
+      "name": "911 Carrera 4S · 991",
+      "group": "911",
+      "file": "2013 Porsche 911 Carrera 4S (991) (9626546987).jpg",
+      "author": "David Villarreal Fernández",
+      "licence": "CC BY-SA 2.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "attribution_url": "https://www.diariomotor.com/altas-prestaciones/comparativa-audi-r8-spyder-v8-vs-porsche-911-carrera-4s/",
+      "attribution_label": "Diariomotor original feature",
+      "caption": "A 991 photographed for Diariomotor: a longer, lower visual stride."
+    },
+    {
+      "id": "targa",
+      "model": "Porsche 911 Targa",
+      "name": "911 Targa 4S",
+      "group": "911",
+      "file": "2021 Porsche 911 Targa 4S Heritage Design Edition in Cherry Metallic, front right.jpg",
+      "credit_key": "2021 Porsche 911 Targa 4S Heritage Design Edition in Cherry Metallic, front right.jpg",
+      "caption": "The Targa bar turns the roof into the main event."
+    },
+    {
+      "id": "904",
+      "model": "Porsche 904",
+      "name": "904 Carrera GTS",
+      "group": "Racing",
+      "file": "Porsche 904 Carrera GTS in the Porsche-Museum (2009) IMG 7409.jpg",
+      "author": "Alexander-93",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "Low, compact and beautifully impatient: the 904 in the Porsche Museum."
+    },
+    {
+      "id": "gt3",
+      "model": "Porsche 997 GT3",
+      "name": "911 GT3 · on circuit",
+      "group": "Racing",
+      "file": "Porsche FARA race Miami Speedway 8358.jpg",
+      "credit_key": "Porsche FARA race Miami Speedway 8358.jpg",
+      "caption": "A racing photograph, not evidence of a road car's specification."
+    },
+    {
+      "id": "seikel",
+      "model": "Porsche 996 GT3",
+      "name": "996 GT3 RS · Le Mans",
+      "group": "Racing",
+      "file": "Porsche 996 GT3 RS - Seikel Motorsport 2003 - 24 Hours of Le Mans.jpg",
+      "credit_key": "Porsche 996 GT3 RS - Seikel Motorsport 2003 - 24 Hours of Le Mans.jpg",
+      "caption": "Seikel Motorsport's 2003 Le Mans car. A working tool in racing clothes."
+    },
+    {
+      "id": "959",
+      "model": "Porsche 959",
+      "name": "959 · road car",
+      "group": "Flagships",
+      "file": "Porsche 959 GIMS 2024 1X7A2269.jpg",
+      "author": "Alexander-93",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "The road-going 959, displayed in Geneva. This is not a Dakar rally car."
+    },
+    {
+      "id": "carreragt",
+      "model": "Porsche Carrera GT",
+      "name": "Carrera GT",
+      "group": "Flagships",
+      "file": "Porsche Carrera GT - Goodwood Breakfast Club (July 2008).jpg",
+      "author": "Brian Snelson",
+      "licence": "CC BY 2.0",
+      "licence_url": "https://creativecommons.org/licenses/by/2.0/",
+      "caption": "Carrera GT at Goodwood: the road car as an occasion."
+    },
+    {
+      "id": "918",
+      "model": "Porsche 918 Spyder",
+      "name": "918 Spyder",
+      "group": "Flagships",
+      "file": "Porsche 918 Spyder IAA 2013.jpg",
+      "author": "Thomas Wolf · www.foto-tw.de",
+      "licence": "CC BY-SA 3.0 DE",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/3.0/de/",
+      "caption": "The 918 at Frankfurt in 2013: a new chapter in the flagship story."
+    },
+    {
+      "id": "924",
+      "model": "Porsche 924 Carrera GT",
+      "name": "924 Carrera GT",
+      "group": "Different thinking",
+      "file": "Porsche, Techno-Classica 2018, Essen (IMG 9380).jpg",
+      "credit_key": "Porsche, Techno-Classica 2018, Essen (IMG 9380).jpg",
+      "caption": "The front-engined branch of the family looks sharp in its own right."
+    },
+    {
+      "id": "944",
+      "model": "Porsche 944",
+      "name": "944 S",
+      "group": "Different thinking",
+      "file": "Porsche 944 Frontansicht.jpg",
+      "author": "Abehn (Andreas Behn)",
+      "licence": "CC BY-SA 3.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "original_width": 1100,
+      "caption": "A 944 S. Pop-up lamps make a wonderfully theatrical introduction."
+    },
+    {
+      "id": "928",
+      "model": "Porsche 928",
+      "name": "928",
+      "group": "Different thinking",
+      "file": "Porsche 928 Classic-Days 2022 DSC 0022.jpg",
+      "author": "Alexander Migl",
+      "licence": "CC BY-SA 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "The 928's rounded grand-touring shape refuses to imitate the 911."
+    },
+    {
+      "id": "boxster",
+      "model": "Porsche 986 Boxster",
+      "name": "Boxster · 986",
+      "group": "Different thinking",
+      "file": "2002-2004 Porsche Boxster (986) convertible (2012-06-24) 01.jpg",
+      "author": "OSX",
+      "licence": "Public domain",
+      "licence_url": "https://commons.wikimedia.org/wiki/File:2002-2004_Porsche_Boxster_%28986%29_convertible_%282012-06-24%29_01.jpg",
+      "caption": "A later first-generation Boxster, photographed in Australia."
+    },
+    {
+      "id": "cayman",
+      "model": "Porsche Cayman GT4",
+      "name": "Cayman GT4",
+      "group": "Different thinking",
+      "file": "2015 Porsche Cayman GT4 4.jpg",
+      "credit_key": "2015 Porsche Cayman GT4 4.jpg",
+      "caption": "A fixed roof, a prominent wing and a mid-engined starting point."
+    },
+    {
+      "id": "macan",
+      "model": "Porsche Macan (95B)",
+      "name": "Macan · 95B",
+      "group": "Everyday & electric",
+      "file": "Porsche Macan - Type 95B - Xiamen 01 2024-03-12.jpg",
+      "credit_key": "Porsche Macan - Type 95B - Xiamen 01 2024-03-12.jpg",
+      "caption": "A combustion-era Macan photographed in Xiamen, not the electric successor."
+    },
+    {
+      "id": "taycan",
+      "model": "Porsche Taycan Cross Turismo",
+      "name": "Taycan Cross Turismo",
+      "group": "Everyday & electric",
+      "file": "2023 Porsche Taycan Turbo S Cross Turismo.jpg",
+      "credit_key": "2023 Porsche Taycan Turbo S Cross Turismo.jpg",
+      "caption": "Electric power with an estate-like roofline. Different hardware, familiar ambition."
+    }
+  ],
+  "films": [
+    {
+      "id": "8-KmqfOY5C8",
+      "name": "The Porsche 356 SL (1952)",
+      "duration": "5:55",
+      "image": "356",
+      "description": "Follow the archive detectives: photographs, body numbers and racing records reconstruct one particular car's identity."
+    },
+    {
+      "id": "vLbADhGh2mw",
+      "name": "The 1986 Paris-Dakar Rally",
+      "duration": "3:34",
+      "image": "959",
+      "description": "A short official film about the 1986 Paris-Dakar adventure: the desert chapter in Porsche’s racing story."
+    },
+    {
+      "id": "2Teo-fv4Dfk",
+      "name": "The 935/78 ‘Moby Dick’",
+      "duration": "24 min",
+      "image": "seikel",
+      "description": "Porsche’s Raceborn Moments explores the extraordinary 1978 racer, with insights from people who shaped its development."
+    }
+  ]
+}

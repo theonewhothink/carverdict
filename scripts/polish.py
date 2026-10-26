@@ -143,7 +143,8 @@ def polish(path):
     if "<head>" not in s and "<head " not in s:
         return False
     orig = s
-    s = bust(s)
+    from site_chrome import enhance
+    s = bust(enhance(s))
     # The buying product owns its accessible navigation and private local state.
     # Legacy account, AI and mobile-search controls do not belong in this shell.
     if 'data-buying-product' in s:
