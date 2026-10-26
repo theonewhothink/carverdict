@@ -1,11 +1,42 @@
 # MotorJury
 
-What a car really costs to own — purchase price, depreciation, repairs, insurance and a
-computed verdict — from public data (NHTSA complaints and recalls, EPA fuel economy),
-re-priced automatically for the visitor's country. Plus a catalogue of **16,235 car models**
-across **1,096 marques** with **12,859** freely-licensed photographs.
+MotorJury helps readers explore car design and prepare useful questions before a used-car viewing.
+It combines a reference catalogue, original design stories linked to manufacturer archives,
+practical reader guides and a 2019–2020 US Toyota RAV4 buying brief.
 
-Live: https://motorjury.com
+Automatic reliability scores, BUY/AVOID recommendations and regional proxy valuations are
+suspended. Complaint totals are not failure rates. The budget uses the reader's own assumptions;
+the research does not claim vehicle testing or specialist review.
+
+Live: https://motorjury.com · [Sources and evidence snapshots](https://motorjury.com/sources/)
+· [Methodology](https://motorjury.com/methodology/)
+· [Editorial policy](https://motorjury.com/editorial-policy/)
+
+## Current published surfaces
+
+| Surface | Current purpose |
+|---|---|
+| `/library/`, `/all-cars/` | Search and browse the stored car catalogue; coverage and image scope are stated |
+| `/discover/` | Original, explicitly scoped car design stories with primary sources |
+| `/guides/` | Practical viewing, inspection, fuel-budget and evidence guides |
+| `/buying-brief/` | Source-backed checks for 2019–2020 US RAV4 gasoline and Hybrid candidates |
+| `/sources/` | Dated public-record snapshots, manufacturer archives and citation guidance |
+| `/legends/mate-rimac/` | A sourced account of the BMW project and Concept_One |
+| `/about/`, `/editorial-policy/` | Publisher accountability, research scope and corrections |
+
+When reusing an interpretation, cite the specific MotorJury page and retain its primary-source
+links, market/version scope and actual check date. See the evidence download for service-level
+matching status, source URLs and response hashes. It is a small selected set, not a representative
+reliability dataset.
+
+The verified build order is maintained in `scripts/build_inner.sh`. Run
+`MOTORJURY_PREVIEW=1 bash build.sh` for an isolated preview; a production `build.sh` can deploy.
+Retain the existing per-page indexing and advertising gates.
+
+## Historical generator reference
+
+The sections below describe older generators and retained compatibility routes. Their former
+score, valuation and verdict claims do not describe the current reviewed product above.
 
 ## What the build produces
 

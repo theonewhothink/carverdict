@@ -975,7 +975,9 @@ def main():
             {"@context": "https://schema.org", "@type": "Article", "headline": m["n"],
              "author": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
              "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
-             "mainEntityOfPage": ORIGIN + url},
+             "mainEntityOfPage": ORIGIN + url,
+             **({"citation": [source[1] for source in profile['sources']],
+                 "description": profile.get('description', profile['intro'])} if profile else {})},
             {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
                 {"@type": "ListItem", "position": 1, "name": "Library",
                  "item": ORIGIN + "/library/"},
