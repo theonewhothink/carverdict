@@ -48,12 +48,33 @@ class BrandPortal(unittest.TestCase):
         data = load()
         self.assertEqual(len(data['photographs']), 24)
         self.assertEqual(len({photo['file'] for photo in data['photographs']}), 24)
-        self.assertEqual(len(data['films']), 3)
+        self.assertEqual(len(data['films']), 6)
+        self.assertEqual(len({film['id'] for film in data['films']}), 6)
         for photo in data['photographs']:
             for key in ('author', 'licence', 'licence_url', 'page', 'src', 'checked_at'):
                 self.assertTrue(photo[key], (photo['name'], key))
             self.assertTrue(photo['src'].startswith('https://'))
         self.assertTrue(all(re.fullmatch(r'[A-Za-z0-9_-]{11}', film['id']) for film in data['films']))
+
+    def test_media_and_history_are_visible_without_extra_disclosure_clicks(self):
+        data = load()
+        text = (ROOT / 'site/library/porsche/index.html').read_text()
+        self.assertNotIn('<details', text)
+        self.assertNotIn('<summary', text)
+        self.assertIn('data-hero-interval="2000"', text)
+        self.assertEqual(text.count('data-hero-slide '), len(data['hero_slides']))
+        self.assertEqual(len(data['hero_slides']), 6)
+        self.assertEqual(text.count('class="bp-feature-film bp-section"'), 3)
+        self.assertEqual(text.count('class="bp-milestone-heading"'), 8)
+        for film in data['films']:
+            self.assertIn(f'https://i.ytimg.com/vi/{film["id"]}/hqdefault.jpg', text)
+            self.assertIn(f'https://www.youtube.com/watch?v={film["id"]}', text)
+
+    def test_homepage_keeps_car_search_and_removes_the_inline_ai_form(self):
+        text = (ROOT / 'site/index.html').read_text()
+        self.assertNotIn('data-chat-entry', text)
+        self.assertNotIn('home-car-question', text)
+        self.assertIn('id="car-search"', text)
 
     def test_final_portal_preserves_every_porsche_anchor_and_destination(self):
         text = (ROOT / 'site/library/porsche/index.html').read_text()

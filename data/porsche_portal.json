@@ -353,21 +353,65 @@
       "name": "The Porsche 356 SL (1952)",
       "duration": "5:55",
       "image": "356",
-      "description": "Follow the archive detectives: photographs, body numbers and racing records reconstruct one particular car's identity."
+      "description": "Follow the archive detectives: photographs, body numbers and racing records reconstruct one particular car's identity.",
+      "placement": "screening",
+      "publisher": "Porsche"
     },
     {
       "id": "vLbADhGh2mw",
       "name": "The 1986 Paris-Dakar Rally",
       "duration": "3:34",
       "image": "959",
-      "description": "A short official film about the 1986 Paris-Dakar adventure: the desert chapter in Porsche’s racing story."
+      "description": "A short official film about the 1986 Paris-Dakar adventure: the desert chapter in Porsche’s racing story.",
+      "placement": "screening",
+      "publisher": "Porsche"
     },
     {
       "id": "2Teo-fv4Dfk",
       "name": "The 935/78 ‘Moby Dick’",
       "duration": "24 min",
       "image": "seikel",
-      "description": "Porsche’s Raceborn Moments explores the extraordinary 1978 racer, with insights from people who shaped its development."
+      "description": "Porsche’s Raceborn Moments explores the extraordinary 1978 racer, with insights from people who shaped its development.",
+      "placement": "screening",
+      "publisher": "Porsche"
+    },
+    {
+      "id": "92sXWVxRr0g",
+      "name": "The Heist — extended cut",
+      "duration": "2:31",
+      "placement": "story",
+      "kicker": "A museum after hours",
+      "publisher": "Porsche",
+      "source_url": "https://www.motortrendgroup.com/portfolio/inside-the-heist-porsche/",
+      "description": "A midnight museum escape turns into a chase through Porsche’s greatest hits. The Taycan has a head start."
+    },
+    {
+      "id": "vpEjrjLaTxE",
+      "name": "Onboard the 911 GT3 RS at the Nürburgring",
+      "duration": "Onboard",
+      "placement": "generations",
+      "kicker": "Take the passenger seat",
+      "publisher": "Porsche",
+      "source_url": "https://www.porsche.com/stories/mobility/five-fastest-porsche-laps-at-the-nurburgring/",
+      "description": "Ride with Jörg Bergmeister around the 20.8 km Nordschleife. The 2022 lap: 6:49.328."
+    },
+    {
+      "id": "PQmSUHhP3ug",
+      "name": "919 Hybrid Evo — the record lap",
+      "duration": "Full lap",
+      "placement": "racing",
+      "kicker": "Beyond the racing rules",
+      "publisher": "Porsche",
+      "source_url": "https://www.porsche.com/stories/innovation/porsche-919-hybrid-record-lap/",
+      "description": "Timo Bernhard, the 919 Hybrid Evo and the Nordschleife. The full onboard from Porsche’s extraordinary 2018 lap of 5:19.55."
     }
+  ],
+  "hero_slides": [
+    "992",
+    "carreragt",
+    "918",
+    "959",
+    "speedster",
+    "taycan"
   ]
 }

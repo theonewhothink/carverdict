@@ -140,7 +140,7 @@
     panel.setAttribute('aria-label', 'Car Genius');
     if (!host) { panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'false'); }
     panel.innerHTML =
-      '<header class="g-hd"><span class="g-logo">' + SPARK + '</span><b>Car Genius</b>' +
+      '<header class="g-hd"><span class="g-logo">' + SPARK + '</span><b>' + esc(T.ask) + '</b>' +
       '<button type="button" class="g-ic g-new" data-g-new title="' + esc(T.newc) + '">' + esc(T.newc) + '</button>' +
       (host ? '' : '<button type="button" class="g-ic g-x" data-g-close aria-label="' + esc(T.close) + '">×</button>') + '</header>' +
       '<div class="g-list" aria-live="polite"></div>' +
@@ -341,7 +341,7 @@
     fab.type = 'button';
     fab.className = 'genius-fab';
     fab.setAttribute('aria-label', T.ask);
-    fab.innerHTML = SPARK + '<span>Car Genius</span>';
+    fab.innerHTML = SPARK + '<span>' + esc(T.ask) + '</span>';
     fab.addEventListener('click', function () { panel && panel.classList.contains('open') ? close() : open(); });
     document.body.appendChild(fab);
     if (state.open && state.m.length && window.innerWidth >= 900) open();
