@@ -1,0 +1,276 @@
+{
+  "observed_at": "2026-10-25",
+  "reporting_end": "2026-10-23",
+  "scope": "Historical manually inspected reports. Not a live provider connection. GA4 counts cover recorded consented activity, not all visitors.",
+  "sources": {
+    "search_periods": {
+      "rows": [
+        {
+          "period": "29 Aug–25 Sep",
+          "start": "2026-08-29",
+          "end": "2026-09-25",
+          "clicks": 18,
+          "impressions": 12714,
+          "ctrPercent": 0.1416,
+          "position": 44.8
+        },
+        {
+          "period": "26 Sep–23 Oct",
+          "start": "2026-09-26",
+          "end": "2026-10-23",
+          "clicks": 3,
+          "impressions": 424,
+          "ctrPercent": 0.7075,
+          "position": 49.7
+        }
+      ],
+      "source": {
+        "label": "Google Search Console · motorjury.com · Web search · consecutive 28-day periods",
+        "url": "https://search.google.com/search-console",
+        "filters": [
+          "Domain property sc-domain:motorjury.com",
+          "Search type Web; no country, device, query or page filters",
+          "26 September–23 October 2026 versus 29 August–25 September 2026"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Read the authoritative property",
+            "detail": "Opened the motorjury.com domain property in the signed-in Google Search Console browser session on 25 October 2026. Performance > Web > Compare last 28 days with previous period. Read property KPI cards. Last data day 23 October 2026."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Search clicks",
+            "definition": "Property-level Google Web search clicks, not unique people or GA4 sessions.",
+            "componentIds": [
+              "search-summary",
+              "search-clicks",
+              "executive-summary"
+            ]
+          },
+          {
+            "label": "Search impressions",
+            "definition": "Property-level Google Web search impressions. Previous period exact value 12,714 was present in the card's accessible text.",
+            "componentIds": [
+              "search-summary",
+              "search-impressions",
+              "executive-summary"
+            ]
+          },
+          {
+            "label": "CTR",
+            "definition": "Clicks / impressions × 100. Calculated from exact observed totals; UI rounds to 0.1% and 0.7%.",
+            "componentIds": [
+              "search-summary"
+            ]
+          },
+          {
+            "label": "Average position",
+            "definition": "Google's aggregate average position for the impressions in each period; changing query mix prevents treating the change as a fixed-keyword ranking decline.",
+            "componentIds": [
+              "search-summary"
+            ]
+          }
+        ],
+        "caveats": [
+          "Search Console query rows omit anonymised searches. Page rows use a different aggregation and must not be summed to recreate property totals."
+        ]
+      }
+    },
+    "traffic_channels": {
+      "rows": [
+        {
+          "channel": "Direct",
+          "sessions": 9,
+          "engagedSessions": 5,
+          "engagementSeconds": 194,
+          "events": 216
+        },
+        {
+          "channel": "Referral",
+          "sessions": 3,
+          "engagedSessions": 3,
+          "engagementSeconds": 95,
+          "events": 76
+        },
+        {
+          "channel": "Organic Search",
+          "sessions": 1,
+          "engagedSessions": 1,
+          "engagementSeconds": 27,
+          "events": 9
+        }
+      ],
+      "source": {
+        "label": "Google Analytics 4 · MotorJury property 550922613 · 26 Sep–23 Oct 2026",
+        "url": "https://analytics.google.com/analytics/web/",
+        "filters": [
+          "Property MotorJury 550922613, account 181028607",
+          "Traffic acquisition; All Users; custom date range 26 September–23 October 2026"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Verify the correct property",
+            "detail": "Selected MotorJury, property 550922613, from the Analytics account picker. The initial open property belonged to Geniuses.Club and its metrics were excluded."
+          },
+          {
+            "title": "Read traffic acquisition",
+            "detail": "Traffic acquisition by Session primary channel group. Read all three channel rows and total: 13 sessions, 9 engaged sessions, 301 events, 69.23% engagement, 2m38s average engagement per session, zero key events and $0 recorded revenue. Aligned dates with Search Console."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Sessions",
+            "definition": "GA4 recorded sessions, not distinct visitors. Browser visits, internal testing, consent and blockers can affect measurement.",
+            "componentIds": [
+              "visitor-evidence",
+              "traffic-chart"
+            ]
+          },
+          {
+            "label": "Engaged sessions",
+            "definition": "GA4 recorded engaged sessions; the sample is only 13 sessions.",
+            "componentIds": [
+              "visitor-evidence"
+            ]
+          }
+        ],
+        "caveats": [
+          "The comparison period displayed zero sessions, while GSC recorded 18 clicks. Historical GA4 coverage is incomplete or inconsistent; do not calculate visitor growth or equate a recorded zero with no actual visitors.",
+          "No verified internal-traffic or bot exclusion configuration was available. Recorded traffic is not a verified external-human audience.",
+          "GA4 key events and revenue are recorded measurements, not proof that no actions occurred or no money was earned."
+        ]
+      }
+    },
+    "indexing": {
+      "rows": [
+        {
+          "reason": "Indexed",
+          "pages": 11269
+        },
+        {
+          "reason": "Noindex",
+          "pages": 1625
+        },
+        {
+          "reason": "Alternate canonical",
+          "pages": 728
+        },
+        {
+          "reason": "Not found (404)",
+          "pages": 383
+        },
+        {
+          "reason": "Redirect",
+          "pages": 131
+        },
+        {
+          "reason": "Crawled, not indexed",
+          "pages": 61
+        },
+        {
+          "reason": "Discovered, not indexed",
+          "pages": 40
+        },
+        {
+          "reason": "Google chose different canonical",
+          "pages": 4
+        }
+      ],
+      "source": {
+        "label": "Google Search Console · Page indexing · reported update 19 Oct 2026",
+        "url": "https://search.google.com/search-console",
+        "evidenceFlow": [
+          {
+            "title": "Read indexing summary",
+            "detail": "Overview showed 11,269 indexed and 2,972 not indexed. Page indexing, All known pages, reported last update 19 October 2026. All seven non-indexing reasons read."
+          },
+          {
+            "title": "Inspect broken-page examples",
+            "detail": "404 drilldown showed 383 affected pages. Validation started 2 September, failed 19 September. Examples included the HTTP Volvo XC90 library URL, HTTPS Jiangling Landwind CV9, Mayhem Pegasus and Volga URLs; examples showed crawl dates through 20 October."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Known indexed URLs",
+            "definition": "Google's reported index inventory at its displayed reporting cutoff; not current live index eligibility and not a visitor metric.",
+            "componentIds": [
+              "indexing-evidence"
+            ]
+          }
+        ],
+        "caveats": [
+          "Noindex, alternate canonicals and redirects can be intentional. Do not label all 2,972 exclusions errors.",
+          "The older indexing inventory can include legacy URLs currently noindexed or removed."
+        ]
+      }
+    },
+    "lost_pages": {
+      "rows": [
+        {
+          "page": "/legends/mate-rimac/",
+          "previousImpressions": 408,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/he/",
+          "previousImpressions": 215,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/legends/carroll-shelby/",
+          "previousImpressions": 126,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/library/",
+          "previousImpressions": 125,
+          "currentImpressions": 19
+        },
+        {
+          "page": "/library/hyundai/hyundai-creta/",
+          "previousImpressions": 104,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/library/hyundai/hyundai-tucson/",
+          "previousImpressions": 103,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/legends/enzo-ferrari/",
+          "previousImpressions": 91,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/legends/adrian-newey/",
+          "previousImpressions": 73,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/events/macau-grand-prix/",
+          "previousImpressions": 71,
+          "currentImpressions": 0
+        },
+        {
+          "page": "/cars/",
+          "previousImpressions": 70,
+          "currentImpressions": 10
+        }
+      ],
+      "source": {
+        "label": "Search Console · Pages comparison · bounded sample sorted by previous impressions",
+        "url": "https://search.google.com/search-console",
+        "evidenceFlow": [
+          {
+            "title": "Read landing-page comparison",
+            "detail": "Performance > compare last 28 days versus previous 28 days > Pages > sort Impressions Previous 28 days. Read the first ten displayed rows. The visible table contained 1,220 rows in total; the sample is not an exhaustive driver decomposition."
+          }
+        ],
+        "caveats": [
+          "Page aggregation differs from property aggregation. These rows must not be summed to reproduce 424 or 12,714 property impressions."
+        ]
+      }
+    }
+  }
+}

@@ -86,5 +86,36 @@
     "definition": "Subscription receipts net of refunds and processor fees minus attributed paid-service AI, support and stated operating costs for the same period. State allocation method; MRR is not cash and unallocated free-tier costs must remain visible.",
     "target": "Positive measured contribution without weakening reader outcomes.",
     "decision": "Fix service costs or offer value when each paid customer loses money; do not confuse receipts with profit."
+  },
+  {
+    "id": "gsc_impressions",
+    "title": "Organic search impressions",
+    "unit": "impressions",
+    "kind": "driver",
+    "view": "seo",
+    "source": "Search Console web-search performance report",
+    "definition": "Impressions for motorjury.com in a settled reporting window, compared with the preceding equal window. Use the same search type, property and filters as organic clicks. Exclude the latest incomplete days.",
+    "target": "Establish a verified baseline for eligible content.",
+    "decision": "Separate lost visibility from changes in search-result click-through."
+  },
+  {
+    "id": "ga4_users",
+    "title": "Recorded GA4 users · consented measurement",
+    "unit": "users",
+    "kind": "driver",
+    "source": "MotorJury GA4 acquisition report",
+    "definition": "GA4 users observed in the stated report window and property. Analytics loads only after explicit opt-in, so this is not a count of every site visitor. New and returning user counts can overlap and must not be added.",
+    "target": "Verify collection and exclusions before comparing periods.",
+    "decision": "Evaluate measured audiences while stating consent and blocker limitations."
+  },
+  {
+    "id": "ga4_sessions",
+    "title": "Recorded GA4 sessions",
+    "unit": "sessions",
+    "kind": "driver",
+    "source": "MotorJury GA4 traffic-acquisition report",
+    "definition": "Recorded GA4 sessions for the same consented measurement scope and dates as the users report. Search Console clicks and GA4 organic sessions use different definitions and coverage; neither should be substituted for the other.",
+    "target": "Report channel mix with sample counts.",
+    "decision": "Use measured acquisition sources to evaluate reader journeys."
   }
 ]
