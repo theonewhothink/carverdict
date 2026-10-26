@@ -39,7 +39,7 @@ def load():
 
 def credit(photo):
     more = f' · <a href="{esc(photo["attribution_url"], quote=True)}">{esc(photo["attribution_label"])}</a>' if photo.get('attribution_url') else ''
-    return f'<a href="{esc(photo["page"],quote=True)}">{esc(photo["author"])}</a> · <a href="{esc(photo["licence_url"],quote=True)}">{esc(photo["licence"])}</a>{more}'
+    return f'<span data-photo-attribution><a href="{esc(photo["page"],quote=True)}">{esc(photo["author"])}</a> · <a href="{esc(photo["licence_url"],quote=True)}">{esc(photo["licence"])}</a>{more}</span>'
 
 
 def image(photo, eager=False):

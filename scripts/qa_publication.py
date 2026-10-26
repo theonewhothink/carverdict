@@ -10,14 +10,23 @@ from publication_policy import ROOT, verify
 
 class ReaderReferences(HTMLParser):
     def __init__(self):
-        super().__init__();self.hidden=0;self.text=[];self.links=[]
+        super().__init__();self.hidden=0;self.text=[];self.links=[];self.span_depth=0;self.photo_attribution=set()
     def handle_starttag(self,tag,attrs):
+        if tag == 'span':
+            self.span_depth += 1
+            if 'data-photo-attribution' in dict(attrs):
+                self.photo_attribution.add(self.span_depth)
         if tag in ('script','style'):self.hidden+=1
         if tag=='a':self.links.append(dict(attrs).get('href',''))
     def handle_endtag(self,tag):
+        if tag == 'span':
+            self.photo_attribution.discard(self.span_depth)
+            self.span_depth = max(0, self.span_depth - 1)
         if tag in ('script','style'):self.hidden=max(0,self.hidden-1)
     def handle_data(self,text):
-        if not self.hidden:self.text.append(text)
+        # A creator may identify their Wikimedia project in a required image credit.
+        # Keep rejecting encyclopedia article links, including links inside credits.
+        if not self.hidden and not self.photo_attribution:self.text.append(text)
 
 def verify_reader_references(text,url):
     if url.strip('/').split('/')[-1:] == ['terms']:return
@@ -117,3 +126,4 @@ def main():
 
 
 if __name__=='__main__':main()
+

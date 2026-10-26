@@ -48,7 +48,7 @@ def photographs(entries, credits):
         result.append(dict(record, id=row['q'], name=row['n'], model=row['n'], file=row['p'],
                            url=row['u'], page=record.get('page') or commons_page(row['p']),
                            src=src, small=src, large=record.get('original_url') or src,
-                           group=group, caption='Catalogue photograph of ' + row['n'] +
+                           group=group, caption='Catalogue image of ' + row['n'] +
                            '. The exact vehicle year and trim are not independently verified.'))
     return result
 
@@ -104,7 +104,7 @@ def build_one(write, brand, entries, credits, editorial, assets):
     sources = (editorial or {}).get('sources', [])
     years = sorted({str(r['y']) for r in entries if re.fullmatch(r'(18|19|20)\d{2}', str(r.get('y') or ''))})
     title = brand + ': cars, photographs & stories'
-    description = f'Explore {brand}: {len(entries):,} catalogue entries' + (f', {len(photos)} credited photographs' if photos else '') + ', original reading notes and a complete model directory.'
+    description = f'Explore {brand}: {len(entries):,} catalogue entries' + (f', {len(photos)} credited images' if photos else '') + ', original reading notes and a complete model directory.'
     tag = (editorial or {}).get('tagline', 'Follow a name. Find a car. Keep exploring.')
     body = f'<div class="brand-portal" data-brand-portal data-brand-name="{esc(brand,quote=True)}" data-full-directory><nav class="bp-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><a href="/library/">Car collection</a><span>/</span><span aria-current="page">{esc(brand)}</span></nav><section class="bp-masthead"><div class="bp-edition"><p class="bp-kicker">The MotorJury marque files</p><span>{len(entries):,} catalogue entries · an independent collection</span></div><div class="bp-title-row"><h1 class="bp-brand-title">{esc(brand)}<span>.</span></h1><div><p>{esc(tag)}</p><a href="#story">Explore the marque ↓</a></div></div>'
     if len(photos) > 1:
@@ -121,7 +121,7 @@ def build_one(write, brand, entries, credits, editorial, assets):
     if years:
         body += '<a href="#timeline">Through the years</a>'
     if photos:
-        body += f'<a href="#gallery">{len(photos)} photographs</a>'
+        body += f'<a href="#gallery">{len(photos)} images</a>'
     if films:
         body += '<a href="#films">Watch &amp; listen</a>'
     body += f'<a href="#models">All {len(entries):,} entries</a><a href="#sources">Sources</a></nav><section id="story" class="bp-section">' + heading('01', 'The story', (editorial or {}).get('headline', 'A badge is only the beginning.'))
@@ -146,10 +146,10 @@ def build_one(write, brand, entries, credits, editorial, assets):
         body += '<section class="bp-feature-film bp-section">' + film_card(films[1]) + '</section>'
     if photos:
         body += '<section id="gallery" class="bp-section">' + heading('03', 'The visual archive', 'Find the one you keep looking at.', 'Open a car for its record, or enlarge a photograph. Individual attribution stays with every image.')
-        body += f'<div class="bp-gallery-filters" role="group" aria-label="Filter {esc(brand,quote=True)} photographs" hidden><button type="button" data-photo-filter="All" aria-pressed="true">All {len(photos)}</button>'
+        body += f'<div class="bp-gallery-filters" role="group" aria-label="Filter {esc(brand,quote=True)} images" hidden><button type="button" data-photo-filter="All" aria-pressed="true">All {len(photos)}</button>'
         for group in dict.fromkeys(p['group'] for p in photos):
             body += f'<button type="button" data-photo-filter="{esc(group,quote=True)}" aria-pressed="false">{esc(group)}</button>'
-        body += f'</div><p class="bp-gallery-status" role="status" data-gallery-status>{len(photos)} photographs · individual credits below each image</p><div class="bp-gallery">'
+        body += f'</div><p class="bp-gallery-status" role="status" data-gallery-status>{len(photos)} images · individual credits below each image</p><div class="bp-gallery">'
         for i, photo in enumerate(photos):
             body += f'<div class="bp-gallery-item" data-photo-group="{esc(photo["group"],quote=True)}">{figure(photo)}<button type="button" class="bp-enlarge" data-photo-open="{i}" aria-label="Enlarge {esc(photo["name"],quote=True)}" hidden>Enlarge ↗</button></div>'
         body += '</div></section>'
