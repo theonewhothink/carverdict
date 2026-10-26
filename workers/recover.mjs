@@ -16,6 +16,54 @@
 const MARQUE_SUFFIX = /-(ag|se|sa|spa|srl|plc|inc|ltd|llc|gmbh|nv|bv|cars|car|auto|autos|automobile|automobiles|automotive|motor|motors|motor-company|motor-corporation|motor-co|company|corporation|corp|group|holding|holdings|industries)$/;
 const LANGS = new Set(["en", "pt", "es", "fr", "de", "he"]);
 
+// One deployment's immutable asset manifest. A missing manifest fails closed.
+const manifests = new WeakMap();
+async function exactRoutes(assets, origin) {
+  if (!manifests.has(assets)) {
+    manifests.set(assets, (async () => {
+      try {
+        const res = await assets.fetch(new Request(origin + "/assets/route-recovery.json"));
+        return res.ok ? await res.json() : {};
+      } catch { return {}; }
+    })());
+  }
+  return manifests.get(assets);
+}
+
+export function canonicalLocation(url) {
+  if (url.hostname.endsWith(".workers.dev") || url.hostname === "www.motorjury.com" ||
+      (url.hostname === "motorjury.com" && url.protocol !== "https:")) {
+    const target = new URL(url);
+    target.hostname = "motorjury.com";
+    target.protocol = "https:";
+    target.port = "";
+    return target.href;
+  }
+  return null;
+}
+
+export async function serveWithRecovery(req, url, assets, candidates) {
+  const res = await assets.fetch(req);
+  if (res.status !== 404 || !["GET", "HEAD"].includes(req.method)) return res;
+  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname)) return res;
+  let path;
+  try { path = decodeURI(url.pathname); } catch { return res; }
+  const p = path.endsWith("/") ? path : path + "/";
+  const routes = await exactRoutes(assets, url.origin);
+  const english = p.replace(/^\/(?:en|pt|es|fr|de|he)(?=\/)/, "");
+  const exact = routes[p] || routes[english];
+  for (const c of [exact, ...candidates(p)].filter(Boolean).slice(0, 12)) {
+    const target = new URL(c, url.origin);
+    if (target.origin !== url.origin || target.pathname === url.pathname) continue;
+    const probe = await assets.fetch(new Request(target.origin + target.pathname, { method: "HEAD" }));
+    if (probe.status === 200) {
+      target.search = url.search;
+      return Response.redirect(target.href, 301);
+    }
+  }
+  return res;
+}
+
 export function makeRecovery(REDIRECT_MAP) {
   const REDIRECT_SLUGS = [...REDIRECT_MAP.entries()].map(([a, b]) => [
     a.replace(/^\/cars\//, "").replace(/\/$/, "").replace("/", "-"),
