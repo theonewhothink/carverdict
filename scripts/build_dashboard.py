@@ -17,5 +17,9 @@ rows=json.loads((root/'site/assets/catalogue-data.json').read_text()) if (root/'
 try:sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
 except Exception:sha='unknown'
 seed['build']={'sha':sha,'built_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'html_pages':len(list((root/'site').rglob('*.html'))),'coverage':coverage,'catalogue_entries':len(rows),'photo_references':sum(bool(r.get('p')) for r in rows),'catalogue_sha256':hashlib.sha256((root/'data/car_library.json').read_bytes()).hexdigest() if (root/'data/car_library.json').exists() else None}
+portals_path=root/'site/assets/brand-portals.json'
+if portals_path.exists():
+ portals=json.loads(portals_path.read_text())
+ seed['build']['brand_portals']={'count':len(portals),'with_images':sum(bool(p['photographs']) for p in portals),'images':sum(p['photographs'] for p in portals)}
 (root/'workers/dashboard-data.json').write_text(json.dumps(seed,ensure_ascii=False)+'\n')
 print('Private dashboard build baseline:',seed['build']['catalogue_entries'],'entries;',len(seed['tasks']),'tasks')
