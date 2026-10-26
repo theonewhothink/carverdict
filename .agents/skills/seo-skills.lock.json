@@ -1,0 +1,110 @@
+{
+  "repository": "https://github.com/coreyhaines31/marketingskills",
+  "commit": "e85f3cbc2e4a79bf33b2a12e9bdd9087d414735b",
+  "installed_at": "2026-10-26",
+  "license": "MIT",
+  "scope": "MotorJury project",
+  "skills": [
+    "seo-audit",
+    "site-architecture",
+    "schema",
+    "programmatic-seo"
+  ],
+  "files": [
+    {
+      "source": "LICENSE",
+      "installed": "LICENSE.coreyhaines31",
+      "git_blob_sha1": "7c48dd638a9ebed49a8ef0c0c4eea90105381cdf"
+    },
+    {
+      "source": "skills/programmatic-seo/SKILL.md",
+      "installed": "programmatic-seo/SKILL.md",
+      "git_blob_sha1": "a7ab6bf74c5a3c5f43c02a607df127b3221c4e2c"
+    },
+    {
+      "source": "skills/programmatic-seo/references/implementation-platforms.md",
+      "installed": "programmatic-seo/references/implementation-platforms.md",
+      "git_blob_sha1": "5a53d73a8c0d535d2add11e08520086ac031155a"
+    },
+    {
+      "source": "skills/programmatic-seo/references/playbooks.md",
+      "installed": "programmatic-seo/references/playbooks.md",
+      "git_blob_sha1": "227f6759de62ec4de4dd1bf7e16e4e915d211ca6"
+    },
+    {
+      "source": "skills/schema/SKILL.md",
+      "installed": "schema/SKILL.md",
+      "git_blob_sha1": "e27fa18dafaac514b6a35a850704e7b26fd3b323"
+    },
+    {
+      "source": "skills/schema/references/schema-examples.md",
+      "installed": "schema/references/schema-examples.md",
+      "git_blob_sha1": "014b5292ce46184a5cde223d3a528b3e48397b8f"
+    },
+    {
+      "source": "skills/seo-audit/SKILL.md",
+      "installed": "seo-audit/SKILL.md",
+      "git_blob_sha1": "e0a41d8c46c06d1e33ce5295c0f303a94d8f6c5b"
+    },
+    {
+      "source": "skills/seo-audit/references/ai-writing-detection.md",
+      "installed": "seo-audit/references/ai-writing-detection.md",
+      "git_blob_sha1": "cb67ece4135f4153575bbbdfbf722364babff61d"
+    },
+    {
+      "source": "skills/seo-audit/references/international-seo.md",
+      "installed": "seo-audit/references/international-seo.md",
+      "git_blob_sha1": "35a7ad2aeadcbef2541563b0077d5f717e4b147d"
+    },
+    {
+      "source": "skills/seo-audit/references/local-seo-pages-and-measurement.md",
+      "installed": "seo-audit/references/local-seo-pages-and-measurement.md",
+      "git_blob_sha1": "d49f0443e091c70e4778a4e33030a33d18a361a4"
+    },
+    {
+      "source": "skills/seo-audit/references/local-seo-profile-and-citations.md",
+      "installed": "seo-audit/references/local-seo-profile-and-citations.md",
+      "git_blob_sha1": "d34b7e043cb7c4d2da114f04e986bd476a22d0c6"
+    },
+    {
+      "source": "skills/seo-audit/references/local-seo.md",
+      "installed": "seo-audit/references/local-seo.md",
+      "git_blob_sha1": "c2636ada98809d6ed8db588040817adc332add5e"
+    },
+    {
+      "source": "skills/seo-audit/references/rankings-push.md",
+      "installed": "seo-audit/references/rankings-push.md",
+      "git_blob_sha1": "5e3930e47e521cf3d27db2e7120ffde8ace3035d"
+    },
+    {
+      "source": "skills/seo-audit/references/title-tags.md",
+      "installed": "seo-audit/references/title-tags.md",
+      "git_blob_sha1": "5d5eac8002179ac5288f3b4bbd2aa35b3a409a42"
+    },
+    {
+      "source": "skills/site-architecture/SKILL.md",
+      "installed": "site-architecture/SKILL.md",
+      "git_blob_sha1": "f0895970fa4126e8ac32e685575fab826f38a1c0"
+    },
+    {
+      "source": "skills/site-architecture/references/mermaid-templates.md",
+      "installed": "site-architecture/references/mermaid-templates.md",
+      "git_blob_sha1": "9f911083427ea01298569b1173ae24474c298015"
+    },
+    {
+      "source": "skills/site-architecture/references/navigation-patterns.md",
+      "installed": "site-architecture/references/navigation-patterns.md",
+      "git_blob_sha1": "b8e69acc4a0f73335afc94db11e199e377d006ab"
+    },
+    {
+      "source": "skills/site-architecture/references/platforms-and-migration.md",
+      "installed": "site-architecture/references/platforms-and-migration.md",
+      "git_blob_sha1": "56f582f3142179e92f65d2d35a15dba49d1c3fca"
+    },
+    {
+      "source": "skills/site-architecture/references/site-type-templates.md",
+      "installed": "site-architecture/references/site-type-templates.md",
+      "git_blob_sha1": "6abe73efdcbb42e9d000c35d5c7e9987b06bd000"
+    }
+  ]
+}
