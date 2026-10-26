@@ -105,6 +105,15 @@ class AllBrandPortals(unittest.TestCase):
             self.assertTrue(all(re.fullmatch(r'[A-Za-z0-9_-]{11}', video) for video in ids))
             self.assertTrue(all(film['publisher'] for film in story['films']))
 
+    def test_photo_creator_credit_does_not_allow_encyclopedia_article_copy(self):
+        from qa_publication import verify_reader_references
+        credit = '<span data-photo-attribution><a href="https://commons.wikimedia.org/wiki/File:Example.jpg">FergR at English Wikipedia</a></span>'
+        verify_reader_references(credit + '<p>An original MotorJury story.</p>', '/library/example/')
+        with self.assertRaises(ValueError):
+            verify_reader_references(credit + '<p>Copied from Wikipedia.</p>', '/library/example/')
+        with self.assertRaises(ValueError):
+            verify_reader_references('<span data-photo-attribution><a href="https://en.wikipedia.org/wiki/Example">An article</a></span>', '/library/example/')
+
 
 if __name__ == '__main__':
     unittest.main()
