@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeRecovery } from "./recover.mjs";
+import { makeRecovery, canonicalLocation, serveWithRecovery } from "./recover.mjs";
 const recoveryCandidates = makeRecovery(new Map([["/cars/bmw/x5-xdrive35d/", "/cars/bmw/x5/"]]));
 
 test("library marque slug drift", () => {
@@ -58,4 +58,44 @@ test("no candidate list ends at a section index", () => {
 test("a real slug migration still recovers", () => {
   assert.ok(recoveryCandidates("/cars/bmw/x5-xdrive35d/2014/").includes("/cars/bmw/x5/2014/"));
   assert.ok(recoveryCandidates("/cars/bmw/x5-xdrive35d/").includes("/cars/bmw/x5/"));
+});
+
+function assets(routes = {}, pages = []) {
+  return { fetch: async req => {
+    const path = new URL(req.url).pathname;
+    if (path === "/assets/route-recovery.json") return Response.json(routes);
+    return new Response(null, { status: pages.includes(path) ? 200 : 404 });
+  }};
+}
+async function recover(path, binding, method = "GET") {
+  const req = new Request("https://motorjury.com" + path, { method });
+  return serveWithRecovery(req, new URL(req.url), binding, recoveryCandidates);
+}
+
+test("exact catalogue recovery preserves query and roster fragment", async () => {
+  const a = assets({ "/library/byd/byd-atto-3/": "/library/byd-auto/#m-byd-atto-3" }, ["/library/byd-auto/"]);
+  const res = await recover("/library/byd/byd-atto-3/?ref=search", a);
+  assert.equal(res.status, 301);
+  assert.equal(res.headers.get("Location"), "https://motorjury.com/library/byd-auto/?ref=search#m-byd-atto-3");
+  assert.equal((await recover("/de/library/byd/byd-atto-3/", a)).status, 301);
+});
+
+test("unknown models, missing targets, files and writes retain their 404", async () => {
+  const a = assets({ "/library/byd/missing/": "/library/byd-auto/#m-missing" });
+  for (const p of ["/library/byd/missing/", "/library/byd/invented/", "/assets/missing.png"])
+    assert.equal((await recover(p, a)).status, 404);
+  assert.equal((await recover("/library/byd/missing/", a, "POST")).status, 404);
+});
+
+test("manifest cannot redirect externally or replace an existing page", async () => {
+  const a = assets({ "/library/audi/s7/": "https://example.org/" }, ["/library/audi/existing/"]);
+  assert.equal((await recover("/library/audi/s7/", a)).status, 404);
+  assert.equal((await recover("/library/audi/existing/", a, "HEAD")).status, 200);
+});
+
+test("HTTP, www and worker hosts canonicalise in one hop with query intact", () => {
+  for (const origin of ["http://motorjury.com", "https://www.motorjury.com", "https://carsite.example.workers.dev"])
+    assert.equal(canonicalLocation(new URL(origin + "/discover/?q=f40")), "https://motorjury.com/discover/?q=f40");
+  assert.equal(canonicalLocation(new URL("https://motorjury.com/discover/")), null);
+  assert.equal(canonicalLocation(new URL("http://localhost:8787/")), null);
 });

@@ -45,7 +45,9 @@
           "https://www.ferrari.com/ko-KR/magazine/articles/the-ferrari-f40-revisited",
           "Manufacturer anniversary context and construction."
         ]
-      ]
+      ],
+      "seo_title": "Ferrari F40 history: the 1987 road-car design",
+      "description": "Explore the 1987 Ferrari F40: turbocharged V8 packaging, lightweight design and its road-car brief, with linked Ferrari archive sources."
     },
     {
       "name": "Lamborghini Miura",
@@ -90,7 +92,9 @@
           "https://www.museolamborghini.com/en/tag/lamborghini-miura/",
           "Museum context for the SV and its place in the family."
         ]
-      ]
+      ],
+      "seo_title": "Lamborghini Miura history: its transverse V12 layout",
+      "description": "Explore the Lamborghini Miura family from its 1966 debut: the transverse V12 layout, design decisions and version scope, with primary sources."
     },
     {
       "name": "Mazda MX-5",
@@ -141,7 +145,9 @@
           "1989 first-generation introduction."
         ]
       ],
-      "illustration": "Mazda MX-5 (NA) IMG 0206.jpg"
+      "illustration": "Mazda MX-5 (NA) IMG 0206.jpg",
+      "seo_title": "Mazda MX-5 NA history: the original roadster brief",
+      "description": "Explore the original 1989 Mazda MX-5 / NA design: lightness, open-top simplicity and the roadster brief, with linked Mazda history sources."
     },
     {
       "name": "BMW M3",
@@ -187,7 +193,9 @@
           "Later-generation context; BMW labels this overview as AI-assisted."
         ]
       ],
-      "illustration": "BMW M3 E30 (12569363305).jpg"
+      "illustration": "BMW M3 E30 (12569363305).jpg",
+      "seo_title": "BMW E30 M3 history: a road car with a racing brief",
+      "description": "Explore the original E30 BMW M3 introduced in 1986: the racing brief, design choices and why later M3s need their own context."
     },
     {
       "name": "Honda NSX",
@@ -233,7 +241,9 @@
           "13 September 1990 introduction; original Japanese release."
         ]
       ],
-      "illustration": "Honda E-NA1 NSX (23110313233).jpg"
+      "illustration": "Honda E-NA1 NSX (23110313233).jpg",
+      "seo_title": "Honda NSX history: the first-generation design brief",
+      "description": "Explore the first-generation Honda NSX project introduced in 1990: engineering priorities and a different supercar brief, with Honda archive sources."
     },
     {
       "name": "Mercedes-Benz 300 SL",
@@ -278,7 +288,9 @@
           "https://media.mercedes-benz.com/article/49808a8f-9510-4421-b5b8-904b9ef64fc8",
           "1957 roadster and revised frame / doors."
         ]
-      ]
+      ],
+      "seo_title": "Mercedes-Benz 300 SL history: why gullwing doors?",
+      "description": "Discover why the 1954 Mercedes-Benz 300 SL W198 coupé has gullwing doors, and how its structure shaped the design. Read the linked archive sources."
     }
   ]
 }

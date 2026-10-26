@@ -5,6 +5,7 @@ root=Path(__file__).resolve().parent.parent
 seed=json.loads((root/'docs/dashboard-register.json').read_text())
 seed['business_plan']=json.loads((root/'docs/business-plan.json').read_text())
 seed['seo']=json.loads((root/'workers/dashboard-seo.json').read_text())
+seed['search_baseline']=json.loads((root/'docs/search-baseline-2026-10-25.json').read_text())
 for metric in seed['metrics']:
  if metric['id']=='organic_clicks':metric['view']='seo'
  if metric['id'] in ('page_rpm','net_contribution'):metric['view']='money'

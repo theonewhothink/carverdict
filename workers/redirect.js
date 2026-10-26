@@ -33,7 +33,7 @@ import { handleDashboard } from "./dashboard.mjs";
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
 import { geniusEnabled, handleGenius } from "./genius.mjs";
-import { makeRecovery } from "./recover.mjs";
+import { makeRecovery, canonicalLocation, serveWithRecovery as recoverAsset } from "./recover.mjs";
 import { b64urlToBytes, idTokenClaims, isJsonRequest, stateCookie,
          validIdentityClaims, verifyGoogleIdToken } from "./oauth.mjs";
 
@@ -53,17 +53,7 @@ function modelRedirect(url) {
 const recoveryCandidates = makeRecovery(REDIRECT_MAP);
 
 async function serveWithRecovery(req, url, env) {
-  const res = await env.ASSETS.fetch(req);
-  if (res.status !== 404 || (req.method !== "GET" && req.method !== "HEAD")) return res;
-  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname)) return res;          // assets: no guessing
-  const p = url.pathname.endsWith("/") ? url.pathname : url.pathname + "/";
-  for (const c of recoveryCandidates(p).slice(0, 12)) {
-    const probe = await env.ASSETS.fetch(new Request(url.origin + c, { method: "HEAD" }));
-    if (probe.ok) {
-      return Response.redirect(url.origin + c + url.search, 301);
-    }
-  }
-  return res;
+  return recoverAsset(req, url, env.ASSETS, recoveryCandidates);
 }
 
 const SEC = {
@@ -396,11 +386,8 @@ export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
 
-    if (url.hostname.endsWith(".workers.dev") || url.hostname === "www.motorjury.com") {
-      url.hostname = "motorjury.com";
-      url.protocol = "https:";
-      return Response.redirect(url.toString(), 301);
-    }
+    const canonical = canonicalLocation(url);
+    if (canonical) return Response.redirect(canonical, 301);
 
     if (url.pathname === "/dashboard" || url.pathname.startsWith("/dashboard/") || url.pathname.startsWith("/api/dashboard/")) {
       try { return await handleDashboard(req, url, env); }

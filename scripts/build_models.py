@@ -990,8 +990,8 @@ def main():
         else:
             jsonld=json.dumps([x for x in json.loads(jsonld) if x.get('@type')!='Article'],separators=(',',':'))
         robots = '' if profile else '<meta name="robots" content="noindex,follow">'
-        page = shell(f"{m['n']} — {b} | {BRAND}",
-                     (profile["intro"] if profile else f"{m['n']} by {b}: catalogue photographs and related models. History and specifications await review."),
+        page = shell((profile.get('seo_title', m['n'] + ' design and history') + ' | ' + BRAND) if profile else f"{m['n']} — {b} | {BRAND}",
+                     (profile.get("description", profile["intro"]) if profile else f"{m['n']} by {b}: catalogue photographs and related models. History and specifications await review."),
                      ORIGIN + url, body).replace("</head>",
                      f'{robots}<script type="application/ld+json">{jsonld}</script></head>')
         out = SITE / url.lstrip("/") / "index.html"
