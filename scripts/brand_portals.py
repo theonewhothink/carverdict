@@ -52,6 +52,24 @@ def figure(photo, cls='', eager=False):
     return f'<figure class="bp-photo {cls}"><a class="bp-photo-link" href="{esc(photo["url"],quote=True)}">{image(photo,eager)}</a><figcaption><b>{esc(photo["name"])}</b><span>{esc(photo["caption"])}</span><small>{credit(photo)} · Display cropped.</small></figcaption></figure>'
 
 
+def hero_slideshow(photos):
+    slides, credits = [], []
+    for i, photo in enumerate(photos):
+        hidden = ' hidden' if i else ''
+        slides.append(f'<a class="bp-hero-slide" data-hero-slide data-hero-name="{esc(photo["name"],quote=True)}" href="{esc(photo["url"],quote=True)}" aria-label="Explore {esc(photo["name"],quote=True)}"{hidden}>{image(photo,i==0)}</a>')
+        credits.append(f'<span data-hero-credit{hidden}>{credit(photo)} · Display cropped.</span>')
+    return (f'<figure class="bp-hero" data-hero-carousel data-hero-interval="2000" aria-roledescription="carousel" aria-label="Porsche photo slideshow"><div class="bp-hero-frames">'
+            + ''.join(slides) + f'<div class="bp-hero-tag"><span>One marque. Many obsessions.</span><b data-hero-label>{esc(photos[0]["name"])}</b></div>'
+            + f'<div class="bp-hero-controls" hidden><span data-hero-count aria-live="off">1 / {len(photos)}</span><button type="button" data-hero-previous aria-label="Previous hero photograph">←</button><button type="button" data-hero-toggle aria-label="Pause hero slideshow">Pause</button><button type="button" data-hero-next aria-label="Next hero photograph">→</button></div>'
+            + '</div><figcaption>' + ''.join(credits) + '</figcaption></figure>')
+
+
+def film_card(film):
+    title, video_id = esc(film['name']), film['id']
+    url = 'https://www.youtube.com/watch?v=' + video_id
+    return f'''<article class="bp-film" aria-labelledby="film-{video_id}"><div class="bp-film-stage" data-video-slot><a class="bp-film-thumbnail" href="{url}" target="_blank" rel="noopener noreferrer" aria-label="Watch {esc(film['name'],quote=True)} on YouTube"><img src="https://i.ytimg.com/vi/{video_id}/hqdefault.jpg" width="480" height="360" alt="Video thumbnail: {esc(film['name'],quote=True)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><button class="bp-film-play" type="button" data-video="{video_id}" aria-label="Play {esc(film['name'],quote=True)}" hidden><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6 27 16 11 26Z" fill="currentColor"/></svg></button><span class="bp-film-duration">{esc(film['duration'])}</span></div><div class="bp-film-copy"><p class="bp-kicker">{esc(film.get('kicker','Porsche films'))}</p><h3 id="film-{video_id}">{title}</h3><p>{esc(film['description'])}</p><a href="{url}" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a></div></article>'''
+
+
 def build(write, all_rows):
     from build_library import slug
     data = load()
@@ -62,6 +80,11 @@ def build(write, all_rows):
         photo['url'] = by_name[photo['model']]['u']
     by_id = {photo['id']: photo for photo in photos}
     sources = {row[0]: row for row in data['sources']}
+    featured_films = {film['placement']: film for film in data['films'] if film.get('placement') != 'screening'}
+
+    def featured_film(placement):
+        film = featured_films[placement]
+        return f'<section class="bp-feature-film bp-section" aria-label="{esc(film["name"],quote=True)}">{film_card(film)}</section>'
 
     def cite(key, label='Archive note'):
         return f'<a class="bp-cite" href="{esc(sources[key][2],quote=True)}">{esc(label)} ↗</a>'
@@ -74,7 +97,7 @@ def build(write, all_rows):
 <nav class="bp-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/library/">Car collection</a><span aria-hidden="true">/</span><span aria-current="page">Porsche</span></nav>
 <section class="bp-masthead" aria-labelledby="porsche-title"><div class="bp-edition"><p class="bp-kicker">The MotorJury marque files <span>№ 01</span></p><span>Stuttgart, Germany · Sports cars since 1948</span></div>
 <div class="bp-title-row"><h1 id="porsche-title">Porsche<span>.</span></h1><div><p>The art of changing<br>without starting over.</p><a href="#story">Get to know the obsession <span aria-hidden="true">↓</span></a></div></div>
-<figure class="bp-hero"><a href="{esc(hero['url'])}" aria-label="Explore the Porsche 992">{image(hero,True)}</a><div class="bp-hero-tag"><span>One idea. Endless revisions.</span><b>911 Carrera S / 992</b></div><figcaption>{credit(hero)} · Display cropped.</figcaption></figure>
+{hero_slideshow([by_id[key] for key in data['hero_slides']])}
 <div class="bp-opening"><p>A 911 can look familiar enough to draw from memory. Porsche's history is much less predictable: desert racers, front-engined grand tourers, an SUV and a battery-powered saloon. Follow the arguments that made the cars.</p><div class="bp-issue-meta"><b>An independent MotorJury feature</b><span>Original, AI-assisted archive research</span><span>Sources checked <time datetime="2026-10-26">26 October 2026</time></span></div></div>
 </section>
 <nav class="bp-jump" aria-label="Explore the Porsche portal"><a href="#story">The story</a><a href="#timeline">Turning points</a><a href="#911">911 generations</a><a href="#gallery">24 photographs</a><a href="#films">Watch &amp; listen</a><a href="#models">All {len(entries)} entries</a></nav>
@@ -89,9 +112,10 @@ def build(write, all_rows):
 <h3>The roadster that widened the invitation.</h3><p>The Boxster concept appeared at Detroit in 1993; production began in August 1996. With an engine between the seats and the rear axle, it revived an older Porsche idea in an approachable new shape. Think of the two sports-car families as two answers to a good afternoon: the 911 carries a long conversation forward; the Boxster starts with the roof down. That is an editorial distinction, rather than a claim from a road test. {cite('boxster')}</p>
 </article><aside class="bp-story-aside">{figure(by_id['356'])}<div class="bp-margin-note"><span>Look closer</span><h3>The first Porsche wasn't a rear-engined 911 in miniature.</h3><p>No. 1 was mid-engined. Its production relatives moved the engine behind the rear axle. A badge can stay put while an idea moves.</p></div>{figure(by_id['928'])}</aside></div>
 <div class="bp-double-story"><article><p class="bp-kicker">The business decision</p><h3>The family car that changed the family.</h3><p>The Cayenne went into production in 2002. An SUV made the badge relevant to people whose lives did not fit inside a two-door sports car. Porsche's own account describes it as a central part of the company's subsequent success. The lesson is more interesting than a purity argument: a specialist can broaden its business without requiring every product to solve the same problem. {cite('cayenne')}</p></article><article><p class="bp-kicker">The next question</p><h3>What survives when the engine disappears?</h3><p>The Taycan's 2019 debut removed the combustion engine altogether. Its 800-volt electrical system was a major part of Porsche's technical pitch. The identity question became impossible to dodge: does a Porsche have to sound a particular way, or can its proportions, controls and engineering intent carry the name? The hardware supplies facts. The answer belongs to the person looking at the car. {cite('taycan')}</p></article></div>
-<details class="bp-history-note"><summary>The history also has a darker chapter.</summary><p>Ferdinand Porsche founded the engineering office in 1931. Its work under National Socialism included military projects, and the business exploited forced labour during the Second World War. Porsche's published account of historical research acknowledges this. Enjoying the later cars does not require turning their manufacturer's past into a spotless origin story. {cite('past','Read the historical research')}</p></details>
+<section class="bp-history-note" aria-labelledby="porsche-history-note"><h3 id="porsche-history-note">The history also has a darker chapter.</h3><p>Ferdinand Porsche founded the engineering office in 1931. Its work under National Socialism included military projects, and the business exploited forced labour during the Second World War. Porsche's published account of historical research acknowledges this. Enjoying the later cars does not require turning their manufacturer's past into a spotless origin story. {cite('past','Read the historical research')}</p></section>
 </section>
-<section id="timeline" class="bp-section bp-timeline-section">{heading('02','The turning points','Eight moments.<br>A very different company.','Open a year to see why it matters.')}
+{featured_film('story')}
+<section id="timeline" class="bp-section bp-timeline-section">{heading('02','The turning points','Eight moments.<br>A very different company.','The dates that changed the cars, and the company behind them.')}
 <div class="bp-timeline">'''
     milestones = [
         ('1931', 'Before the badge', 'Ferdinand Porsche establishes an engineering office in Stuttgart. The business comes before the sports-car marque.', 'past'),
@@ -104,7 +128,7 @@ def build(write, all_rows):
         ('2019', 'Electric, unmistakably ambitious', 'The Taycan premieres on 4 September. Its 800-volt architecture gives the new era a concrete engineering centrepiece.', 'taycan'),
     ]
     for year, title, text, key in milestones:
-        body += f'<details><summary><span>{year}</span><b>{esc(title)}</b></summary><p>{esc(text)}</p>{cite(key,"Check this milestone")}</details>'
+        body += f'<article><div class="bp-milestone-heading"><span>{year}</span><h3>{esc(title)}</h3></div><p>{esc(text)}</p>{cite(key,"Check this milestone")}</article>'
     body += '</div></section>'
     body += f'''<section id="911" class="bp-section">{heading("03","The enduring idea","Same family.<br>Eight distinct personalities.","Choose a generation. Years below refer to introductions, rather than every market's model-year range.")}<div class="bp-generation-tabs" role="tablist" aria-label="Porsche 911 generations" hidden>'''
     generations = [
@@ -122,8 +146,9 @@ def build(write, all_rows):
     body += '</div><div class="bp-generations">'
     for i, (key, name, year, title, text, source) in enumerate(generations):
         body += f'<section class="bp-generation" id="bp-gen-{i}" aria-label="{name} generation"><div>{figure(by_id[key])}</div><div class="bp-generation-copy"><p class="bp-kicker">{name} / Introduced {year}</p><h3>{title}</h3><p>{text}</p>{cite(source,"Explore the archive")}<a class="bp-text-link" href="{by_id[key]["url"]}">Open the catalogue entry →</a></div></section>'
-    body += '</div></section>'
+    body += '</div></section>' + featured_film('generations')
     body += f'''<section class="bp-racing bp-section">{heading('04','Beyond the road','The racing story has dirt under its nails.')}<div class="bp-racing-columns"><p>A 356 SL won its class on Porsche's Le Mans debut in 1951. The 917 KH delivered an outright win in 1970. Those are different achievements, and the gap between them matters: a small sports-car maker had become an overall contender. {cite('racing')}</p><p>The desert adds a useful twist. The 959's 1986 Dakar result was a one-two, with the service car sixth. When Porsche later recommissioned one of those cars, its team preserved wear and traces of the original event. A race car's scars can tell you more than another spotless plinth. {cite('dakar')}</p></div><p class="bp-racing-line">Circuits. Rally stages. A desert.<br>The badge has never had just one playground.</p></section>
+{featured_film('racing')}
 <section id="gallery" class="bp-section">{heading('05','The visual archive','Find the one<br>you keep looking at.','24 selected photographs. Open a car for its catalogue entry, or use Enlarge to browse the gallery.')}
 <div class="bp-gallery-filters" role="group" aria-label="Filter Porsche photographs" hidden><button type="button" data-photo-filter="All" aria-pressed="true">All 24</button>'''
     groups = list(dict.fromkeys(photo['group'] for photo in photos))
@@ -133,9 +158,10 @@ def build(write, all_rows):
     for i, photo in enumerate(photos):
         body += f'<div class="bp-gallery-item" data-photo-group="{esc(photo["group"],quote=True)}">'+figure(photo)+f'<button type="button" class="bp-enlarge" data-photo-open="{i}" aria-label="Enlarge {esc(photo["name"],quote=True)}" hidden>Enlarge <span aria-hidden="true">↗</span></button></div>'
     body += '</div><p class="bp-footnote">Photographs illustrate the named cars; they do not verify an individual vehicle’s condition or every trim detail. Cropped displays retain the licences linked with each photograph.</p></section>'
-    body += f'''<section id="films" class="bp-section">{heading("06","The screening room","Let the people<br>who were there talk.","Three films from Porsche's verified channel. Choose Play to load YouTube; nothing from YouTube loads before you choose.")}<div class="bp-films">'''
-    for i, film in enumerate(data['films']):
-        body += f'''<article class="bp-film"><div class="bp-film-stage" data-video-slot><span class="bp-film-number">0{i+1} / PORSCHE FILMS</span><b>{esc(film['name'])}</b><button type="button" data-video="{film['id']}" aria-label="Play {esc(film['name'],quote=True)}" hidden><span aria-hidden="true">▶</span> Play film</button><span class="bp-film-duration">{esc(film['duration'])}</span></div><h3>{esc(film['name'])}</h3><p>{esc(film['description'])}</p><a href="https://www.youtube.com/watch?v={film['id']}" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a></article>'''
+    body += f'''<section id="films" class="bp-section">{heading("06","The screening room","Let the people<br>who were there talk.","Porsche's archive, on film. Choose a thumbnail to watch.")}<div class="bp-films">'''
+    for film in data['films']:
+        if film.get('placement') == 'screening':
+            body += film_card(film)
     body += '</div><p class="bp-footnote">Official manufacturer films are presented as primary accounts. Playback may include YouTube advertising and may be restricted by region or embedding settings. External links remain available.</p></section>'
     body += f'''<section class="bp-surprise"><div><p class="bp-kicker">The unexpected footnote</p><h2>Yes, they tried<br>a Cayenne convertible.</h2></div><div><p>After the first Cayenne arrived, Porsche explored a convertible version and built a full-size study. It stayed a one-off. The next time someone insists Porsche never experiments, imagine the meeting where that roof came off.</p>{cite('surprise','Meet the one that never reached the showroom')}</div></section>
 <section id="models" class="bp-section">{heading('07','Keep exploring',f'Your Porsche rabbit hole.<br>All {len(entries)} catalogue entries.','Road cars, prototypes, racers and historical oddities. These catalogue identities are a directory, not a list of models currently on sale.')}
@@ -144,10 +170,10 @@ def build(write, all_rows):
     for row in entries:
         body += f'<li id="m-{slug(row["n"])}" data-model-name="{esc(row["n"],quote=True)}"><a href="{esc(row["u"],quote=True)}">{esc(row["n"])}</a></li>'
     body += '</ul><button class="bp-more-models" type="button" data-more-models hidden>Show the complete directory</button><p class="bp-no-models" data-no-models hidden>No matching entry. Try a shorter name.</p></section>'
-    body += f'<section id="sources" class="bp-section bp-sources">{heading("08","Behind the story","Good stories should<br>leave a paper trail.")}<p>Written for MotorJury from the primary material below. Narrative judgements are our interpretation; historical dates and engineering claims link to their sources. This is AI-assisted desk research, without a claimed road test, interview or specialist endorsement. MotorJury is independent of Porsche AG.</p><details><summary>Research notes &amp; primary sources · {len(sources)}</summary><ol>'
+    body += f'<section id="sources" class="bp-section bp-sources">{heading("08","Behind the story","Good stories should<br>leave a paper trail.")}<p>Written for MotorJury from the primary material below. Narrative judgements are our interpretation; historical dates and engineering claims link to their sources. This is AI-assisted desk research, without a claimed road test, interview or specialist endorsement. MotorJury is independent of Porsche AG.</p><div class="bp-research-notes"><h3>Research notes &amp; primary sources · {len(sources)}</h3><ol>'
     for key, title, url, scope in data['sources']:
         body += f'<li><a href="{esc(url,quote=True)}">{esc(title)}</a><span>{esc(scope)}</span></li>'
-    body += f'</ol></details><p class="bp-footnote">Research checked <time datetime="{data["reviewed_at"]}">26 October 2026</time>. Introduction dates may differ from production or market-specific model years. The model directory preserves the current catalogue’s naming and coverage limits. <a href="/catalogue-notes/">Catalogue notes</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/contact/">Suggest a correction</a></p></section><div class="bp-end"><p>Still thinking about one of them?</p><a href="#gallery">One more look at the photographs ↑</a><a href="/library/">Explore another marque →</a></div></div>'
+    body += f'</ol></div><p class="bp-footnote">Research checked <time datetime="{data["reviewed_at"]}">26 October 2026</time>. Introduction dates may differ from production or market-specific model years. The model directory preserves the current catalogue’s naming and coverage limits. <a href="/catalogue-notes/">Catalogue notes</a> · <a href="/editorial-policy/">Editorial policy</a> · <a href="/contact/">Suggest a correction</a></p></section><div class="bp-end"><p>Still thinking about one of them?</p><a href="#gallery">One more look at the photographs ↑</a><a href="/library/">Explore another marque →</a></div></div>'
 
     for name in ('brand-portal.css', 'brand-portal.mjs'):
         text = (ROOT / 'assets' / name).read_text()

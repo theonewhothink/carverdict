@@ -15,10 +15,25 @@ try{
  page.on('pageerror',e=>report.errors.push(e.message));page.on('request',r=>requests.push(r.url()));
  await page.goto(origin+'/library/porsche/',{waitUntil:'domcontentloaded'});await page.locator('.bp-generation-tabs').waitFor({state:'visible'});
  check('24 photographs are available in the gallery',await page.locator('.bp-gallery-item').count()===24);
- check('No YouTube request before a playback choice',!requests.some(url=>/youtube|ytimg/.test(url)));
+ check('Six real video thumbnails are present',await page.locator('.bp-film-thumbnail img[src^="https://i.ytimg.com/vi/"]').count()===6);
+ check('Three extra films appear throughout the story',await page.locator('.bp-feature-film').count()===3);
+ check('No YouTube player loads before a playback choice',!requests.some(url=>/youtube(?:-nocookie)?\.com\/embed\//.test(url)));
+ check('Timeline, historical note and sources have no collapsed disclosures',await page.locator('[data-brand-portal] details').count()===0);
+ const firstHero=await page.locator('[data-hero-slide]:visible').getAttribute('href');
+ await page.waitForFunction(first=>document.querySelector('[data-hero-slide]:not([hidden])').getAttribute('href')!==first,firstHero,{timeout:10000});
+ check('Hero rotates automatically on the two-second interval',await page.locator('[data-hero-slide]:visible').getAttribute('href')!==firstHero);
+ await page.getByRole('button',{name:'Pause hero slideshow',exact:true}).click();
+ const pausedHero=await page.locator('[data-hero-slide]:visible').getAttribute('href');await page.waitForTimeout(2200);
+ check('Reader can pause the rotating hero',await page.locator('[data-hero-slide]:visible').getAttribute('href')===pausedHero);
+ check('Exactly one matching hero credit remains visible',await page.locator('[data-hero-credit]:visible').count()===1);
  for(const image of await page.locator('.bp-gallery img').all())await image.scrollIntoViewIfNeeded();
  await page.waitForFunction(()=>[...document.querySelectorAll('.bp-gallery img')].every(img=>img.complete),{},{timeout:20000}).catch(()=>{});
  report.images=await page.locator('.bp-gallery img').evaluateAll(images=>images.map(img=>({alt:img.alt,loaded:img.naturalWidth>0,url:img.currentSrc})));
+ for(const poster of await page.locator('.bp-film-thumbnail img').all())await poster.scrollIntoViewIfNeeded();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.bp-film-thumbnail img')].every(img=>img.complete),{},{timeout:20000});
+ report.videoThumbnails=await page.locator('.bp-film-thumbnail img').evaluateAll(images=>images.map(img=>({alt:img.alt,loaded:img.naturalWidth>0,url:img.currentSrc})));
+ check('All six real video thumbnails loaded',report.videoThumbnails.every(img=>img.loaded));
+ await page.locator('.bp-feature-film').first().screenshot({path:join(out,'porsche-featured-film.png')});
  await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:join(out,'porsche-desktop.png')});
  check('Desktop has no horizontal overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
  await page.getByRole('tab',{name:'992'}).click();check('The 992 selector changes the visible generation',await page.getByRole('heading',{name:'The idea, sharpened again.'}).isVisible());
@@ -33,7 +48,12 @@ try{
  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:900});await page.goto(origin+'/library/porsche/');await page.locator('.bp-generation-tabs').waitFor({state:'visible'});check('No horizontal overflow at '+width+'px',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));if(width===390){await page.screenshot({path:join(out,'porsche-mobile.png')});}}
  await page.setViewportSize({width:390,height:900});for(const url of ['/','/library/','/library/ferrari/','/guides/','/ask/','/library/ferrari/ferrari-f40/']){await page.goto(origin+url);check('Exactly one header search on '+url,await page.locator('#header-car-search').count()===1);check('Header fits the phone viewport on '+url,await page.locator('[data-header-search]').evaluate(el=>el.getBoundingClientRect().right<=innerWidth+1));}
  await page.goto(origin+'/library/porsche/');await page.getByRole('button',{name:'Play The Porsche 356 SL (1952)',exact:true}).click();check('Playback loads the selected privacy-enhanced embed',await page.locator('iframe[src*="youtube-nocookie.com/embed/8-KmqfOY5C8"]').count()===1);
+ await page.route('**/api/genius/status',route=>route.fulfill({contentType:'application/json',body:'{"enabled":true}'}));await page.goto(origin+'/');
+ check('Homepage inline Ask MotorJury form is removed',await page.locator('[data-chat-entry],#home-car-question').count()===0);
+ await page.locator('.genius-fab').waitFor({state:'visible'});check('Floating assistant reads Ask Car Genius',await page.locator('.genius-fab').innerText()==='Ask Car Genius');
+ await page.locator('.genius-fab').click();check('Side panel is named Ask Car Genius',await page.locator('.g-hd b').innerText()==='Ask Car Genius');
  check('No uncaught browser errors',report.errors.length===0);await context.close();
- const plain=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:900}}),nojs=await plain.newPage();await nojs.goto(origin+'/library/porsche/');check('All 140 directory entries work without JavaScript',await nojs.locator('[data-model-name]').count()===140);check('All eight generation stories remain readable without JavaScript',await nojs.locator('.bp-generation:visible').count()===8);check('Official video links remain available without JavaScript',await nojs.locator('.bp-film>a[href*="youtube.com/watch"]').count()===3);await plain.close();
+ const plain=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:900}}),nojs=await plain.newPage();await nojs.goto(origin+'/library/porsche/');check('All 140 directory entries work without JavaScript',await nojs.locator('[data-model-name]').count()===140);check('All eight generation stories remain readable without JavaScript',await nojs.locator('.bp-generation:visible').count()===8);check('Six thumbnails and video links remain available without JavaScript',await nojs.locator('.bp-film-copy>a[href*="youtube.com/watch"]').count()===6);check('All eight timeline stories remain visible without JavaScript',await nojs.locator('.bp-timeline>article:visible').count()===8);await plain.close();
+ const calm=await browser.newContext({reducedMotion:'reduce',viewport:{width:1440,height:1000}}),still=await calm.newPage();await still.goto(origin+'/library/porsche/');await still.getByRole('button',{name:'Play hero slideshow',exact:true}).waitFor({state:'visible'});const stillHero=await still.locator('[data-hero-slide]:visible').getAttribute('href');await still.waitForTimeout(2200);check('Reduced-motion readers start with a still hero',await still.locator('[data-hero-slide]:visible').getAttribute('href')===stillHero);await calm.close();
  console.log('PORTAL_BROWSER_QA:'+JSON.stringify(report));
 }finally{await writeFile(join(out,'browser-qa.json'),JSON.stringify(report,null,2));await browser.close();await new Promise(resolve=>server.close(resolve));}
