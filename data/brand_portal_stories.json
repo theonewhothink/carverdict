@@ -1,0 +1,442 @@
+{
+  "BMW": {
+    "checked_at": "2026-10-26",
+    "tagline": "A familiar face. An impatient imagination.",
+    "headline": "The badge looks settled. The ideas keep moving.",
+    "intro": "A BMW collection is a useful place to challenge your own taste. Start with the M3, take a detour through a small city car, and look again at a shape you thought you already understood.",
+    "sections": [
+      [
+        "A company before the cars.",
+        "BMW dates its company history to 1916. That is not the birth date of a familiar saloon or the beginning of the M badge. Keeping those histories separate makes the collection more interesting: the cars are answers developed over time, rather than variations on one timeless recipe."
+      ],
+      [
+        "The car as a leading character.",
+        "A manufacturer can tell you about engineering in a technical document, or it can put a car in a film and invite you to remember the chase. BMW Films takes the second route. Watch the named official film below as entertainment and brand storytelling, not as a demonstration that a production car can perform its fictional stunts."
+      ]
+    ],
+    "sources": [
+      [
+        "BMW Group company history",
+        "https://www.bmwgroup.com/en/company/history.html",
+        "Company origins and historical milestones."
+      ],
+      [
+        "BMW Films: the return of The Escape",
+        "https://www.press.bmwgroup.com/global/article/detail/T0263935EN/bmw-films-returns-with-%E2%80%9Cthe-escape%E2%80%9D-tribute-film-with-clive-owen-and-dakota-fanning-premieres-on-bmwfilms-com-on-23-october",
+        "The manufacturer explains its film-making project."
+      ]
+    ],
+    "featured": [
+      "BMW M3"
+    ],
+    "films": [
+      {
+        "id": "TJfAOBk7HgQ",
+        "name": "BMW Films presents The Calm",
+        "publisher": "BMW",
+        "kicker": "BMW on film",
+        "duration": "Watch film",
+        "description": "A fictional action short produced by BMW. Enjoy the filmmaking; the staged events are not a road test."
+      }
+    ]
+  },
+  "Ford": {
+    "checked_at": "2026-10-26",
+    "tagline": "Big ambitions. Everyday consequences.",
+    "headline": "The interesting part is how far the badge travels.",
+    "intro": "The Model T, a Mustang and a GT invite very different daydreams. Put them in one collection and Ford becomes a conversation about what a car is supposed to do for its driver.",
+    "sections": [
+      [
+        "Start with the scale of the question.",
+        "Ford traces its company history to 1903. Its own archive follows vehicles alongside manufacturing and working life. That is a useful reminder when looking at the cars: a design can matter because it makes something attainable, repeatable or practical, as well as because it looks dramatic."
+      ],
+      [
+        "Then take a completely different turn.",
+        "A race programme asks a different set of questions from a daily journey. The official Ford Performance trailer below offers the manufacturer’s telling of its return to Le Mans. Read it alongside the period material in Ford’s Heritage Vault; a compelling film is a starting point for investigation, rather than independent evidence of every claim."
+      ]
+    ],
+    "sources": [
+      [
+        "Ford company history",
+        "https://corporate.ford.com/about/history/",
+        "Company history, archival links and the Heritage Vault."
+      ]
+    ],
+    "featured": [
+      "Ford Mustang",
+      "Ford GT",
+      "Ford Model T"
+    ],
+    "films": [
+      {
+        "id": "ol5e5nmnlWI",
+        "name": "The Return: Ford GT returns to Le Mans — trailer",
+        "publisher": "Ford Performance",
+        "kicker": "Ford Performance on film",
+        "duration": "Watch film",
+        "description": "Ford Performance’s official documentary trailer. A manufacturer’s account of its endurance-racing project."
+      }
+    ]
+  },
+  "Mercedes-Benz": {
+    "checked_at": "2026-10-26",
+    "tagline": "The patent. The proportions. The next idea.",
+    "headline": "A very long history can still surprise you.",
+    "intro": "Begin with the 300 SL’s doors, then look at the cars around it. Mercedes-Benz becomes more interesting when the famous details are treated as engineering questions rather than decoration.",
+    "sections": [
+      [
+        "Keep the anniversaries straight.",
+        "Mercedes-Benz’s 2026 anniversary material distinguishes 140 years of the automobile from 100 years of the Mercedes-Benz name. Those are connected stories, but they do not start on the same date. The official film below presents the manufacturer’s own account of that longer history."
+      ],
+      [
+        "An opening can explain a whole car.",
+        "The 300 SL is a particularly good place to look past the badge. Its upward-opening doors invite the obvious question: why that shape? Follow the researched design profile in this collection for the relationship between the body opening and the structure beneath it. That link between a visible detail and an engineering decision is a better guide than judging an entire brand by a single silhouette."
+      ]
+    ],
+    "sources": [
+      [
+        "Mercedes-Benz: 140 Years of Innovation",
+        "https://media.mercedes-benz.com/en/140-years-innovation",
+        "The manufacturer distinguishes its automobile, transport and brand anniversaries."
+      ]
+    ],
+    "featured": [
+      "Mercedes-Benz 300 SL"
+    ],
+    "films": [
+      {
+        "id": "3WnnlvogOUE",
+        "name": "From 1886 to 2026 — 140 years of innovation",
+        "publisher": "Mercedes-Benz",
+        "kicker": "Mercedes-Benz on film",
+        "duration": "Watch film",
+        "description": "An official anniversary film. Historical statements are the manufacturer’s primary account, not independent vehicle testing."
+      }
+    ]
+  },
+  "Ferrari": {
+    "checked_at": "2026-10-26",
+    "tagline": "One badge. Several kinds of theatre.",
+    "headline": "Look beyond the red paint.",
+    "intro": "The F40 makes an easy opening argument: the wing, the vents, the uncompromising outline. Ferrari’s wider collection is a chance to ask why a car looks dramatic, and what that drama is doing.",
+    "sections": [
+      [
+        "A beginning worth separating from the legend.",
+        "Ferrari’s official 75th-anniversary film looks back to the 125 S leaving Maranello in 1947. A short company film compresses a complicated history into a few memorable images. Enjoy that perspective, then follow individual cars and their source records rather than treating the brand legend as an explanation of every design."
+      ],
+      [
+        "Make one car your way into the whole collection.",
+        "The F40 profile here begins with a design question: how do the engine, structure and body work together? It is an original reading of Ferrari’s technical archive, with its scope and sources attached. Use that kind of close reading as a habit. A badge gives you a family name; the interesting decisions belong to the individual car."
+      ]
+    ],
+    "sources": [
+      [
+        "Ferrari: 75 years",
+        "https://www.youtube.com/watch?v=S3Fn5kk6_fM",
+        "Official Ferrari anniversary film, including the 1947 starting point."
+      ]
+    ],
+    "featured": [
+      "Ferrari F40"
+    ],
+    "films": [
+      {
+        "id": "S3Fn5kk6_fM",
+        "name": "75 years of Ferrari",
+        "publisher": "Ferrari",
+        "kicker": "Ferrari on film",
+        "duration": "Watch film",
+        "description": "Ferrari looks back to the 125 S and the company’s first 75 years."
+      },
+      {
+        "id": "Tz6UY2s32ck",
+        "name": "Ferrari 1947–2022: 75 years looking ahead",
+        "publisher": "Ferrari",
+        "kicker": "Ferrari on film",
+        "duration": "Watch film",
+        "description": "An official anniversary film focused on the people behind the manufacturer."
+      },
+      {
+        "id": "LC3FNHnHbYw",
+        "name": "Ferrari 75th anniversary show",
+        "publisher": "Ferrari",
+        "kicker": "Ferrari on film",
+        "duration": "Watch film",
+        "description": "The manufacturer’s anniversary celebration at Fiorano, with the Daytona SP3."
+      }
+    ]
+  },
+  "Lamborghini": {
+    "checked_at": "2026-10-26",
+    "tagline": "The sensible route was never the only route.",
+    "headline": "A change of engine position can change everything.",
+    "intro": "The Miura invites you to stop. The rest of the archive invites you to stay. Look at a low sports car beside a four-seat grand tourer and the same badge starts asking very different questions.",
+    "sections": [
+      [
+        "The first chapter had its engine at the front.",
+        "Automobili Lamborghini was established in 1963; its 350 GT production car followed in 1964. The company’s own chronology then brings you to the Miura in 1966. Those steps matter because the marque’s early story was already changing direction, rather than perfecting a single unaltered layout."
+      ],
+      [
+        "Follow the hardware into the silhouette.",
+        "The Miura placed its V12 across the car behind the cabin. That packaging decision is a useful explanation for its proportions, rather than a piece of trivia to memorise. Our linked design profile follows the manufacturer’s account of the arrangement. The later Countach prototype appears in the official chronology in 1971: another invitation to look at what an engineering idea does to a body."
+      ]
+    ],
+    "sources": [
+      [
+        "Lamborghini historical milestones",
+        "https://www.lamborghini.com/en-en/history/milestones",
+        "Founding, first production car, Miura and Countach prototype chronology."
+      ],
+      [
+        "Lamborghini Miura archive",
+        "https://www.lamborghini.com/en-en/history/miura",
+        "The manufacturer’s account of the transverse engine and body design."
+      ]
+    ],
+    "featured": [
+      "Lamborghini Miura",
+      "Lamborghini Countach"
+    ],
+    "films": [
+      {
+        "id": "g6o69fbMP_k",
+        "name": "Sixty years of Automobili Lamborghini",
+        "publisher": "Lamborghini",
+        "kicker": "Lamborghini on film",
+        "duration": "Watch film",
+        "description": "An official anniversary film: the manufacturer’s own view of the company it began in 1963."
+      }
+    ]
+  },
+  "Toyota": {
+    "checked_at": "2026-10-26",
+    "tagline": "Familiar names. A much larger family tree.",
+    "headline": "Follow the branches, not the reputation.",
+    "intro": "A Toyota collection can move from a practical daily car to an enthusiast’s favourite in a few clicks. The interesting question is what each branch of that family was built to solve.",
+    "sections": [
+      [
+        "A history you can follow by vehicle.",
+        "Toyota’s 75-year archive presents its history through text, data and a vehicle-lineage diagram. The diagram groups Toyota and Lexus vehicles by body type and follows their changes over time. It is a useful antidote to the idea that every car wearing the same badge belongs to one simple progression."
+      ],
+      [
+        "A model name is the beginning of a check.",
+        "Our catalogue preserves distinct names and recorded years; the buying brief takes a narrower route into the 2019–2020 US RAV4. Those are different uses of an archive. Enjoy the shape or the story here, then establish the exact vehicle and powertrain before using any buying guidance. A name alone cannot settle recall applicability or a candidate’s condition."
+      ]
+    ],
+    "sources": [
+      [
+        "Toyota: 75-year company archive",
+        "https://www.toyota-global.com/company/history_of_toyota/75years/",
+        "Historical text, video and data archive."
+      ],
+      [
+        "Toyota vehicle-lineage diagram",
+        "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/family_tree/index.html",
+        "Historical vehicle families by body type; not a current model list."
+      ]
+    ],
+    "featured": [
+      "Toyota Supra",
+      "Toyota RAV4",
+      "Toyota 2000GT"
+    ],
+    "films": [
+      {
+        "id": "KbRM7UYQUzM",
+        "name": "GR Yaris aero performance package",
+        "publisher": "TOYOTA GAZOO Racing",
+        "kicker": "TOYOTA GAZOO Racing on film",
+        "duration": "Watch film",
+        "description": "The manufacturer presents an aerodynamic package for the GR Yaris. Promotional engineering material, not an independent performance assessment."
+      }
+    ]
+  },
+  "Audi AG": {
+    "checked_at": "2026-10-26",
+    "tagline": "Four rings. More than one beginning.",
+    "headline": "The emblem is a miniature company history.",
+    "intro": "Start with the rings, then move to the cars. An Audi archive becomes much richer when the badge is read as a clue to the companies and ideas that came together behind it.",
+    "sections": [
+      [
+        "Four companies in one emblem.",
+        "Audi, DKW, Horch and the automotive division of Wanderer came together as Auto Union in 1932. Audi’s own historical account explains the four linked rings as a representation of those four constituent businesses. The emblem records a union, rather than the signature of one founder."
+      ],
+      [
+        "A catalogue label is not the whole story.",
+        "This directory retains Audi AG as its stored marque label. Follow individual vehicle identities through the collection, and use the manufacturer’s history to understand the corporate changes around them. For a different perspective, the official Audi Sport anniversary film looks at the performance side of the name. A racing story and a company genealogy answer different questions; both are worth keeping."
+      ]
+    ],
+    "sources": [
+      [
+        "Audi company history",
+        "https://www.audi.com/en/company-history-17227",
+        "The 1932 Auto Union merger and the four constituent companies."
+      ]
+    ],
+    "featured": [
+      "Audi Quattro"
+    ],
+    "films": [
+      {
+        "id": "EP0p1cNKlv4",
+        "name": "40 years of Audi Sport",
+        "publisher": "Audi",
+        "kicker": "Audi on film",
+        "duration": "Watch film",
+        "description": "Audi’s official retrospective on its performance and motorsport identity."
+      }
+    ]
+  },
+  "Volkswagen": {
+    "checked_at": "2026-10-26",
+    "tagline": "A familiar name. A radical change of mind.",
+    "headline": "The successor did not have to copy the original.",
+    "intro": "Put a Beetle beside a first-generation Golf and the change is more interesting than a badge. These are two very different ways to package a useful small car.",
+    "sections": [
+      [
+        "The important change happened underneath.",
+        "Volkswagen’s archive describes the first Golf as a fundamental break from the Beetle. Rear-mounted engine and rear-wheel drive gave way to an engine at the front and front-wheel drive. Series production of the first Golf began in March 1974. Look at the cars with that change in mind: the new shape follows a different arrangement of the major components."
+      ],
+      [
+        "The history is bigger than the favourite.",
+        "Volkswagen’s own history also describes the Nazi-era origins of the original project. A collection should leave room for that context alongside the later cars people remember fondly. Start with a favourite here, but keep the company’s documented past and an individual vehicle’s design as distinct parts of the story."
+      ]
+    ],
+    "sources": [
+      [
+        "Volkswagen: the first Golf generation",
+        "https://www.volkswagen-newsroom.com/en/golf-1st-generation-1974-1983-17905",
+        "The 1974 transition in engine position and driven wheels."
+      ],
+      [
+        "Volkswagen historical archive",
+        "https://www.volkswagen-newsroom.com/en/history-3693",
+        "The company’s own account of its origins."
+      ]
+    ],
+    "featured": [
+      "Volkswagen Golf",
+      "Volkswagen Beetle"
+    ],
+    "films": []
+  },
+  "Renault": {
+    "checked_at": "2026-10-26",
+    "tagline": "An ordinary journey can demand an unusual car.",
+    "headline": "Practicality has a surprisingly vivid imagination.",
+    "intro": "A Renault archive rewards a second look at the everyday. Compare a small hatchback, a family car and a concept, and the practical brief starts to look much less predictable.",
+    "sections": [
+      [
+        "The collection outgrows one origin story.",
+        "Renault dates the beginning of its brand to 1898. Its historical collection follows a much wider industrial and human story, while the individual cars show how many ways a manufacturer can interpret an ordinary journey. Start with the exact model that caught your eye, then use the archive to place it in context."
+      ],
+      [
+        "Let the unexpected car lead.",
+        "There is no need to begin with the newest or most famous entry. Choose a shape that makes you wonder about space, access or proportions, and compare it with another Renault in this directory. That is an invitation to examine the design, not a claim about how either car drives. Recorded years in our timeline remain catalogue data rather than a complete production history."
+      ]
+    ],
+    "sources": [
+      [
+        "Renault Group historical archive",
+        "https://www.renaultgroup.com/en/group/history/",
+        "The company’s history from its 1898 origin."
+      ],
+      [
+        "Renault history magazine",
+        "https://www.renaultgroup.com/en/magazine/history/",
+        "Manufacturer archive essays and collection context."
+      ]
+    ],
+    "featured": [
+      "Renault 4",
+      "Renault 5",
+      "Renault Clio"
+    ],
+    "films": []
+  },
+  "Mazda": {
+    "checked_at": "2026-10-07",
+    "tagline": "One design decision. A whole new way in.",
+    "headline": "The MX-5 makes a case for choosing less",
+    "intro": "What if a sports car starts with the experience you want, rather than the largest engine you can fit? Mazda’s original MX-5 development story is a useful answer to that question.",
+    "sections": [
+      [
+        "The layout was a choice",
+        "Mazda considered front-wheel drive, a rear-wheel-drive layout and a mid-engine proposal. It selected a front-engine, rear-wheel-drive two-seat roadster. The original car used a naturally aspirated 1.6-litre four-cylinder engine and double-wishbone suspension. A powerplant frame connected the transmission and differential. These details belong to the original design, not every later MX-5."
+      ],
+      [
+        "The roof tells you about the brief",
+        "Mazda’s account describes a manually operated soft top and two seats rather than a two-plus-two arrangement. Those decisions help explain the brief: make a compact open car around its occupants."
+      ],
+      [
+        "Make the comparison personal",
+        "If you are exploring the idea of owning a roadster, list the things a photograph cannot settle: your seating position, luggage needs, roof operation and where the car will live. Test those in person before choosing a version. For browsing, compare the MX-5’s compact open-car brief with the M3’s production-car racing brief."
+      ],
+      [
+        "Write your own roadster brief",
+        "Try finishing this sentence: “I want an open car because…” Then add the ordinary journey it must still manage. Perhaps the appeal is the roof, perhaps the size, perhaps simply a car that makes a familiar trip feel different. That answer tells you what to check at a viewing: getting in, finding a comfortable position, opening the roof and fitting your normal bag. Do not borrow someone else’s enthusiasm as proof that the car suits you. The original Mazda project offers a design idea; your own use decides which compromises are welcome."
+      ]
+    ],
+    "sources": [
+      [
+        "Mazda: Roadster development, part one",
+        "https://www.mazda.com/en/about/history/greatcar/roadster/01/",
+        "Competing layout proposals and the selected roadster brief."
+      ],
+      [
+        "Mazda: Roadster development, part three",
+        "https://www.mazda.com/en/about/history/greatcar/roadster/03/",
+        "Original engine, suspension, powerplant frame, seating and soft top."
+      ],
+      [
+        "Mazda: MX-5 chronology",
+        "https://www2.mazda.com/en/stories/craftmanship/mx-5/chronology/index.html",
+        "1989 first-generation introduction."
+      ]
+    ],
+    "featured": [
+      "Mazda MX-5"
+    ],
+    "films": []
+  },
+  "Honda": {
+    "checked_at": "2026-10-07",
+    "tagline": "One design decision. A whole new way in.",
+    "headline": "The NSX asks a different supercar question",
+    "intro": "A dramatic car can also be designed around the person who has to use it. Honda’s original NSX project is interesting because its goals included comfort and safety alongside performance.",
+    "sections": [
+      [
+        "Construction changed the factory, too",
+        "Honda’s heritage account describes an all-aluminium monocoque body and the manufacturing work needed to make it. Different aluminium alloys and production processes led to a dedicated plant in Tochigi in 1990. This was a construction project as well as a sports-car project. Honda’s original Japanese launch announcement dates the road car’s introduction to September 1990."
+      ],
+      [
+        "The ordinary-use ambition matters",
+        "Honda’s account puts comfort and safety into the development brief. That puts the person using the car into the engineering discussion, rather than treating performance as the only goal."
+      ],
+      [
+        "Put it beside the F40",
+        "Compare what each source chooses to explain. Ferrari emphasises turbo power and composite reinforcement; Honda describes an aluminium body and the manufacturing system behind it. Neither fact creates an automatic winner. Together they show that two exciting cars can answer quite different design questions. Save both and compare their project briefs."
+      ],
+      [
+        "Compare the questions behind the cars",
+        "Put the first-generation NSX beside the F40 and ask what each project makes you curious about. Honda’s aluminium structure points towards manufacturing and construction. Ferrari’s turbocharged V8 and composite reinforcement point towards a different package. Add a second column for the human questions: access, controls and living with the car. The archives establish the project goals; they do not settle your experience of those details. A useful comparison can end with two cars you admire for different reasons. There is no need to manufacture a winner from facts that answer different questions."
+      ]
+    ],
+    "sources": [
+      [
+        "Honda heritage: The NSX",
+        "https://global.honda/en/heritage/episodes/1990thensx.html",
+        "Development goals, aluminium construction and dedicated factory."
+      ],
+      [
+        "Honda: original NSX launch announcement",
+        "https://global.honda/jp/news/1990/4900913.html",
+        "13 September 1990 introduction; original Japanese release."
+      ]
+    ],
+    "featured": [
+      "Honda NSX"
+    ],
+    "films": []
+  }
+}
