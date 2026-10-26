@@ -45,6 +45,21 @@ jobs:
       - name: Deployment note
         run: echo "Publish handled by Cloudflare Workers Builds (Worker 'carsite', branch main)."
 
+      - name: Check brand portal and header in Chromium
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node scripts/qa_brand_portal.mjs
+
+      - name: Save portal browser checks and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: porsche-portal-browser-qa
+          path: verification/brand-portal/
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Ping IndexNow
         if: github.ref == 'refs/heads/main'
         continue-on-error: true
