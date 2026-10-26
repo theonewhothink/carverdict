@@ -57,6 +57,8 @@ PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" -c "from build_record_page
 "$PY" scripts/build_social.py
 "$PY" scripts/build_buying_brief.py
 "$PY" scripts/build_record_pages.py
+"$PY" scripts/build_recovery.py
+"$PY" scripts/build_legends.py
 "$PY" scripts/build_genius.py
 "$PY" scripts/tag_site.py
 "$PY" scripts/localize.py
