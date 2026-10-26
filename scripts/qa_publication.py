@@ -7,6 +7,7 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 from publication_policy import ROOT, verify
+from seo_templates import metadata_issues
 
 class ReaderReferences(HTMLParser):
     def __init__(self):
@@ -86,7 +87,7 @@ def verify_collection(site):
         page=next((p for p in assistant if p['url']==row['u']),None)
         if not page or PROFILES[name]['scope'] not in page.get('text','') or PROFILES[name]['sources'][0][1] not in page.get('text',''):
             raise ValueError('Assistant reference lost version scope or sources: '+name)
-    print(f'STORY QA: six sourced profiles; all {len(model_pages)} model pages retain saving and community controls')
+    print(f'STORY QA: nine sourced profiles; all {len(model_pages)} model pages retain saving and community controls')
     print(f"COLLECTION QA: all {len(actual):,} entries and {coverage['photo_references']:,} photo references retained; every static directory row and destination verified")
 
 
@@ -97,6 +98,8 @@ def main():
         text=f.read_text()
         url='/'+f.relative_to(site).as_posix().removesuffix('index.html')
         verify_reader_references(text,url)
+        conflicts=metadata_issues(text)
+        if conflicts:raise ValueError('Search metadata conflicts on '+url+': '+', '.join(conflicts))
         if 'data-buying-product' in text and text.count('src="/assets/genius.js')!=1:raise ValueError('Modern page lost or duplicated its chat: '+url)
         for match in re.finditer(r'''(?:href|src)=["'](/[^"'#?]*)''',text):
             url=match.group(1)
@@ -126,4 +129,3 @@ def main():
 
 
 if __name__=='__main__':main()
-

@@ -438,7 +438,7 @@ def shell(title, desc, canon, body):
     from build_buying_brief import shell as modern_shell
     path=canon.removeprefix(ORIGIN)
     scripts='<script src="/assets/account.js" defer></script><script src="/assets/lightbox.js" defer></script><script src="/assets/gallery.js" defer></script>'
-    return re.sub(r'<meta name="description" content="[^"]*">','<meta name="description" content="'+esc(desc)+'">',modern_shell(title.replace(' | '+BRAND,''),path,body,scripts),count=1)
+    return modern_shell(title.replace(' | '+BRAND,''),path,body,scripts,description=desc)
 
 
 
@@ -937,7 +937,7 @@ def main():
 
         # Keep original photographs, gallery category and account controls while
         # presenting one coherent collection journey. A reference entry is not a review.
-        from collection_stories import PROFILES, story
+        from collection_stories import PROFILES, story, DATA as PROFILE_DATA
         profile=PROFILES.get(m['n'])
         displayed_photo=profile.get('illustration',m['p']) if profile else m['p']
         from build_library import PHOTO_DELIVERY
@@ -977,6 +977,7 @@ def main():
              "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
              "mainEntityOfPage": ORIGIN + url,
              **({"citation": [source[1] for source in profile['sources']],
+                 "dateModified": profile.get('reviewed_at', PROFILE_DATA['reviewed_at']),
                  "description": profile.get('description', profile['intro'])} if profile else {})},
             {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
                 {"@type": "ListItem", "position": 1, "name": "Library",

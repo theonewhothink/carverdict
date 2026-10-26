@@ -42,7 +42,7 @@ def shell(title, path, body, script="", description=None, jsonld=None, og_type="
     if path=='/':description="Explore MotorJury's car photography and complete current catalogue. Find a marque or model, then prepare a source-backed buying brief."
     elif path.startswith('/library/'):description=title+". Browse reference photographs, search models and open the complete marque roster."
     elif path.startswith('/all-cars/'):description="Browse every distinct entry in the current MotorJury catalogue, including cars without photographs or recorded dates."
-    elif path=='/discover/':description='Follow six original car design stories from manufacturer archives. Explore engine packaging, roadster simplicity and the reason behind gullwing doors.'
+    elif path=='/discover/':description='Follow nine original car design stories from manufacturer archives. Explore engine packaging, roadster simplicity and the reason behind gullwing doors.'
     elif path=='/shortlist/':description='Save cars in your browser and compare explicitly scoped design briefs, with links to the source-backed stories.'
     elif path=='/catalogue-notes/':description="What the MotorJury car collection covers, how duplicates are handled, and the sources and credits for featured photographs."
     if custom_description:description=custom_description

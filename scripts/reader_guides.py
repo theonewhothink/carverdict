@@ -4,6 +4,28 @@ from pathlib import Path
 from build_guides import parse, md
 ROOT=Path(__file__).resolve().parent.parent
 SLUGS=('before-a-used-car-viewing','what-car-photos-cannot-tell-you','recalls-history-and-inspections','fuel-economy-label-to-your-budget','seller-promise-to-written-evidence','complaint-counts-without-failure-rates','inspection-report-next-step','ev-charging-before-you-buy','used-car-tire-questions')
+SEARCH_TITLES={
+ 'before-a-used-car-viewing':'Used-car viewing checklist: questions before you travel',
+ 'what-car-photos-cannot-tell-you':'Buying a used car from photos: what to verify',
+ 'recalls-history-and-inspections':'Used-car recall checks, history reports and inspections',
+ 'fuel-economy-label-to-your-budget':'How to calculate annual fuel costs from MPG',
+ 'seller-promise-to-written-evidence':'Used-car seller promises: ask for written repair evidence',
+ 'complaint-counts-without-failure-rates':'Do NHTSA complaint counts measure car reliability?',
+ 'inspection-report-next-step':'Used-car inspection report: questions to ask next',
+ 'ev-charging-before-you-buy':'Buying a used EV: home charging and backup checklist',
+ 'used-car-tire-questions':'Used-car tire checks: age, specification and condition',
+}
+RELATED={
+ 'before-a-used-car-viewing':('inspection-report-next-step','recalls-history-and-inspections','used-car-tire-questions'),
+ 'what-car-photos-cannot-tell-you':('before-a-used-car-viewing','used-car-tire-questions'),
+ 'recalls-history-and-inspections':('complaint-counts-without-failure-rates','inspection-report-next-step'),
+ 'fuel-economy-label-to-your-budget':('ev-charging-before-you-buy','before-a-used-car-viewing'),
+ 'seller-promise-to-written-evidence':('inspection-report-next-step','before-a-used-car-viewing'),
+ 'complaint-counts-without-failure-rates':('recalls-history-and-inspections','before-a-used-car-viewing'),
+ 'inspection-report-next-step':('seller-promise-to-written-evidence','used-car-tire-questions'),
+ 'ev-charging-before-you-buy':('fuel-economy-label-to-your-budget','inspection-report-next-step'),
+ 'used-car-tire-questions':('what-car-photos-cannot-tell-you','inspection-report-next-step'),
+}
 def visual(slug):
  if slug=='fuel-economy-label-to-your-budget':
   return '<figure class="guide-visual"><figcaption><strong>Same distance. Different fuel bill.</strong> Illustrative inputs: 12,000 miles/year, $3.50 per US gallon.</figcaption><svg viewBox="0 0 600 180" role="img" aria-label="Illustrative annual fuel costs: 30 US MPG costs 1400 dollars; 40 US MPG costs 1050 dollars."><text x="15" y="37">30 US MPG</text><rect x="155" y="17" width="360" height="44" rx="8" fill="#12685e"/><text x="170" y="46" fill="white">$1,400 / year</text><text x="15" y="109">40 US MPG</text><rect x="155" y="89" width="270" height="44" rx="8" fill="#925b27"/><text x="170" y="118" fill="white">$1,050 / year</text></svg><div class="table-wrap"><table><caption>Arithmetic behind the example</caption><thead><tr><th>Economy</th><th>Gallons/year</th><th>Fuel/year</th></tr></thead><tbody><tr><td>30 US MPG</td><td>400</td><td>$1,400</td></tr><tr><td>40 US MPG</td><td>300</td><td>$1,050</td></tr></tbody></table></div><p class="note">Difference: $350/year for fuel only. This is a fictional scenario, not the total cost of either car. See the assumptions and break-even discussion below.</p></figure>'
@@ -37,7 +59,11 @@ def main(write):
   meta,body=parse((ROOT/'data/guides'/f'{slug}.md').read_text())
   text=md(body,lambda _: '')
   article=f'<section class="collection-hero compact"><p class="eyebrow">A practical reader guide · checked {meta["date"]}</p><h1>{html.escape(meta["title"])}</h1><p class="lede">{html.escape(meta["description"])}</p></section><article class="collection-story">{visual(slug)}{text}{questions(slug)}<p class="note">Published by MotorJury. AI-assisted desk research and original editorial suggestions. No vehicle test or specialist review is claimed.</p></article><section class="card"><h2>Keep exploring</h2><a href="/guides/">All reviewed reader guides →</a> · <a href="/ask/">Ask a question about this guide</a></section>'
+  related='<section class="card"><h2>Related checks for your next decision</h2><ul>'+''.join('<li><a href="/guides/'+s+'/">'+html.escape(SEARCH_TITLES[s])+'</a></li>' for s in RELATED[slug])+'</ul></section>'
+  article=article.replace('<section class="card"><h2>Keep exploring</h2>',related+'<section class="card"><h2>Keep exploring</h2>')
   citations=sorted({('https://motorjury.com'+html.unescape(url) if url.startswith('/') else html.unescape(url)) for url in re.findall(r'href="([^\"]+)"',text) if url.startswith(('https://','/'))})
-  write('/guides/'+slug+'/',meta['title'],article,description=meta['description'],og_type='article',jsonld=[{'@context':'https://schema.org','@type':'Article','headline':meta['title'],'description':meta['description'],'url':'https://motorjury.com/guides/'+slug+'/','dateModified':meta['date'],'citation':citations,'author':{'@type':'Organization','name':'MotorJury'},'publisher':{'@type':'Organization','name':'MotorJury'},'mainEntityOfPage':'https://motorjury.com/guides/'+slug+'/'}])
+  breadcrumbs={'@type':'BreadcrumbList','itemListElement':[{'@type':'ListItem','position':1,'name':'Home','item':'https://motorjury.com/'},{'@type':'ListItem','position':2,'name':'Used-car guides','item':'https://motorjury.com/guides/'},{'@type':'ListItem','position':3,'name':SEARCH_TITLES[slug],'item':'https://motorjury.com/guides/'+slug+'/'}]}
+  article='<nav class="collection-chips" aria-label="Breadcrumb"><a href="/">Home</a><a href="/guides/">Used-car guides</a></nav>'+article
+  write('/guides/'+slug+'/',SEARCH_TITLES[slug],article,description=meta['description'],og_type='article',jsonld=[{'@context':'https://schema.org','@type':'Article','headline':meta['title'],'description':meta['description'],'url':'https://motorjury.com/guides/'+slug+'/','dateModified':meta['date'],'citation':citations,'author':{'@type':'Organization','name':'MotorJury'},'publisher':{'@type':'Organization','name':'MotorJury'},'mainEntityOfPage':'https://motorjury.com/guides/'+slug+'/'},breadcrumbs])
   cards.append(f'<article class="card"><h2><a href="/guides/{slug}/">{html.escape(meta["title"])}</a></h2><p>{html.escape(meta["description"])}</p></article>')
  write('/guides/','Guides that help you take the next step','<section class="collection-hero compact"><p class="eyebrow">Read, ask, prepare</p><h1>Make your next car question a useful one.</h1><p class="lede">Practical guides for a viewing, a photo comparison or a closer look at the evidence.</p></section><div class="guide-cards">'+''.join(cards)+'</div><section class="card"><h2>Considering a US RAV4?</h2><p>Work through the version, manufacturer records, seller questions and your own costs.</p><a href="/buying-brief/">2019–2020 RAV4 buying brief →</a> · <a href="/guides/rav4-gasoline-vs-hybrid/">Gasoline and Hybrid: compare your costs</a></section><section class="card"><h2>Here for the cars?</h2><p>Follow six engineering ideas through our collection.</p><a href="/discover/">Explore the design stories →</a></section>',description='Practical used-car guides for viewings, inspections, fuel costs, EV charging, tires and the evidence behind your next decision.')

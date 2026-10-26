@@ -3099,5 +3099,29 @@
     "licence_url": "https://creativecommons.org/licenses/by/2.0/de/deed.en",
     "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/BRK-Wasserwacht_M%C3%BCnchen_%E2%80%94_RTW_Volkswagen_LT_%282._Generation%29_-_Fotojahr_2015.jpg/960px-BRK-Wasserwacht_M%C3%BCnchen_%E2%80%94_RTW_Volkswagen_LT_%282._Generation%29_-_Fotojahr_2015.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "checked_at": "2026-10-07"
+  },
+  "Omega av.jpg": {
+    "author": "Lebubu93",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Omega_av.jpg",
+    "checked_at": "2026-10-26",
+    "source": "https://commons.wikimedia.org/wiki/File:Omega_av.jpg"
+  },
+  "Subaru Impreza 22B STi.jpg": {
+    "author": "A15ff11300g",
+    "licence": "Public domain",
+    "licence_url": "https://commons.wikimedia.org/wiki/Template:PD-user",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Subaru_Impreza_22B_STi.jpg",
+    "checked_at": "2026-10-26",
+    "source": "https://commons.wikimedia.org/wiki/File:Subaru_Impreza_22B_STi.jpg"
+  },
+  "1996 McLaren F1 Chassis No 63 6.1 Front.jpg": {
+    "author": "Chelsea Jay",
+    "licence": "CC BY-SA 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/1996_McLaren_F1_Chassis_No_63_6.1_Front.jpg/960px-1996_McLaren_F1_Chassis_No_63_6.1_Front.jpg",
+    "checked_at": "2026-10-26",
+    "source": "https://commons.wikimedia.org/wiki/File:1996_McLaren_F1_Chassis_No_63_6.1_Front.jpg"
   }
 }

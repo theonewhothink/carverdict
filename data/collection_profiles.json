@@ -291,6 +291,151 @@
       ],
       "seo_title": "Mercedes-Benz 300 SL history: why gullwing doors?",
       "description": "Discover why the 1954 Mercedes-Benz 300 SL W198 coupé has gullwing doors, and how its structure shaped the design. Read the linked archive sources."
+    },
+    {
+      "name": "Lotus Carlton",
+      "scope": "Lotus Carlton / Omega road saloon · produced 1990–1992",
+      "year": "1990–1992",
+      "layout": "Front-mounted twin-turbo six-cylinder; six-speed manual",
+      "idea": "Re-engineer a familiar four-door shape rather than start with a supercar body",
+      "photo": "Lotus Omega reference photograph; exact build year and individual-car identity are not verified.",
+      "title": "Lotus Carlton and Omega: the ordinary shape was the point",
+      "intro": "The Carlton makes more sense when you stop expecting a Lotus to look like a two-seat sports car. The project asked what could change underneath a familiar saloon body while keeping its everyday purpose.",
+      "sections": [
+        [
+          "Are the Lotus Carlton and Lotus Omega different cars?",
+          "Lotus uses Omega for this GM collaboration and Carlton for its UK-market version. Its archive dates production to 1990–1992 and identifies the Opel Omega / Vauxhall Carlton as the starting point. Treat the badges as market context, rather than evidence that one photograph establishes a particular car’s specification."
+        ],
+        [
+          "What did Lotus change?",
+          "The manufacturer records an enlarged 3.6-litre twin-turbo six-cylinder engine, a six-speed manual gearbox and changes to suspension, steering and brakes. The body gained flared arches, side skirts and a rear spoiler. The engineering story is the combination: adding power to a familiar car also requires attention to how it stops and changes direction."
+        ],
+        [
+          "Read the shape before the headline",
+          "Compare a side view with a conventional four-door saloon. Follow the passenger compartment, the doors and the boot, then look at the arches and lower bodywork. Our interpretation is that the unchanged everyday format makes the alterations more interesting. It is a different design question from the F40 or Miura: how far can an existing package be developed?"
+        ],
+        [
+          "What does the photograph establish?",
+          "The credited image is identified as a Lotus Omega reference. It is useful for studying proportions, but does not authenticate chassis identity, originality or condition. For a specific car, keep its documents, physical inspection and production details separate from the nameplate history. The historical engine specification is not a measurement of a surviving example."
+        ]
+      ],
+      "question": "How much can the engineering change while the everyday body format remains familiar?",
+      "related": [
+        "BMW M3",
+        "Ferrari F40"
+      ],
+      "sources": [
+        [
+          "Lotus: Omega / Carlton heritage",
+          "https://www.lotuscars.com/en/lotus-story/road-cars/omega",
+          "Market names, production period, mechanical changes and the GM collaboration."
+        ],
+        [
+          "Credited Lotus Omega reference photograph",
+          "https://commons.wikimedia.org/wiki/File:Omega_av.jpg",
+          "Photographer attribution, photo description and CC BY-SA 3.0 licence; exact car identity is not independently authenticated."
+        ]
+      ],
+      "seo_title": "Lotus Carlton / Omega history: the 1990–1992 saloon",
+      "description": "Why the Lotus Carlton is also called the Omega, what Lotus changed and how the 1990–1992 saloon differs from a clean-sheet supercar.",
+      "reviewed_at": "2026-10-26"
+    },
+    {
+      "name": "Subaru Impreza 22B STi-Version",
+      "scope": "Japanese-market 22B-STi road coupe · introduced 16 March 1998",
+      "year": "1998",
+      "layout": "2,212 cc turbocharged flat-four; four-wheel drive; five-speed manual",
+      "idea": "Bring the rally car’s visual identity into a road-going coupe",
+      "photo": "Impreza 22B reference photograph; build year, originality and individual-car identity are not verified.",
+      "title": "Subaru 22B: a rally image translated for the road",
+      "intro": "The useful distinction is between a car that resembles a rally machine and a car entered in a rally. Subaru’s 1998 launch record explains what the 22B project actually set out to do.",
+      "sections": [
+        [
+          "What is the Subaru Impreza 22B?",
+          "Subaru announced the Japanese-market 22B-STi Version on 16 March 1998 as a road-going coupe recreating the appearance of the Impreza World Rally Car ’97. That wording matters: a road version inspired by a competition car is not the same vehicle with number plates added."
+        ],
+        [
+          "Why does it look different?",
+          "The release describes widened blister fenders, an aluminium bonnet and a manually adjustable rear spoiler. Its specification lists a 2,212 cc turbocharged horizontally opposed four-cylinder engine, four-wheel drive and a five-speed manual transmission. These are the launch-record details to compare with a claimed example, rather than specifications inferred from blue paint or a large wing."
+        ],
+        [
+          "How many were planned?",
+          "The Japanese announcement gives a limited sales plan of 400 cars. That is the scope of the source: a launch-market plan, not an independently reconciled worldwide production register. Keep market allocation, prototypes and later registration claims separate when investigating a chassis."
+        ],
+        [
+          "A useful two-photo exercise",
+          "Compare the rear quarters of the credited road-car photograph with the rally imagery that interests you. List the shapes you can see and the mechanical details you cannot verify. Our reading of the project is that its appeal sits in this translation between two jobs. For a car offered for sale, resemblance is a starting point; provenance, inspection and correct-version documentation must answer the authenticity questions."
+        ]
+      ],
+      "question": "Which details show a rally influence, and which need documents rather than a photograph?",
+      "related": [
+        "BMW M3",
+        "Lotus Carlton"
+      ],
+      "sources": [
+        [
+          "Subaru: 22B-STi launch announcement, 16 March 1998",
+          "https://www.subaru.co.jp/news/archives/98_1_3/3_16_1.html",
+          "Japanese-language primary launch record, specifications and the stated 400-car Japanese sales plan."
+        ],
+        [
+          "Credited 22B reference photograph",
+          "https://commons.wikimedia.org/wiki/File:Subaru_Impreza_22B_STi.jpg",
+          "Photographer attribution, description and public-domain release; not chassis authentication."
+        ]
+      ],
+      "seo_title": "Subaru Impreza 22B STi: 1998 launch, engine and design",
+      "description": "Read Subaru’s 1998 22B-STi launch details: rally-inspired bodywork, 2.2-litre engine and the scope of the 400-car Japanese sales plan.",
+      "reviewed_at": "2026-10-26"
+    },
+    {
+      "name": "McLaren F1",
+      "scope": "F1 road-car project · realised 1992; distinguish the F1 GTR racer",
+      "year": "1992",
+      "layout": "Carbon-fibre monocoque road-car construction",
+      "idea": "Connect the road-car project to the racing story without merging their identities",
+      "photo": "McLaren F1 reference photograph, described by its photographer as a restored 1996 car; identity and current condition are not independently verified.",
+      "title": "McLaren F1: read the road car before the racing legend",
+      "intro": "The F1 name can refer to a road car, a racing derivative or a much broader motorsport story. Separating them gives you a clearer account than another list of supercar records.",
+      "sections": [
+        [
+          "When did the McLaren F1 arrive?",
+          "McLaren dates the idea to 1988 and the realised road-car project to 1992. Its heritage account identifies carbon-fibre monocoque construction as a defining feature. That is a useful design starting point: ask how the supporting structure differs from the steel-and-composite approach described in the F40 archive."
+        ],
+        [
+          "Was the Le Mans winner the same as the road car?",
+          "The F1 GTR was the racing derivative. McLaren’s account of Le Mans records its overall win in 1995 and four cars in the top five. The connection to the road project is central to the story, but it does not make a photographed road F1 the same specification as the race winner."
+        ],
+        [
+          "How should you read the production number?",
+          "McLaren’s heritage page gives 106 examples for the F1 programme. Treat that as the manufacturer’s programme figure; it is not presented here as a count of one road-car specification. A precise question about a variant needs a variant-specific record."
+        ],
+        [
+          "Compare construction, not auction headlines",
+          "Look at the road-car photograph, then the credited racing material in McLaren’s Le Mans account. Keep a short list: what is visibly different, what the manufacturer explicitly documents, and what remains unknown. Our interpretation is that this makes the F1 more interesting than an isolated speed or price claim. Neither a famous chassis name nor a historic race result establishes the originality, value or condition of an example today."
+        ]
+      ],
+      "question": "What changes when a road-car idea becomes a racing derivative?",
+      "related": [
+        "Ferrari F40",
+        "Honda NSX",
+        "Lamborghini Miura"
+      ],
+      "sources": [
+        [
+          "McLaren: F1 heritage",
+          "https://www.mclaren.com/cars/us_en/ultimate-models/mclaren-f1",
+          "Road-project dates, carbon-fibre construction and the manufacturer’s 106-example programme figure."
+        ],
+        [
+          "McLaren: Le Mans 1995 legacy",
+          "https://www.mclaren.com/cars/us_en/post/le-mans-30",
+          "F1 GTR racing context and the manufacturer’s account of its 1995 Le Mans result."
+        ]
+      ],
+      "seo_title": "McLaren F1 history: the road car and 1995 F1 GTR",
+      "description": "Explore McLaren F1 history, carbon-fibre construction and its link to the 1995 Le Mans-winning F1 GTR, with the variants kept distinct.",
+      "reviewed_at": "2026-10-26"
     }
   ]
 }
