@@ -4,6 +4,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from audit_dashboard_seo import audit
 class SeoAuditTest(unittest.TestCase):
  def page(self,root,path,title='Distinct page',extra='',robots=''):
+  (root/'photo.png').write_bytes(b'image fixture')
   dest=root/path;dest.parent.mkdir(parents=True,exist_ok=True);url='https://motorjury.com/'+path.removesuffix('index.html')
   dest.write_text(f'''<html lang="en"><head><title>{title}</title><meta name="description" content="{title} useful introduction"><meta name="robots" content="{robots}"><link rel="canonical" href="{url}"><meta property="og:title" content="{title}"><meta property="og:description" content="Intro"><meta property="og:url" content="{url}"><meta property="og:image" content="https://motorjury.com/photo.png"><script type="application/ld+json">{{"@type":"WebPage"}}</script>{extra}</head><body><h1>{title}</h1></body></html>''')
  def test_eligible_held_and_error_pages_are_distinct(self):
@@ -14,4 +15,8 @@ class SeoAuditTest(unittest.TestCase):
   with tempfile.TemporaryDirectory() as tmp:
    p=Path(tmp);self.page(p,'index.html');self.page(p,'duplicate/index.html',extra='<script type="application/ld+json">bad json</script>');result=audit(p)
    self.assertEqual(result['summary']['duplicate_title_groups'],1);self.assertEqual(result['summary']['duplicate_description_groups'],1);self.assertTrue(any('Malformed structured data' in r['issues'] for r in result['issues']));self.assertTrue(any('Not present in generated sitemap' in r['issues'] for r in result['issues']))
+ def test_missing_social_preview_asset_is_reported(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   p=Path(tmp);self.page(p,'index.html');(p/'photo.png').unlink();result=audit(p)
+   self.assertTrue(any('Social preview image points to a missing generated asset' in r['issues'] for r in result['issues']))
 if __name__=='__main__':unittest.main()
