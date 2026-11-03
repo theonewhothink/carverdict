@@ -2,10 +2,11 @@
 import {chromium} from 'playwright';
 import {createServer} from 'node:http';
 import {writeFile,mkdir} from 'node:fs/promises';
-import {HTML,CSS,CLIENT} from '../workers/dashboard-ui.mjs';
+import {compiledDashboard} from './dashboard_browser_bundle.mjs';
 import BASE from '../workers/dashboard-data.json' with {type:'json'};
 import {prioritiseTasks} from '../workers/dashboard-control.mjs';
 import {validateTask,validateMetric} from '../workers/dashboard-store.mjs';
+const {HTML,CSS,CLIENT}=await compiledDashboard();
 const out='verification/dashboard',checks=[],errors=[];await mkdir(out,{recursive:true});
 const live={checked_at:new Date().toISOString(),probes:['/','/library/','/ask/'].map(path=>({path,status:200,ok:true,ms:5})),ci:{status:'success',sha:'fixture',url:'https://github.com/theonewhothink/carverdict/actions'},ai_enabled:true,ai_daily_cap:20,providers:{email:true,google:true,apple:false}};
 const state={...structuredClone(BASE),tasks:prioritiseTasks(structuredClone(BASE.tasks)),metric_values:{},history:[],stats:{users:3,likes:4,surveys:1,subscribers:2,ai_quota_used_today:2},live,health_reports:[{date:new Date().toISOString().slice(0,10),checked_at:live.checked_at,first_seen_at:live.checked_at,last_seen_at:live.checked_at,samples:1,source_sha:'fixture',probes:live.probes,ci:live.ci,ai_enabled:true,tasks:{total:BASE.tasks.length,verified:18,blocked:7}}]};

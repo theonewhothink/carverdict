@@ -31,8 +31,10 @@ else
     echo "Dataset unavailable; retaining the existing snapshot."
   fi
 fi
-if [ ! -d node_modules/@anthropic-ai/sdk ]; then
-  npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts @anthropic-ai/sdk@0.128.0
+# The regression tests exercise the Worker compiler boundary, including on a
+# fresh Cloudflare checkout with no package manifest or local Wrangler install.
+if [ ! -d node_modules/@anthropic-ai/sdk ] || ! node --input-type=module -e 'await import("./scripts/dashboard_browser_bundle.mjs")' >/dev/null 2>&1; then
+  npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts @anthropic-ai/sdk@0.128.0 esbuild@0.28.1
 fi
 # Imported encyclopedia harvests and automatic catalogue expansion are intentionally stopped.
 # The committed reference catalogue is retained for existing URLs during the measured migration.
@@ -66,6 +68,7 @@ PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" -c "from build_record_page
 "$PY" scripts/polish.py
 "$PY" scripts/publication_policy.py
 "$PY" scripts/audit_dashboard_seo.py
+node scripts/build_dashboard_client.mjs
 "$PY" scripts/build_dashboard.py
 "$PY" scripts/qa_site.py
 "$PY" scripts/qa_publication.py
