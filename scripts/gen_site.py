@@ -1048,14 +1048,10 @@ change country in the bar at the top. Estimates; see <a href="/methodology/">met
     price_html = price_block(r, five_run, _fuel)
 
     # Owner satisfaction. NHTSA tells us what broke; only owners can tell us whether they
-    # would do it again. Until real responses exist the survey card said "No responses yet"
-    # on 1,900 pages — a site-wide empty section, which is what an AdSense reviewer reads as
-    # a site under construction. The survey now lives behind the love button (account.js
-    # opens it) and the card returns to the page only when the API has responses to show.
+    # would do it again. The API publishes a real rollup or an explicit empty state.
     survey_html = (f'<div class="card engagement-card">'
                    f'<div class="love-host" data-love="my:{r["my_id"]}" data-love-name="{esc(name)}"></div>'
-                   f'<div class="survey-card" data-survey="my:{r["my_id"]}" data-survey-name="{esc(name)}" '
-                   f'data-survey-quiet="1"></div></div>')
+                   f'<div class="survey-card" data-survey="my:{r["my_id"]}" data-survey-name="{esc(name)}"></div></div>')
 
     running_curve = [{**p, "total_low": p["total_low"] + _fuel,
                       "total_high": p["total_high"] + _fuel} for p in curve]
@@ -1590,7 +1586,7 @@ def gen_model(con, model_rows, all_rows):
 {gv_eras}
 {AD.format(slot='mid')}
 <div class="card engagement-card"><div class="love-host" data-love="nameplate:{r0['kslug']}/{r0['mslug']}" data-love-name="{esc(make)} {esc(model)}"></div>
-<div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}" data-survey-quiet="1"></div></div>
+<div class="survey-card" data-survey="nameplate:{r0['kslug']}/{r0['mslug']}" data-survey-name="{esc(make)} {esc(model)}"></div></div>
 <div class="card"><h2>Year-by-year data table</h2>{verdict_line}
 <div class="table-wrap"><table class="cost-table"><thead><tr><th>Year</th><th>Score</th><th>Verdict</th>
 <th>Running cost / yr</th><th>NHTSA complaints</th><th>Recalls</th></tr></thead>
@@ -1964,9 +1960,18 @@ def gen_home(con, all_rows):
     # The most-loved leaderboard shows real votes only. Until readers have cast any, the
     # page shows this data-derived list under a label that says exactly that, instead of
     # an empty grid — the same cars the home page leads with, one year per nameplate.
+    discovery = _amazing(gated, 24)
+    if not discovery:
+        seen = set()
+        for x in sorted(gated, key=lambda r: (not bool(r["annual_fuel_cost"]), -(r["year"] or 0), r["make"], r["model"])):
+            if x["model_id"] in seen:
+                continue
+            seen.add(x["model_id"]); discovery.append(x)
+            if len(discovery) >= 24:
+                break
     (SITE / "assets" / "loved-fallback.json").write_text(json.dumps(
-        [{"name": f'{x["year"]} {x["make"]} {x["model"]}', "url": url_my(x), "score": x["score"]}
-         for x in _amazing(gated, 24)], separators=(",", ":"), ensure_ascii=False))
+        [{"name": f'{x["year"]} {x["make"]} {x["model"]}', "url": url_my(x)}
+         for x in discovery], separators=(",", ":"), ensure_ascii=False))
 
     def card_money(x):
         bits = []
@@ -2171,8 +2176,8 @@ def gen_search(con, all_rows):
 
     The typeahead answers "take me to the Corolla". It cannot answer "a reliable electric
     SUV from the last five years under $30k", which is the question people actually shop
-    with. This page can: every model-year that has a page, filterable by year, fuel,
-    category, verdict and price, all client-side over one compact index — no server, no
+    with. This page can: every model-year that has a page, filterable by year, fuel and
+    category, all client-side over one compact index — no server, no
     round-trips, instant on a phone."""
     fuel_kind_of = {"Electricity": "electric", "Electricity and Hydrogen": "electric",
                     "Diesel": "diesel", "Hydrogen": "hydrogen", "CNG": "cng"}
@@ -2207,8 +2212,8 @@ def gen_search(con, all_rows):
 
     seg_label = dict(SEGMENT_LABEL)
     body = f"""<div class="hero"><div class="wrap hero-inner"><h1>Find your car</h1>
-<p class="sub">Every scored model year, filterable by year, fuel, category, price and verdict.
-For the full catalogue of every car ever made, use the <a href="/library/">Library</a>.</p></div></div>
+<p class="sub">Search model-year records by year, fuel and category. Cards show the available annual fuel-plus-maintenance planning figure; use the actual listing for purchase price.
+For the complete current catalogue, use the <a href="/library/">Library</a>.</p></div></div>
 <div class="wrap" style="padding:22px 0 40px">
 <div class="card sf-card">
 <div class="sf-row">
@@ -2218,15 +2223,10 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
 <option value="electric">Electric</option><option value="diesel">Diesel</option></select>
 <select id="sf-seg" aria-label="Category"><option value="">Any category</option>
 {''.join(f'<option value="{k}">{v.title()}</option>' for k, v in seg_label.items() if k != 'exotic')}</select>
-<select id="sf-verdict" aria-label="Verdict"><option value="">Any verdict</option>
-<option>BUY</option><option>CAUTION</option><option>AVOID</option></select>
 <select id="sf-ymin" aria-label="From year"></select>
 <select id="sf-ymax" aria-label="To year"></select>
-<select id="sf-price" aria-label="Max price"><option value="">Any price</option>
-<option value="10000">Under $10,000</option><option value="20000">Under $20,000</option>
-<option value="35000">Under $35,000</option><option value="60000">Under $60,000</option></select>
-<select id="sf-sort" aria-label="Sort"><option value="score">Best score first</option>
-<option value="price">Cheapest first</option><option value="year">Newest first</option>
+<select id="sf-sort" aria-label="Sort"><option value="running">Lowest annual running cost first</option>
+<option value="year">Newest first</option>
 <option value="data">Most data first</option></select>
 </div>
 <p class="sf-count" id="sf-count"></p></div>
@@ -2237,7 +2237,7 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
 (function () {{
   var R = null, LIM = 60, shown = LIM;
   var els = {{}};
-  ['q','fuel','seg','verdict','ymin','ymax','price','sort'].forEach(function (k) {{
+  ['q','fuel','seg','ymin','ymax','sort'].forEach(function (k) {{
     els[k] = document.getElementById('sf-' + k);
   }});
   var out = document.getElementById('sf-out'), count = document.getElementById('sf-count'),
@@ -2252,34 +2252,26 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
   function apply() {{
     if (!R) return;
     var q = els.q.value.trim().toLowerCase();
-    var f = els.fuel.value, g = els.seg.value, v = els.verdict.value;
-    var y0 = +els.ymin.value || 0, y1 = +els.ymax.value || 9999, pm = +els.price.value || 0;
+    var f = els.fuel.value, g = els.seg.value;
+    var y0 = +els.ymin.value || 0, y1 = +els.ymax.value || 9999;
     var hits = R.filter(function (r) {{
       if (q && r[0].toLowerCase().indexOf(q) < 0) return false;
       if (f && r[4] !== f) return false;
       if (g && r[5] !== g) return false;
-      if (v && r[7] !== v) return false;
       if (r[2] < y0 || r[2] > y1) return false;
-      if (pm && (!r[8] || r[8] > pm)) return false;
       return true;
     }});
     var s = els.sort.value;
     hits.sort(function (a, b) {{
-      if (s === 'price') return (a[8] || 9e9) - (b[8] || 9e9);
       if (s === 'year') return b[2] - a[2];
       if (s === 'data') return b[9] - a[9];
-      return (b[6] || 0) - (a[6] || 0);
+      return (a[10] || 9e9) - (b[10] || 9e9);
     }});
     count.textContent = hits.length.toLocaleString() + ' model year' + (hits.length === 1 ? '' : 's') + ' match';
     out.innerHTML = hits.slice(0, shown).map(function (r) {{
-      var costs = [];
-      if (r[8]) costs.push(money(r[8]) + ' typical price');
-      if (r[10]) costs.push(money(r[10]) + '/yr ' + (r[11] ? 'fuel + maintenance' : 'maintenance; fuel unavailable'));
-      if (r[12]) costs.push(money(r[12]) + '/yr insurance');
-      if (r[13]) costs.push(money(r[13]) + '/yr depreciation');
+      var costs = r[10] ? money(r[10]) + '/yr fuel + maintenance planning figure' : 'Annual running cost not available';
       return '<a href="' + r[1] + '">' + r[0] +
-        '<small>score ' + (r[6] == null ? '—' : r[6] + '/100') + ' · ' + (r[7] || 'DATA PENDING') +
-        (costs.length ? ' · ' + costs.join(' · ') : '') + '</small></a>';
+        '<small>' + costs + ' · Purchase price: use the actual listing</small></a>';
     }}).join('') || '<p class="muted" style="grid-column:1/-1">Nothing matches. Loosen a filter — or browse the <a href="/library/">full library</a>.</p>';
     more.hidden = hits.length <= shown;
   }}
@@ -2295,8 +2287,8 @@ For the full catalogue of every car ever made, use the <a href="/library/">Libra
 }})();
 </script>"""
     return write("search/index.html", page(
-        f"Find Your Car — Filter by Year, Fuel, Price & Verdict | {BRAND}",
-        "Filter every scored model year by year, fuel type, category, price and data verdict.",
+        f"Find a Car by Year, Fuel and Ownership Cost | {BRAND}",
+        "Search model-year public records by year, fuel type and category, with available annual fuel and maintenance planning figures.",
         ORIGIN + "/search/", body, extra_head=NOINDEX))
 
 
@@ -2323,65 +2315,58 @@ def gen_calculators(con, all_rows):
 <div class="card calc"><h2>What will it cost me?</h2>
 <label for="cv">Vehicle</label><select id="cv" aria-busy="true"><option>Loading vehicles…</option></select>
 <label for="cy">Years you plan to keep it</label><input id="cy" type="number" value="5" min="1" max="10">
-<label for="cp">Price you would pay (leave as-is for our estimate)</label><input id="cp" type="number" min="200" step="100">
+<label for="cp">Actual price you would pay</label><input id="cp" type="number" min="0" step="100" placeholder="Seller's price">
+<label for="cr">Expected resale value after that period</label><input id="cr" type="number" min="0" step="100" placeholder="Your assumption">
+<label for="ci">Actual insurance quote / year</label><input id="ci" type="number" min="0" step="10" placeholder="Your quote">
+<label for="crepair">Repair reserve / year</label><input id="crepair" type="number" min="0" step="50" placeholder="Your reserve">
 <div class="calc-out" id="cout">—</div>
 <div class="calc-break" id="cbreak"></div>
 <p id="cnote" style="font-size:13px"></p></div>
-<div class="card"><h2>How it works</h2><p>Total cost of ownership = depreciation (what the car loses while
-you own it) + fuel or energy + the age-indexed maintenance band + insurance. Depreciation is normally the
-biggest line of the four, which is why most "running cost" calculators — including the earlier version of
-this one — flatter every car by leaving it out. EV packs add a labeled out-of-warranty battery-replacement
-risk. Price, depreciation and insurance are class-level estimates; the
-<a href="/methodology/#prices">formula and constants are published</a>. Browse verdicts in
-<a href="/cars/">the data index</a>.</p>
+<div class="card"><h2>How it works</h2><p>Total cost of ownership = purchase price minus expected resale value,
+plus fuel or energy, the age-indexed maintenance band, your insurance quote and your repair reserve.
+MotorJury does not invent a market price, insurance premium or future resale value: those inputs must come
+from the actual car and quotes you are considering. EV pages separately label an out-of-warranty
+battery-replacement risk when a source-backed band is available.</p>
 <h3>What the number is good for, and what it is not</h3>
 <p>The calculator answers one question: over the next few years, what will this model year cost to
 keep, compared with another? It is built for comparison — a 2015 against a 2018 of the same car, or
-a hybrid against the petrol version — because the inputs are class-level averages that cancel out
-when two cars of the same class are set side by side. It is not a quote for one specific car: condition,
-mileage, options and where you live move every line. The fuel figure is the EPA's, the maintenance band
-is an industry average indexed to the car's age, and the price, depreciation and insurance lines are
-estimates with a stated ±18% band. If you have been quoted a price, type it in on the model-year page
-and the whole panel recomputes from that number instead.</p>
+a hybrid against the petrol version — provided you enter comparable real-world quotes. It is not a quote
+for one specific car: condition, mileage, options and where you live move every line. The fuel figure is
+EPA-backed or explicitly labelled as a nearby-year/segment estimate, and the maintenance range is a
+generic age-based planning band.</p>
 <h3>Where the inputs come from</h3>
 <p>Fuel economy comes from fueleconomy.gov (EPA). Maintenance bands are drawn from published
-industry cost-of-ownership surveys, indexed by vehicle age. The reliability score behind each verdict
-is computed from NHTSA complaint and recall records by the published method. Prices are re-priced
-to your country from retail fuel, electricity and parts indices; change the country in the bar at the
-top of the page and every figure follows.</p></div>
+the site's published generic age curve. Purchase, resale, insurance and repair-reserve values come only
+from what you type; the calculator does not send or save them. Financing, tax, registration and parking
+are not included.</p></div>
 </div><div class="col-side">{AD.format(slot='calc')}</div></div>
 <script>
 let P=[];
 const sel=document.getElementById('cv'),out=document.getElementById('cout'),note=document.getElementById('cnote');
-const price=document.getElementById('cp'),brk=document.getElementById('cbreak');
+const price=document.getElementById('cp'),resale=document.getElementById('cr'),insurance=document.getElementById('ci'),repairs=document.getElementById('crepair'),brk=document.getElementById('cbreak');
 const M=n=>'$'+Math.round(n).toLocaleString();
 let lastIdx=-1;
 function calc(){{const p=P[sel.value];if(!p)return;const keep=Math.min(10,Math.max(1,+document.getElementById('cy').value||5));
-if(+sel.value!==lastIdx){{lastIdx=+sel.value;price.value=p.pt||'';price.placeholder=p.pt?String(p.pt):'purchase price';}}
+if(+sel.value!==lastIdx)lastIdx=+sel.value;
 const age0=Math.max(0,{CURRENT_YEAR}-p.y);let lo=0,hi=0;
 for(let k=0;k<keep;k++){{const a=Math.min(p.c.length-1,age0+k);lo+=p.c[a][0];hi+=p.c[a][1];}}
 const fuel=(p.fc||0)*keep;
 const run=(lo+hi)/2+fuel;
 const runLo=lo+fuel,runHi=hi+fuel;
-// depreciation scales with the price actually paid: the retained-value ratio is the same curve
-const paid=Math.max(200,+price.value||p.pt||0);
-const dep=p.d5&&p.pt?p.d5*(paid/p.pt)*(keep/5):0;
-const ins=(p.ins||0)*keep;
-const total=run+dep+ins;
 const hasFuel=!!p.fc;
-out.textContent=M(total/keep)+' / year — '+M(total)+' over '+keep+' year'+(keep>1?'s':'')+
-  ' (USD'+(hasFuel?'':', fuel excluded')+')';
-brk.innerHTML=(dep?'<div><span>Depreciation</span><b>'+M(dep)+'</b></div>':'')+
-'<div><span>'+(hasFuel?'Fuel and maintenance':'Maintenance — fuel unavailable')+'</span><b>'+M(run)+'</b></div>'+
-(ins?'<div><span>Insurance</span><b>'+M(ins)+'</b></div>':'')+
-'<div class="tot"><span>'+(hasFuel?'Total cost of ownership':'Total shown — fuel excluded')+'</span><b>'+M(total)+'</b></div>'+
-'<div class="per"><span>'+(hasFuel?'Per mile at 12,000 miles a year':'Per mile shown — fuel excluded')+'</span><b>$'+(total/(keep*12000)).toFixed(2)+'</b></div>';
+const raw=[price,resale,insurance,repairs].map(x=>x.value.trim()),complete=raw.every(x=>x!==''&&!Number.isNaN(+x)&&+x>=0);
+let detail='<div><span>'+(hasFuel?'Fuel and maintenance':'Maintenance — fuel unavailable')+'</span><b>'+M(runLo)+'–'+M(runHi)+'</b></div>';
+if(complete){{const dep=+price.value-+resale.value,ins=+insurance.value*keep,repair=+repairs.value*keep,totalLo=dep+runLo+ins+repair,totalHi=dep+runHi+ins+repair;
+out.textContent=M(totalLo)+'–'+M(totalHi)+' over '+keep+' year'+(keep>1?'s':'')+' ('+M(totalLo/(keep*12))+'–'+M(totalHi/(keep*12))+'/month)';
+detail='<div><span>Depreciation from your inputs</span><b>'+M(dep)+'</b></div>'+detail+'<div><span>Insurance from your quote</span><b>'+M(ins)+'</b></div><div><span>Repair reserve</span><b>'+M(repair)+'</b></div><div class="tot"><span>Total ownership range</span><b>'+M(totalLo)+'–'+M(totalHi)+'</b></div>';
+}}else{{out.textContent='Known running-cost band: '+M(runLo)+'–'+M(runHi)+' over '+keep+' year'+(keep>1?'s':'')+'. Enter the four actual money inputs for total ownership cost.';}}
+brk.innerHTML=detail;
 note.textContent=(p.ev&&p.bl?'EV note: out-of-warranty battery replacement risk $'+p.bl.toLocaleString()+'–$'+p.bh.toLocaleString()+' (estimate, not included above). ':'')+
 (hasFuel?'Running cost':'Maintenance-only')+' band over '+keep+' yr: '+M(runLo)+'–'+M(runHi)+'. '+
 (hasFuel?'':'EPA has no matched fuel or energy record for this selection, so fuel is excluded rather than shown as $0. ')+
-'Price, depreciation and insurance are class-level estimates — see the methodology. Local fuel, electricity and parts prices from the country bar feed the per-country figures on each car page.';}}
+'Purchase price, resale, insurance and repair reserve come only from your inputs and stay in this page.';}}
 sel.addEventListener('change',calc);document.getElementById('cy').addEventListener('input',calc);
-price.addEventListener('input',calc);
+[price,resale,insurance,repairs].forEach(x=>x.addEventListener('input',calc));
 fetch('/assets/calculator-data.json').then(r=>{{if(!r.ok)throw new Error(r.status);return r.json()}}).then(rows=>{{
   P=rows;sel.innerHTML='';P.forEach((p,i)=>{{const o=document.createElement('option');o.value=i;o.textContent=p.n;sel.appendChild(o)}});
   sel.removeAttribute('aria-busy');calc();
@@ -2984,10 +2969,10 @@ account data is used are announced by email to account holders before they take 
 on it. Using the site means you accept them.</p>
 
 <h2>What the site is</h2>
-<p>MotorJury publishes ownership-cost data, reliability verdicts, recall summaries and buyer's
-guides for cars sold in the United States, computed from public records held by the United States
-National Highway Traffic Safety Administration (NHTSA) and the Environmental Protection Agency (EPA),
-plus class-level estimates of prices, depreciation, insurance and running costs. The
+<p>MotorJury publishes public safety records, fuel and maintenance planning figures, recall summaries,
+catalogue entries and buyer guides. Public-record material comes from the United States National
+Highway Traffic Safety Administration (NHTSA) and the Environmental Protection Agency (EPA).
+Purchase price, resale value, insurance and repair-reserve calculations use numbers entered by the reader. The
 <a href="/methodology/">methodology page</a> describes every formula. The
 <a href="/editorial-policy/">editorial policy</a> describes what is computed, what is written by a
 person, and how corrections are handled.</p>

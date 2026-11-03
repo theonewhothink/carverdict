@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
-"""build_social.py — the daily social factory, and the page you post from.
+"""build_social.py — a source-backed editorial queue and the page you post from.
 
-The old queue wrote seven generic "Car of the Day" captions into a repo folder nobody
-opens, with a model count hard-coded two catalogue rebuilds ago. Generic car captions lose
-to the thousand accounts already posting generic car captions; the only thing this site has
-that they do not is the numbers.
-
-So every package here is built from one real record and leads with the figure: the cost per
-mile, the five-year depreciation, the repair bill behind the top complaint cluster, the
-worst year of a nameplate people are shopping right now. Three formats a day, seven days
-ahead, each with the image, the caption, the hashtags, a spoken script for video and the
-link — and all of it on a page that can be opened on a phone and copied out in a minute.
+Every package comes from one of MotorJury's reviewed design stories. The queue deliberately
+does not revive the withdrawn BUY/AVOID scores or synthetic price estimates: a social post
+must be at least as careful as the article it promotes.
 
 Outputs:
   SOCIAL_QUEUE/queue.json   machine-readable, for whatever posts it
@@ -41,11 +34,11 @@ def _handles():
     return [(n, h, d.get(n)) for n, h in want if d.get(n)]
 HANDLES = _handles()
 
-BIO = ("What that car really costs to own. Price, depreciation, repairs, insurance and a "
-       "verdict — computed from public NHTSA and EPA data, never opinions.")
+BIO = ("Car design stories and practical ownership planning. EPA-backed running costs, "
+       "public safety records and calculators that use the price you are actually quoted.")
 
 TAGS = {
-    "instagram": "#usedcars #cartok #carbuying #cardata #carmaintenance #depreciation "
+    "instagram": "#usedcars #cartok #carbuying #cardata #carmaintenance "
                  "#carsofinstagram #carfacts #carshopping #motorjury",
     "tiktok": "#cartok #usedcars #carbuying #cartips #cardata #carmaintenance #fyp",
     "facebook": "#usedcars #carbuying #cardata #carmaintenance",
@@ -204,6 +197,44 @@ def pack(day, angle, r, hook, body, script):
     }
 
 
+def reviewed_packages(days=7):
+    """Turn the reviewed story collection into an honest seven-day publishing queue."""
+    profiles_path = SITE / "assets" / "collection-profiles.json"
+    try:
+        profiles = json.loads(profiles_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    out = []
+    for i, profile in enumerate(profiles[:days]):
+        sections = profile.get("sections") or []
+        first_fact = sections[0][1] if sections and len(sections[0]) > 1 else profile.get("intro", "")
+        name = profile.get("name", "MotorJury design story")
+        hook = profile.get("title") or name
+        link = ORIGIN + profile.get("url", "/discover/")
+        body = (f"{profile.get('intro', '')}\n\n{first_fact}\n\n"
+                "Read the full story and open the manufacturer archive sources on MotorJury.")
+        script = (f"{hook}. {profile.get('intro', '')} "
+                  "The full MotorJury story separates what the photographs suggest from what "
+                  "the manufacturer archive actually establishes. Link in bio.")
+        day = (date.today() + timedelta(days=i)).isoformat()
+        out.append({
+            "date": day,
+            "angle": "reviewed-design-story",
+            "car": name,
+            "link": link,
+            "hook": hook,
+            "posts": {
+                "instagram": f"{hook}\n\n{body}\n\nFull story → link in bio\n\n{TAGS['instagram']}",
+                "tiktok": f"{hook}\n\nFull source-backed story in the bio.\n\n{TAGS['tiktok']}",
+                "facebook": f"{hook}\n\n{body}\n\n{link}\n\n{TAGS['facebook']}",
+            },
+            "script": script,
+            "image_hint": f"Use the credited lead photograph or screen-record the story at {link}.",
+        })
+    return out
+
+
 def studio_page(items):
     """The page the posting actually happens from. Deliberately plain, deliberately noindex,
     and built so every block is one tap to copy on a phone."""
@@ -287,11 +318,11 @@ def follow_page(model_count, brand_count):
     """The link-in-bio page every social profile points at. One screen, thumb-sized targets,
     no hero image to wait for."""
     links = [
-        ("Which years to avoid", "Every nameplate ranked on the federal complaint record", "/years-to-avoid/"),
+        ("Recall and complaint records", "Compare public record counts by model year", "/years-to-avoid/"),
         ("Buyer's guides", "Signed, dated, checked against the record", "/guides/"),
         ("Head-to-head", "Two nameplates, year by year", "/compare/"),
-        ("What will it cost me?", "Price, depreciation, insurance and running cost", "/calculators/"),
-        ("Every car ever made", f"The library — {model_count:,} models from {brand_count:,} marques", "/library/"),
+        ("What will it cost me?", "EPA-backed running cost plus your actual price, insurance, repair and resale inputs", "/calculators/"),
+        ("Explore the complete current catalogue", f"The library — {model_count:,} models from {brand_count:,} marques", "/library/"),
         ("How the numbers work", "Every formula, published", "/methodology/"),
     ]
     rows_html = "".join(
@@ -338,13 +369,10 @@ border:1px solid var(--line);font-size:14px;font-weight:600;color:var(--muted)}}
 
 
 def main():
-    con = db()
-    all_rows = rows(con)
-    if not all_rows:
-        print("SOCIAL SKIPPED: no scored rows")
+    items = reviewed_packages()
+    if not items:
+        print("SOCIAL SKIPPED: no reviewed profiles")
         return 0
-    items = packages(con, all_rows)
-    con.close()
 
     q = ROOT / "SOCIAL_QUEUE"
     q.mkdir(exist_ok=True)

@@ -7,11 +7,53 @@ their evidence needs verification. This does not create every year/pairing URL.
 import json
 import sqlite3
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlencode
 from build_buying_brief import write, esc, ROOT, SITE
 from nhtsa_records import identity, record_check
 from catalogue_experience import record_photo
+
+
+def ownership_card(r):
+    fuel = int(r["annual_fuel_cost"] or 0)
+    try:
+        curve = json.loads(r["cost_curve"] or "[]")
+        age = max(0, date.today().year - int(r["year"]))
+        point = min(curve, key=lambda p: abs(int(p["age"]) - age)) if curve else None
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        point = None
+    maint_low = int(point["total_low"]) if point else 0
+    maint_high = int(point["total_high"]) if point else 0
+    running_low, running_high = fuel + maint_low, fuel + maint_high
+    fuel_type = r["fuel_type"] or ""
+    if not fuel:
+        fuel_note = "No usable fuel/energy figure is available; it is excluded rather than shown as $0."
+        fuel_text = "Not available"
+    elif fuel_type.startswith("est-adjacent:"):
+        fuel_note = "Estimated from the nearest EPA-covered model year (" + esc(fuel_type.split(":", 1)[1]) + ")."
+        fuel_text = f"${fuel:,}/year"
+    elif fuel_type == "est-segment":
+        fuel_note = "Estimated from the EPA-backed segment mean because this exact version is not matched."
+        fuel_text = f"${fuel:,}/year"
+    else:
+        fuel_note = "EPA annual fuel/energy planning figure for the matched record."
+        fuel_text = f"${fuel:,}/year"
+    known = (f'<div class="ownership-known"><div><span>Fuel / energy</span><b>{fuel_text}</b><small>{fuel_note}</small></div>'
+             f'<div><span>Maintenance planning band</span><b>${maint_low:,}–${maint_high:,}/year</b><small>Generic age-based planning range, not a repair quote.</small></div>'
+             f'<div><span>Fuel + maintenance</span><b>${running_low:,}–${running_high:,}/year</b><small>Insurance, repairs and depreciation are added below from your numbers.</small></div></div>')
+    return f'''<section class="card ownership" data-ownership-planner data-running-low="{running_low}" data-running-high="{running_high}">
+<p class="eyebrow">Ownership budget · transparent inputs</p><h2>What could this car cost you?</h2>{known}
+<p>MotorJury does not guess a purchase price, insurance premium, repair bill or resale value. Enter the actual listing and quotes you are considering.</p>
+<form><div class="ownership-fields">
+<label>Actual purchase price ($)<input name="purchase" type="number" min="0" step="100" inputmode="decimal" required placeholder="Seller's price"></label>
+<label>Expected resale after holding period ($)<input name="resale" type="number" min="0" step="100" inputmode="decimal" required placeholder="Your assumption"></label>
+<label>Actual insurance quote / year ($)<input name="insurance" type="number" min="0" step="10" inputmode="decimal" required placeholder="Your quote"></label>
+<label>Repair reserve / year ($)<input name="repairs" type="number" min="0" step="50" inputmode="decimal" required placeholder="Your reserve"></label>
+<label>Years you will keep it<input name="years" type="number" min="1" max="15" step="1" value="5" required></label>
+</div><button type="submit">Calculate my ownership range</button></form>
+<div class="ownership-result" data-ownership-result role="status" aria-live="polite">Enter the four actual money inputs to calculate a total.</div>
+<details><summary>What the total includes</summary><p>Purchase price minus your expected resale value (depreciation), plus fuel/energy, the generic maintenance band, your insurance quote and your repair reserve for the selected years. Financing, tax, registration and parking are excluded.</p></details></section>'''
 
 
 def apply_pilot(con):
@@ -44,9 +86,19 @@ def main():
     published=set(legacy)
     con=sqlite3.connect(ROOT / "data" / "cars.sqlite")
     apply_pilot(con)
+    # Small migration/test fixtures may predate the cost tables. Keep the routes useful
+    # and render "Not available" rather than turning an absent join into a build failure.
+    con.execute('''CREATE TABLE IF NOT EXISTS fuel(my_id INT PRIMARY KEY, fuel_type TEXT,
+        mpg_city REAL, mpg_hwy REAL, mpg_comb REAL, annual_fuel_cost INT,
+        ev_range REAL, kwh_100mi REAL)''')
+    con.execute('''CREATE TABLE IF NOT EXISTS computed_scores(my_id INT PRIMARY KEY,
+        reliability_score INT, verdict TEXT, reasons TEXT, cost_curve TEXT,
+        complaints_per_year REAL)''')
     con.row_factory=sqlite3.Row
-    rows=con.execute('''SELECT my.*,mk.name make,mk.slug kslug,mo.name model,mo.slug mslug
+    rows=con.execute('''SELECT my.*,mk.name make,mk.slug kslug,mo.name model,mo.slug mslug,
+        f.annual_fuel_cost,f.fuel_type,cs.cost_curve
         FROM model_years my JOIN models mo ON mo.id=my.model_id JOIN makes mk ON mk.id=mo.make_id
+        LEFT JOIN fuel f ON f.my_id=my.id LEFT JOIN computed_scores cs ON cs.my_id=my.id
         ORDER BY mk.name,mo.name,my.year DESC''').fetchall()
     checks={(r["my_id"],r["service"]):dict(r) for r in con.execute("SELECT * FROM source_checks")}
     by_model=defaultdict(list)
@@ -71,10 +123,12 @@ def main():
         elif rc:
             campaign_html=f'<p class="callout">The most recent recall check is {esc(rc["status"])}. No zero-recall or safe-to-buy conclusion can be drawn.</p>'
         lookup='https://www.nhtsa.gov/vehicle/'+str(r['year'])+'/'+r['make'].upper()+'/'+r['model'].upper().replace(' ','%20')
+        engage=(f'<section class="card engagement-card"><div class="love-host" data-love="my:{r["id"]}" data-love-name="{esc(name)}"></div>'
+                f'<div class="survey-card" data-survey="my:{r["id"]}" data-survey-name="{esc(name)}"></div></section>')
         body=f'''<section class="hero"><p class="eyebrow">US public safety record</p><h1>{esc(name)}</h1><p class="lede">Use the record to choose what to check. It cannot establish this car's condition.</p></section>
 <section class="card"><h2>What is verified here?</h2><p>Complaint reports: <b>{count(r,'complaints')}</b>. Distinct recall campaigns: <b>{count(r,'recalls')}</b>.</p><p>“Not verified” means the snapshot lacks a successful service-specific matching check. It does not mean zero. Complaint totals are reports, not failure rates.</p><p>Predictive reliability scores and automatic BUY/AVOID decisions are suspended.</p><div class="actions"><a class="button" href="https://www.nhtsa.gov/recalls">Check the actual VIN</a><a class="button secondary" href="{esc(lookup)}">See the NHTSA vehicle record</a></div></section>
-{record_photo(r["make"],r["model"],r["year"])}{campaign_html}<section class="card"><h2>Before a deposit</h2><ul><li>Confirm the exact version and service history.</li><li>Ask for dealer evidence of applicable recall remedies.</li><li>Arrange an independent inspection of the actual vehicle.</li><li>Compare your purchase quote and insurance with a budget.</li></ul><p><a href="/cars/{r['kslug']}/{r['mslug']}/">Other years of this model</a> · <a href="/buying-brief/">See the RAV4 buying-brief example</a></p></section>'''
-        write(url,name+' — documented safety checks',body)
+{record_photo(r["make"],r["model"],r["year"])}{campaign_html}{ownership_card(r)}{engage}<section class="card"><h2>Before a deposit</h2><ul><li>Confirm the exact version and service history.</li><li>Ask for dealer evidence of applicable recall remedies.</li><li>Arrange an independent inspection of the actual vehicle.</li><li>Compare your purchase quote and insurance with a budget.</li></ul><p><a href="/cars/{r['kslug']}/{r['mslug']}/">Other years of this model</a> · <a href="/buying-brief/">See the RAV4 buying-brief example</a></p></section>'''
+        write(url,name+' — documented safety checks and ownership budget',body+'<script src="/assets/ownership.js" defer></script>')
         f=SITE / url.strip('/') / 'index.html'
         if not rc or rc['status'] not in ('matched','empty'):
             f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))

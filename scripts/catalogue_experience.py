@@ -7,7 +7,7 @@ import build_library as lib
 ROOT=Path(__file__).resolve().parent.parent
 SITE=ROOT/'site'
 esc=html.escape
-FEATURED=['Ferrari F40','Lamborghini Miura','BMW M3','Mazda MX-5','Honda NSX','Mercedes-Benz 300 SL','Ford Mustang','Volkswagen Golf','Toyota RAV4','Citroën DS','Alpine A110','Lancia Stratos','Jaguar E-Type','Porsche 356','Aston Martin DB5','Audi Quattro']
+FEATURED=['Ferrari F40','Lamborghini Miura','BMW M3','Mazda MX-5','Honda NSX','Mercedes-Benz 300 SL','Citroën DS','Alpine A110','Lancia Stratos','Jaguar E-Type','Porsche 356','Aston Martin DB5','Audi Quattro']
 
 @lru_cache(maxsize=1)
 def photo_credits():
@@ -47,7 +47,9 @@ def card(r,lazy=True):
     r=dict(r,p=r.get('i') or r['p'])
     credit='<a class="collection-credit" href="'+esc(lib.commons_page(r['p']),quote=True)+'" rel="noopener">Photo &amp; attribution ↗</a>' if r['p'] else '<span class="collection-credit">Photo not yet catalogued</span>'
     save=f'<button type="button" class="save-car" data-save-car="{esc(r["u"],quote=True)}" data-car-name="{esc(r["n"],quote=True)}" aria-pressed="false">Save car +</button>'
-    return f'<article class="collection-card"><a href="{esc(r["u"],quote=True)}">{image(r["p"],r["n"],lazy)}<div class="collection-card-body"><span class="collection-brand">{esc(r["b"])}</span><h3>{esc(r["n"])}</h3></div></a>{credit}{save}</article>'
+    love=f'<div class="love-host card-love" data-love="model:{esc(r["q"],quote=True)}" data-love-name="{esc(r["n"],quote=True)}"></div>'
+    costs=f'<a class="collection-card-cost" href="{esc(r["u"],quote=True)}">Price: use the actual listing · See year-by-year ownership costs →</a>'
+    return f'<article class="collection-card"><a href="{esc(r["u"],quote=True)}">{image(r["p"],r["n"],lazy)}<div class="collection-card-body"><span class="collection-brand">{esc(r["b"])}</span><h3>{esc(r["n"])}</h3></div></a>{credit}{costs}{love}{save}</article>'
 
 def roster_row(r):
     photo=('<a class="roster-credit" href="'+esc(lib.commons_page(r['p']),quote=True)+'">View photograph &amp; attribution ↗</a>') if r['p'] else ''
@@ -92,7 +94,7 @@ def main(write):
     script=f'<script type="module" src="/assets/{app_name}"></script>'
     search='<form class="collection-search" data-collection-entry role="search"><label for="car-search">Find a car or marque</label><div><input id="car-search" name="q" type="search" placeholder="Try Ferrari, 911 or Toyota RAV4" autocomplete="off"><button>Find cars <span aria-hidden="true">→</span></button></div></form>'
     stats=f'<p class="collection-stats"><b>{n:,}</b> catalogue entries <span>·</span> <b>{len(brands):,}</b> marques <span>·</span> <b>{photos:,}</b> photo references</p>'
-    header=f'<section class="collection-hero"><p class="eyebrow">For the cars you love. And the one you might buy.</p><h1>A whole world of cars.</h1><p class="lede">Classics, icons and everyday cars. Find yours.</p>{search}{stats}</section>'
+    header=f'<section class="collection-hero"><p class="eyebrow">For the cars you love. And the one you might buy.</p><h1>A whole world of cars.</h1><p class="lede">Design icons, racing legends and cars that changed the rulebook. Find yours.</p>{search}{stats}</section>'
     gallery='<div class="collection-grid">'+''.join(card(r,lazy=i>0) for i,r in enumerate(featured[:12]))+'</div>'
     home=header+'<nav class="collection-chips" aria-label="Explore by interest"><a href="/discover/">Nine design stories →</a><a href="/library/#brands">Explore every marque portal →</a><a href="/shortlist/">My saved cars →</a><a href="/guides/">Practical reader guides →</a><a href="/buying-brief/">Prepare for a viewing →</a></nav>'+'<section aria-label="Explore the collection">'+gallery+'<div class="collection-bottom"><a class="button" href="/library/">Explore the photo collection →</a><a href="/all-cars/">Complete A–Z directory</a></div></section><section class="collection-feature"><div><p class="eyebrow">Considering a used RAV4?</p><h2>Take better questions to the viewing.</h2><p>A source-backed 2019–2020 US RAV4 brief, a private checklist and a budget using your numbers.</p><a class="button" href="/buying-brief/">Prepare my buying brief →</a></div>'+record_photo('Toyota','RAV4')+'</section><p class="note">This is the complete current MotorJury catalogue, not a verified list of every car ever made. Reference photos may show another generation or trim. <a href="/catalogue-notes/">Coverage and photo credits</a>.</p>'
     write('/','Explore the world of cars',home,script)

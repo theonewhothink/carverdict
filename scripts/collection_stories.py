@@ -15,9 +15,17 @@ def catalogue_revision():
 def story(name):
     p=PROFILES.get(name)
     if not p:return ''
-    sections=''.join(f'<section><h2>{esc(h)}</h2><p>{esc(t)}</p></section>' for h,t in p['sections'])
+    rendered=[f'<section><h2>{esc(h)}</h2><p>{esc(t)}</p></section>' for h,t in p['sections']]
+    try:slot=json.loads((ROOT/'data/ads.json').read_text()).get('in_article_slot','')
+    except Exception:slot=''
+    # Publication policy removes this fail-closed until the exact reviewed page and
+    # AdSense account are approved. Keeping the unit in the article template makes the
+    # reviewed biographies ready without putting ads on thin catalogue entries.
+    if slot and rendered:
+        rendered.insert(1, '<ins class="adsbygoogle bio-ad" style="display:block;text-align:center" data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="ca-pub-6675837012921030" data-ad-slot="'+esc(slot,quote=True)+'"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>')
+    sections=''.join(rendered)
     sources=''.join(f'<li><a href="{esc(url,quote=True)}" rel="noopener">{esc(title)}</a><p class="note">{esc(scope)}</p></li>' for title,url,scope in p['sources'])
-    return f'<article class="collection-story" data-reviewed-profile><p class="eyebrow">The design story · {esc(p["scope"])}</p><h2>{esc(p["title"])}</h2><p class="lede">{esc(p["intro"])}</p>{sections}<aside class="callout"><b>A question worth keeping</b><p>{esc(p["question"])}</p></aside><h2>Check the source, then the version</h2><ul>{sources}</ul><p class="note">Research checked {esc(p.get("reviewed_at", DATA["reviewed_at"]))}. {esc(DATA["method"])} Manufacturer accounts are primary records of their projects, not independent evidence of ownership quality. This profile does not establish an individual car’s condition or value.</p></article>'
+    return f'<div class="collection-story" data-reviewed-profile><p class="eyebrow">The design story · {esc(p["scope"])}</p><h2>{esc(p["title"])}</h2><p class="lede">{esc(p["intro"])}</p>{sections}<aside class="callout"><b>A question worth keeping</b><p>{esc(p["question"])}</p></aside><h2>Check the source, then the version</h2><ul>{sources}</ul><p class="note">Research checked {esc(p.get("reviewed_at", DATA["reviewed_at"]))}. {esc(DATA["method"])} Manufacturer accounts are primary records of their projects, not independent evidence of ownership quality. This profile does not establish an individual car’s condition or value.</p></div>'
 
 def main(write,all_rows,card):
     picks={r['n']:r for r in all_rows if r['n'] in PROFILES}

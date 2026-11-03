@@ -59,12 +59,30 @@ def build_redirects(raw, rows, site):
     return result
 
 
+def add_known_redirects(result, known, site):
+    """Merge exact Search Console discoveries without creating a wildcard soft 404."""
+    for source, target in sorted(known.items()):
+        src = urlsplit(source)
+        dst = urlsplit(target)
+        if (src.scheme or src.netloc or dst.scheme or dst.netloc or
+                not source.startswith('/') or not target.startswith('/') or
+                source == target or (site / src.path.strip('/') / 'index.html').exists()):
+            continue
+        if not (site / dst.path.strip('/') / 'index.html').is_file():
+            continue
+        result[source] = target
+    return result
+
+
 def main():
     site = ROOT / 'site'
     redirects = build_redirects(json.loads((ROOT / 'data/car_library.json').read_text()),
                                json.loads((site / 'assets/catalogue-data.json').read_text()), site)
+    known_path = ROOT / 'data/search_console_redirects.json'
+    if known_path.exists():
+        add_known_redirects(redirects, json.loads(known_path.read_text()), site)
     (site / 'assets/route-recovery.json').write_text(json.dumps(redirects, ensure_ascii=False, separators=(',', ':')))
-    print(f'Catalogue recovery: {len(redirects)} exact routes; unknown identities remain 404')
+    print(f'Route recovery: {len(redirects)} exact routes; unknown identities remain 404')
 
 
 if __name__ == '__main__':

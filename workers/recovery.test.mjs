@@ -80,6 +80,15 @@ test("exact catalogue recovery preserves query and roster fragment", async () =>
   assert.equal((await recover("/de/library/byd/byd-atto-3/", a)).status, 301);
 });
 
+test("an exact historic comparison can retire to the reviewed comparison index", async () => {
+  const old = "/compare/bmw-x5-vs-nissan-murano-crosscabriolet/";
+  const a = assets({ [old]: "/compare/" }, ["/compare/"]);
+  const res = await recover(old + "?from=google", a);
+  assert.equal(res.status, 301);
+  assert.equal(res.headers.get("Location"), "https://motorjury.com/compare/?from=google");
+  assert.equal((await recover("/compare/invented-vs-invented/", a)).status, 404);
+});
+
 test("unknown models, missing targets, files and writes retain their 404", async () => {
   const a = assets({ "/library/byd/missing/": "/library/byd-auto/#m-missing" });
   for (const p of ["/library/byd/missing/", "/library/byd/invented/", "/assets/missing.png"])

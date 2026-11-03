@@ -74,6 +74,8 @@ def main():
             fields = r"class|body(?:_style)?|engine|power|layout|transmission|production|assembly|designer|predecessor|successor|wheelbase|length|width|height|weight"
             if re.search(rf"\b(?:{fields})\s*=", story_copy, re.I):
                 issues.append("raw_infobox_template_debris")
+        if 'data-love=' in text and '/assets/account.js' not in text:
+            issues.append("love control without account-backed client")
         if not re.search(r'<meta\s+name=["\']viewport["\']', text, re.I):
             issues.append("missing_viewport")
         if issues:

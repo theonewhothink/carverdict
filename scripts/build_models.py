@@ -846,11 +846,10 @@ def main():
 
         about_card = ""   # the Wikipedia summary is woven into the article (bio_text.py)
 
-        # Quiet until an owner has answered (account.js renders the card from the API);
-        # the static "No responses yet" read as an unfinished site on every library page.
+        # Render a real rollup or an explicit "No responses yet" state from the API.
         engagement_card = (f'<div class="card engagement-card">'
                            f'<div class="survey-card" data-survey="model:{esc(m["q"])}" '
-                           f'data-survey-name="{esc(m["n"])}" data-survey-quiet="1"></div></div>')
+                           f'data-survey-name="{esc(m["n"])}"></div></div>')
 
         gallery_card = ""
         if sp.get("commons"):
@@ -963,7 +962,7 @@ def main():
         if profile:
             links=''.join('<a href="'+esc(FLAT[name])+'">'+esc(name)+' →</a>' for name in profile['related'] if name in FLAT)
             narrative+='<section class="card"><h2>Follow another idea</h2><div class="collection-chips">'+links+'</div></section>'
-        body=f'<nav class="collection-chips" aria-label="Breadcrumb"><a href="/library/">Car collection</a><a href="/library/{bs}/">{esc(b)}</a></nav><section class="collection-hero compact"><p class="eyebrow">{esc(scope)}</p><h1>{esc(m["n"])}</h1><div class="actions"><button type="button" data-save-car="{esc(url)}" data-car-name="{esc(m["n"])}" aria-pressed="false">Save car +</button><a class="button secondary" href="/shortlist/">Compare saved cars →</a></div></section>{shot}{narrative}{gallery_card}<details class="card"><summary>Community feedback</summary><div class="love-host" data-love="model:{esc(m["q"])}" data-love-name="{esc(m["n"])}"></div>{engagement_card}</details>{family_card}<section class="card"><h2>More from {esc(b)}</h2><div class="collection-chips">{sib_html}</div><a href="/library/{bs}/">Complete {esc(b)} collection →</a></section>'
+        body=f'<nav class="collection-chips" aria-label="Breadcrumb"><a href="/library/">Car collection</a><a href="/library/{bs}/">{esc(b)}</a></nav><section class="collection-hero compact"><p class="eyebrow">{esc(scope)}</p><h1>{esc(m["n"])}</h1><div class="actions"><button type="button" data-save-car="{esc(url)}" data-car-name="{esc(m["n"])}" aria-pressed="false">Save car +</button><a class="button secondary" href="/shortlist/">Compare saved cars →</a></div></section><article class="model-reading" aria-label="{esc(m["n"])} story and media">{shot}{narrative}{gallery_card}</article><details class="card"><summary>Community feedback</summary><div class="love-host" data-love="model:{esc(m["q"])}" data-love-name="{esc(m["n"])}"></div>{engagement_card}</details>{family_card}<section class="card"><h2>More from {esc(b)}</h2><div class="collection-chips">{sib_html}</div><a href="/library/{bs}/">Complete {esc(b)} collection →</a></section>'
 
         # Vehicle plus the breadcrumb trail the page already shows visually. Google renders the
         # BreadcrumbList as the result's path line instead of a bare URL, so every library model

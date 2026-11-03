@@ -66,6 +66,15 @@
     var local = {};
     try { local = JSON.parse(localStorage.getItem('cv_prefs') || '{}'); } catch (e) { return; }
     try {
+      var shortlist = JSON.parse(localStorage.getItem('motorjury.collection.v1') || '[]');
+      if (Array.isArray(shortlist) && shortlist.length) {
+        local.garage = (local.garage || []).concat(shortlist.filter(function (u) {
+          return typeof u === 'string' && /^\/(?!\/)/.test(u) &&
+            !(local.garage || []).some(function (g) { return g.u === u; });
+        }).map(function (u) { return { u: u, n: 'Saved car' }; }));
+      }
+    } catch (e) {}
+    try {
       var geo = localStorage.getItem('cv_geo_override');
       if (geo && !local.geo) local.geo = geo;
     } catch (e) {}
@@ -122,32 +131,39 @@
       '<span class="love-lbl">' + (mine ? 'Loved' : 'Love it') + '</span></button>';
   }
 
-  function loveInit() {
-    var hosts = [].slice.call(document.querySelectorAll('[data-love]'));
-    if (!hosts.length) return;
-    var items = hosts.map(function (h) { return h.getAttribute('data-love'); });
-    function paint(h, n, mine) {
-      var id = h.getAttribute('data-love');
-      h.innerHTML = '<div class="engage-row">' + loveMarkup(n, mine) + quickStars(id) + '</div>';
-    }
-    hosts.forEach(function (h) { paint(h, 0, false); });
+  var LOVE_EVENTS_BOUND = false;
 
-    fetch('/api/love?items=' + encodeURIComponent(items.join(',')), { credentials: 'same-origin' })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        hosts.forEach(function (h) {
-          var id = h.getAttribute('data-love');
-          h.setAttribute('data-love-n', (j.counts || {})[id] || 0);
-          h.setAttribute('data-love-mine', (j.mine || []).indexOf(id) > -1 ? '1' : '');
-          paint(h, (j.counts || {})[id] || 0, (j.mine || []).indexOf(id) > -1);
-        });
-      }).catch(function () {});
+  function paintLove(h, n, mine) {
+    var id = h.getAttribute('data-love');
+    h.innerHTML = '<div class="engage-row">' + loveMarkup(n, mine) + quickStars(id) + '</div>';
+  }
+
+  function loveInit() {
+    var hosts = [].slice.call(document.querySelectorAll('[data-love]:not([data-love-ready])'));
+    var items = hosts.map(function (h) { return h.getAttribute('data-love'); });
+    hosts.forEach(function (h) { h.setAttribute('data-love-ready', '1'); paintLove(h, 0, false); });
+
+    if (items.length) {
+      fetch('/api/love?items=' + encodeURIComponent(items.join(',')), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          hosts.forEach(function (h) {
+            var id = h.getAttribute('data-love');
+            h.setAttribute('data-love-n', (j.counts || {})[id] || 0);
+            h.setAttribute('data-love-mine', (j.mine || []).indexOf(id) > -1 ? '1' : '');
+            paintLove(h, (j.counts || {})[id] || 0, (j.mine || []).indexOf(id) > -1);
+          });
+        }).catch(function () {});
+    }
+
+    if (LOVE_EVENTS_BOUND) return;
+    LOVE_EVENTS_BOUND = true;
 
     // Ratings summary for the same items, from the owner-response rollups.
     document.addEventListener('cv:rating', function (e) {
-      hosts.forEach(function (h) {
+      [].slice.call(document.querySelectorAll('[data-love]')).forEach(function (h) {
         if (h.getAttribute('data-love') !== e.detail.item) return;
-        paint(h, +h.getAttribute('data-love-n') || 0, !!h.getAttribute('data-love-mine'));
+        paintLove(h, +h.getAttribute('data-love-n') || 0, !!h.getAttribute('data-love-mine'));
       });
     });
 
@@ -190,7 +206,7 @@
       }).then(function (j) {
         host.setAttribute('data-love-n', j.count);
         host.setAttribute('data-love-mine', j.loved ? '1' : '');
-        paint(host, j.count, j.loved);
+        paintLove(host, j.count, j.loved);
       }).catch(function () { btn.disabled = false; });
     });
   }
@@ -523,6 +539,9 @@
     });
 
   loveInit();
+  new MutationObserver(function (mutations) {
+    if (mutations.some(function (m) { return m.addedNodes.length; })) loveInit();
+  }).observe(document.documentElement, { childList: true, subtree: true });
   surveyInit();
   loginPage();
 })();
