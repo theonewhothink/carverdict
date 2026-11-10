@@ -232,7 +232,13 @@ export class HubDO {
             provider, String(b.sub || ""), now, now);
           u = this.one(`SELECT * FROM users WHERE id=?`, id);
         } else if (!u.provider_id) {
-          this.sql.exec(`UPDATE users SET provider=?, provider_id=? WHERE id=?`, provider, String(b.sub || ""), u.id);
+          // The provider has just proven ownership of this email; email signup never did. A password
+          // or session created before that proof may belong to someone else (account pre-hijack), so
+          // drop both before handing the verified owner the account.
+          this.sql.exec(`UPDATE users SET provider=?, provider_id=?, pw_hash=NULL, pw_salt=NULL WHERE id=?`,
+            provider, String(b.sub || ""), u.id);
+          this.sql.exec(`DELETE FROM sessions WHERE user_id=?`, u.id);
+          u = this.one(`SELECT * FROM users WHERE id=?`, u.id);
         }
         return { token: await this.newSession(u.id), user: this.publicUser(u) };
       }
