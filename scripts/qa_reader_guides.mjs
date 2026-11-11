@@ -31,6 +31,7 @@ try{
  await page.getByRole('button',{name:'Calculate my scenario',exact:true}).click();
  check('Ownership form calculates the fictional five-year scenario',(await page.locator('[data-guide-result]').innerText()).includes('$33,000.00'));
  check('Ownership breakdown contains all five components',await page.locator('[data-guide-result] tbody tr').count()===5);
+ check('Currency amounts stay on one line',await page.locator('[data-guide-result] tbody td:nth-child(2)').evaluateAll(cells=>cells.every(cell=>{const range=document.createRange();range.selectNodeContents(cell);return range.getClientRects().length===1;})));
  check('Ownership result fits a narrow viewport',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
  await page.locator('[data-guide-result]').screenshot({path:join(out,'ownership-result-390.png')});
  await page.goto(origin+'/guides/hybrid-fuel-break-even/');
