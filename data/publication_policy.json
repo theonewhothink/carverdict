@@ -34,7 +34,13 @@
     "/guides/complaint-counts-without-failure-rates/",
     "/library/lotus-cars/lotus-carlton/",
     "/library/subaru/subaru-impreza-22b-sti-version/",
-    "/library/mclaren/mclaren-f1/"
+    "/library/mclaren/mclaren-f1/",
+    "/guides/used-car-ownership-budget/",
+    "/guides/hybrid-fuel-break-even/",
+    "/guides/match-car-version-before-you-buy/",
+    "/guides/recall-check-to-dealer-record/",
+    "/guides/car-design-timeline/",
+    "/guides/compare-car-design-briefs/"
   ],
   "index_policy": "preserve_template_gates"
 }

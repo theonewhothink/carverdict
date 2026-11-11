@@ -37,3 +37,7 @@
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
+
+/release.json
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow

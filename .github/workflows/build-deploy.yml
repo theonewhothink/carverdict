@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -52,6 +52,16 @@ jobs:
           node scripts/qa_brand_portal.mjs
           node scripts/qa_all_brand_portals.mjs
           node scripts/qa_dashboard.mjs
+          node scripts/qa_reader_guides.mjs
+
+      - name: Save reader guide browser checks and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-guide-browser-qa
+          path: verification/reader-guides/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Save portal browser checks and screenshots
         if: always()
@@ -129,6 +139,3 @@ jobs:
                       raise RuntimeError('IndexNow did not accept the notification')
                   print(f'IndexNow acknowledged {len(batch)} published sitemap URLs (HTTP {response.status}); receipt is not indexing.')
           PY
-
-
-
