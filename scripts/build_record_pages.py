@@ -56,6 +56,33 @@ def ownership_card(r):
 <details><summary>What the total includes</summary><p>Purchase price minus your expected resale value (depreciation), plus fuel/energy, the generic maintenance band, your insurance quote and your repair reserve for the selected years. Financing, tax, registration and parking are excluded.</p></details></section>'''
 
 
+def recall_study(con, rows, checks, indexed):
+    """Distinct NHTSA recall campaigns per verified model year: counts, never failure rates."""
+    matched=[r for r in rows if (checks.get((r["id"],"recalls")) or {}).get("status")=="matched"]
+    if not matched:
+        return
+    ids=[r["id"] for r in matched]; q=",".join("?"*len(ids))
+    n=dict(con.execute(f"SELECT my_id,COUNT(DISTINCT campaign) FROM recalls WHERE my_id IN ({q}) GROUP BY my_id",ids).fetchall())
+    total=con.execute(f"SELECT COUNT(DISTINCT campaign) FROM recalls WHERE my_id IN ({q})",ids).fetchone()[0]
+    comps=con.execute(f"SELECT UPPER(TRIM(SUBSTR(component,1,INSTR(component||':',':')-1))) c,COUNT(DISTINCT campaign) k FROM recalls WHERE my_id IN ({q}) GROUP BY c ORDER BY k DESC,c LIMIT 10",ids).fetchall()
+    dates=sorted(checks[(r["id"],"recalls")]["checked_at"][:10] for r in matched)
+    years=sorted(r["year"] for r in matched)
+    top=sorted(matched,key=lambda r:(-n.get(r["id"],0),r["make"],r["model"],r["year"]))[:25]
+    def name(r):
+        hub=f'/cars/{r["kslug"]}/{r["mslug"]}/'; label=esc(f'{r["year"]} {r["make"]} {r["model"]}')
+        return f'<a href="{hub}{r["year"]}/">{label}</a>' if r["year"] in indexed[hub] else label
+    trs=''.join(f'<tr><td>{i}</td><td>{name(r)}</td><td>{n.get(r["id"],0)}</td></tr>' for i,r in enumerate(top,1))
+    crs=''.join(f'<tr><td>{esc(c.capitalize())}</td><td>{k}</td></tr>' for c,k in comps)
+    lead=[f'{r["year"]} {r["make"]} {r["model"]}' for r in top if n.get(r["id"],0)==n.get(top[0]["id"],0)]
+    lead_text=(f'The {esc(lead[0])} leads' if len(lead)==1 else f'The {esc(" and ".join(lead[:2]))}{" and others" if len(lead)>2 else ""} lead')+f' with {n.get(top[0]["id"],0)} separate campaigns{"" if len(lead)==1 else " each"}.'
+    body=f'''<section class="hero"><p class="eyebrow">MotorJury research · NHTSA recall records</p><h1>Which used cars carry the most recall campaigns?</h1><p class="lede">{len(matched):,} US model years from {years[0]}–{years[-1]}, each matched to the federal recall database. {lead_text}</p></section>
+<section class="card"><h2>The 25 model years with the most campaigns</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Model year</th><th>Recall campaigns</th></tr></thead><tbody>{trs}</tbody></table></div><p class="note">Ties are listed alphabetically. {total:,} distinct campaigns across all {len(matched):,} model years.</p></section>
+<section class="card"><h2>What gets recalled most</h2><div class="table-wrap"><table><thead><tr><th>Component (NHTSA category)</th><th>Campaigns</th></tr></thead><tbody>{crs}</tbody></table></div></section>
+<section class="card"><h2>How to read this</h2><p>A recall campaign is a documented safety defect with a free remedy. A high count is not a failure rate: it also reflects how many versions were built, how complex the car is and how readily its maker files campaigns. It does not tell you whether a particular car was affected or repaired.</p><p>Only model years whose match to NHTSA records was verified are included, so this is not every car sold. Checks ran {dates[0]} to {dates[-1]}.</p><div class="actions"><a class="button" href="https://www.nhtsa.gov/recalls">Check a VIN for open recalls</a><a class="button secondary" href="/cars/">Look up any model year</a></div></section>'''
+    write('/recall-campaigns/','Which used cars have the most recall campaigns?',body,
+          description=f'{len(matched):,} US model years matched to NHTSA recall records: the 25 with the most safety recall campaigns and the components recalled most often.')
+
+
 def apply_pilot(con):
     for record in json.loads((ROOT / "data" / "pilot_records.json").read_text())["records"]:
         rows = con.execute('''SELECT my.id,mk.name,mo.name,my.year FROM model_years my
@@ -152,7 +179,7 @@ def main():
         links=''.join(f'<li><a href="{u}">{esc(model)}</a>'+''.join(f' · <a href="{u}{y}/">{y}</a>' for y in indexed[u])+'</li>' for _,model,u in models)
         write('/cars/'+ks+'/',models[0][0]+' safety-record lookup',f'<section class="hero"><h1>{esc(models[0][0])} public records</h1><p class="lede">Choose a model. Source matching is being verified; this list is not a recommendation.</p></section><section class="card"><ul>{links}</ul></section>')
     links=''.join(f'<li><a href="/cars/{ks}/">{esc(models[0][0])}</a></li>' for ks,models in by_make.items())
-    write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p></section><section class="card"><ul>{links}</ul></section>')
+    write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p><p><a href="/recall-campaigns/">Which model years carry the most recall campaigns →</a></p></section><section class="card"><ul>{links}</ul></section>')
     # Preserve published comparison routes, even though the unsupported ranking
     # generator no longer selects pairs. Unknown versions stay unknown.
     model_keys={ks+'-'+ms:(ks,ms) for ks,ms in by_model}
@@ -186,6 +213,7 @@ def main():
             write(path,'Documented problems need an exact match','<section class="hero"><h1>Check the actual vehicle.</h1></section><section class="card"><p>Automatic problem rankings are suspended. Choose the exact year and version, verify campaigns by VIN, and use an independent inspection to establish condition.</p><a href="/cars/">Open the public-record lookup</a></section>')
             f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
     write('/years-to-avoid/','How to investigate a used-car year','<section class="hero"><h1>A model year is a starting point.<br>Check the actual car.</h1></section><article class="card"><p>Automatic best-year and worst-year rankings are suspended. Complaint totals cannot establish failure probability without comparable sales and usage denominators.</p><p>Start with the exact powertrain and year. Check applicable campaigns by VIN, ask for remedy and service records, and arrange an independent inspection. Then compare the actual price and ownership assumptions with an alternative.</p><p><a href="/buying-brief/">Work through the RAV4 example</a> · <a href="/cars/">Look up a model record</a></p></article>')
+    recall_study(con, rows, checks, indexed)
     con.close()
     print(f'RECORD PAGES: {made} existing URLs retained with evidence states; no rating or false zero')
 

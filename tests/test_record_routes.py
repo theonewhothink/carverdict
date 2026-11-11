@@ -103,6 +103,31 @@ class PublishedYearRoutes(unittest.TestCase):
             self.assertIn('href="/cars/test/model/2016/"', brand)
             self.assertNotIn('href="/cars/test/model/2014/"', brand)
 
+    def test_recall_study_counts_distinct_campaigns_on_matched_years_only(self):
+        con = sqlite3.connect(':memory:')
+        con.row_factory = sqlite3.Row
+        con.executescript('''
+            CREATE TABLE recalls(my_id INTEGER, campaign TEXT, component TEXT);
+            INSERT INTO recalls VALUES(1, '20V1', 'AIR BAGS:SENSOR');
+            INSERT INTO recalls VALUES(1, '20V1', 'AIR BAGS:SENSOR');
+            INSERT INTO recalls VALUES(1, '20V2', 'STEERING');
+            INSERT INTO recalls VALUES(2, '20V3', 'STEERING');
+            INSERT INTO recalls VALUES(2, '20V4', 'STEERING');
+            INSERT INTO recalls VALUES(2, '20V5', 'STEERING');
+        ''')
+        row = lambda i, y: {'id': i, 'year': y, 'make': 'Test', 'model': 'Model',
+                            'kslug': 'test', 'mslug': 'model'}
+        rows = [row(1, 2020), row(2, 2021)]
+        checks = {(1, 'recalls'): {'status': 'matched', 'checked_at': '2026-11-01T00:00'},
+                  (2, 'recalls'): {'status': 'unmatched', 'checked_at': '2026-11-01T00:00'}}
+        pages = {}
+        with patch.object(records, 'write', lambda path, title, body, **kw: pages.update({path: body})):
+            records.recall_study(con, rows, checks, {'/cars/test/model/': [2020]})
+        body = pages['/recall-campaigns/']
+        self.assertIn('<td><a href="/cars/test/model/2020/">2020 Test Model</a></td><td>2</td>', body)
+        self.assertNotIn('2021 Test Model', body)
+        self.assertIn('<td>Air bags</td><td>1</td>', body)
+
 
 if __name__ == '__main__':
     unittest.main()
