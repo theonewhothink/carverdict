@@ -2,6 +2,7 @@ import BASELINE from './dashboard-data.json' with {type:'json'};
 import { HTML, LOGIN, CSS, CLIENT } from './dashboard-ui.mjs';
 import { prioritiseTasks } from './dashboard-control.mjs';
 import { geniusEnabled } from './genius.mjs';
+import { servingCI } from './dashboard-ci.mjs';
 const COOKIE='__Host-mj_dashboard';
 const headers={'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow, noarchive','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"};
 const reply=(body,status=200,extra={})=>new Response(typeof body==='string'?body:JSON.stringify(body),{status,headers:{...headers,'Content-Type':typeof body==='string'?'text/html; charset=utf-8':'application/json; charset=utf-8',...extra}});
@@ -10,13 +11,12 @@ function token(req){const match=(req.headers.get('Cookie')||'').match(/(?:^|;\s*
 async function call(env,op,payload){const h=env.HUB.get(env.HUB.idFromName('hub'));const r=await h.fetch(new Request('https://hub/'+op,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}));const out=await r.json();if(!r.ok)return {error:out.error||'Dashboard storage is unavailable.',status:r.status};return out;}
 let healthCache=null;
 export async function health(env,origin){
- if(healthCache&&Date.now()-healthCache.time<60000)return healthCache.data;
+ if(healthCache&&healthCache.origin===origin&&Date.now()-healthCache.time<60000)return healthCache.data;
  const paths=['/','/library/','/cars/','/buying-brief/','/ask/','/guides/','/privacy/','/terms/','/sitemap.xml','/robots.txt','/ads.txt','/favicon.ico'];
  const probes=await Promise.all(paths.map(async path=>{const start=Date.now();try{const r=await env.ASSETS.fetch(new Request(origin+path,{method:'HEAD'}));return {path,status:r.status,ok:r.status===200,ms:Date.now()-start};}catch{return {path,status:null,ok:false,ms:null};}}));
- let ci={status:'unavailable',url:'https://github.com/theonewhothink/carverdict/actions',checked_at:new Date().toISOString()};
- try{const r=await fetch('https://api.github.com/repos/theonewhothink/carverdict/actions/runs?per_page=1&branch=main',{headers:{'User-Agent':'MotorJury-dashboard','Accept':'application/vnd.github+json'},signal:AbortSignal.timeout(5000)});if(r.ok){const d=await r.json(),run=d.workflow_runs?.[0];if(run)ci={status:run.conclusion||run.status,sha:run.head_sha,url:run.html_url,created_at:run.created_at,checked_at:new Date().toISOString()};}}catch{/* Absence is not green. */}
+ const ci=await servingCI(BASELINE.build.sha);
  const data={checked_at:new Date().toISOString(),probes,ci,ai_enabled:geniusEnabled(env),ai_daily_cap:Number(env.GENIUS_DAILY_CAP)||20,providers:{email:true,google:Boolean(env.GOOGLE_CLIENT_ID),apple:Boolean(env.APPLE_CLIENT_ID&&env.APPLE_TEAM_ID&&env.APPLE_KEY_ID&&env.APPLE_PRIVATE_KEY)}};
- healthCache={time:Date.now(),data};return data;
+ healthCache={origin,time:Date.now(),data};return data;
 }
 export async function handleDashboard(req,url,env){
  const path=url.pathname.replace(/\/$/,'');

@@ -2,8 +2,9 @@
 import html,re
 from pathlib import Path
 from build_guides import parse, md
+from reader_guide_explainers import guide_visual
 ROOT=Path(__file__).resolve().parent.parent
-SLUGS=('before-a-used-car-viewing','what-car-photos-cannot-tell-you','recalls-history-and-inspections','fuel-economy-label-to-your-budget','seller-promise-to-written-evidence','complaint-counts-without-failure-rates','inspection-report-next-step','ev-charging-before-you-buy','used-car-tire-questions')
+SLUGS=('before-a-used-car-viewing','what-car-photos-cannot-tell-you','recalls-history-and-inspections','fuel-economy-label-to-your-budget','seller-promise-to-written-evidence','complaint-counts-without-failure-rates','inspection-report-next-step','ev-charging-before-you-buy','used-car-tire-questions','used-car-ownership-budget','hybrid-fuel-break-even','match-car-version-before-you-buy','recall-check-to-dealer-record','car-design-timeline','compare-car-design-briefs')
 SEARCH_TITLES={
  'before-a-used-car-viewing':'Used-car viewing checklist: questions before you travel',
  'what-car-photos-cannot-tell-you':'Buying a used car from photos: what to verify',
@@ -15,6 +16,7 @@ SEARCH_TITLES={
  'ev-charging-before-you-buy':'Buying a used EV: home charging and backup checklist',
  'used-car-tire-questions':'Used-car tire checks: age, specification and condition',
 }
+SEARCH_TITLES.update({'used-car-ownership-budget': 'Used-car ownership budget: a cash-cost breakdown', 'hybrid-fuel-break-even': 'Hybrid fuel savings: calculate a fuel-only payback', 'match-car-version-before-you-buy': 'Match a used car’s year, version and market', 'recall-check-to-dealer-record': 'Recall checks: from model campaign to dealer records', 'car-design-timeline': 'Car design timeline: distinguish the milestone and version', 'compare-car-design-briefs': 'Compare Miura, original NSX and McLaren F1 design briefs'})
 RELATED={
  'before-a-used-car-viewing':('inspection-report-next-step','recalls-history-and-inspections','used-car-tire-questions'),
  'what-car-photos-cannot-tell-you':('before-a-used-car-viewing','used-car-tire-questions'),
@@ -26,7 +28,10 @@ RELATED={
  'ev-charging-before-you-buy':('fuel-economy-label-to-your-budget','inspection-report-next-step'),
  'used-car-tire-questions':('what-car-photos-cannot-tell-you','inspection-report-next-step'),
 }
+RELATED.update({'used-car-ownership-budget': ('hybrid-fuel-break-even', 'inspection-report-next-step'), 'hybrid-fuel-break-even': ('fuel-economy-label-to-your-budget', 'used-car-ownership-budget'), 'match-car-version-before-you-buy': ('recall-check-to-dealer-record', 'before-a-used-car-viewing'), 'recall-check-to-dealer-record': ('match-car-version-before-you-buy', 'recalls-history-and-inspections'), 'car-design-timeline': ('compare-car-design-briefs', 'what-car-photos-cannot-tell-you'), 'compare-car-design-briefs': ('car-design-timeline', 'what-car-photos-cannot-tell-you')})
 def visual(slug):
+ extra=guide_visual(slug)
+ if extra:return extra
  if slug=='fuel-economy-label-to-your-budget':
   return '<figure class="guide-visual"><figcaption><strong>Same distance. Different fuel bill.</strong> Illustrative inputs: 12,000 miles/year, $3.50 per US gallon.</figcaption><svg viewBox="0 0 600 180" role="img" aria-label="Illustrative annual fuel costs: 30 US MPG costs 1400 dollars; 40 US MPG costs 1050 dollars."><text x="15" y="37">30 US MPG</text><rect x="155" y="17" width="360" height="44" rx="8" fill="#12685e"/><text x="170" y="46" fill="white">$1,400 / year</text><text x="15" y="109">40 US MPG</text><rect x="155" y="89" width="270" height="44" rx="8" fill="#925b27"/><text x="170" y="118" fill="white">$1,050 / year</text></svg><div class="table-wrap"><table><caption>Arithmetic behind the example</caption><thead><tr><th>Economy</th><th>Gallons/year</th><th>Fuel/year</th></tr></thead><tbody><tr><td>30 US MPG</td><td>400</td><td>$1,400</td></tr><tr><td>40 US MPG</td><td>300</td><td>$1,050</td></tr></tbody></table></div><p class="note">Difference: $350/year for fuel only. This is a fictional scenario, not the total cost of either car. See the assumptions and break-even discussion below.</p></figure>'
  if slug=='seller-promise-to-written-evidence':
@@ -66,4 +71,4 @@ def main(write):
   article='<nav class="collection-chips" aria-label="Breadcrumb"><a href="/">Home</a><a href="/guides/">Used-car guides</a></nav>'+article
   write('/guides/'+slug+'/',SEARCH_TITLES[slug],article,description=meta['description'],og_type='article',jsonld=[{'@context':'https://schema.org','@type':'Article','headline':meta['title'],'description':meta['description'],'url':'https://motorjury.com/guides/'+slug+'/','dateModified':meta['date'],'citation':citations,'author':{'@type':'Organization','name':'MotorJury'},'publisher':{'@type':'Organization','name':'MotorJury'},'mainEntityOfPage':'https://motorjury.com/guides/'+slug+'/'},breadcrumbs])
   cards.append(f'<article class="card"><h2><a href="/guides/{slug}/">{html.escape(meta["title"])}</a></h2><p>{html.escape(meta["description"])}</p></article>')
- write('/guides/','Guides that help you take the next step','<section class="collection-hero compact"><p class="eyebrow">Read, ask, prepare</p><h1>Make your next car question a useful one.</h1><p class="lede">Practical guides for a viewing, a photo comparison or a closer look at the evidence.</p></section><div class="guide-cards">'+''.join(cards)+'</div><section class="card"><h2>Considering a US RAV4?</h2><p>Work through the version, manufacturer records, seller questions and your own costs.</p><a href="/buying-brief/">2019–2020 RAV4 buying brief →</a> · <a href="/guides/rav4-gasoline-vs-hybrid/">Gasoline and Hybrid: compare your costs</a></section><section class="card"><h2>Here for the cars?</h2><p>Follow six engineering ideas through our collection.</p><a href="/discover/">Explore the design stories →</a></section>',description='Practical used-car guides for viewings, inspections, fuel costs, EV charging, tires and the evidence behind your next decision.')
+ write('/guides/','Guides that help you take the next step','<section class="collection-hero compact"><p class="eyebrow">Read, ask, prepare</p><h1>Make your next car question a useful one.</h1><p class="lede">Practical guides for a viewing, a photo comparison or a closer look at the evidence.</p></section><div class="guide-cards">'+''.join(cards)+'</div><section class="card"><h2>Considering a US RAV4?</h2><p>Work through the version, manufacturer records, seller questions and your own costs.</p><a href="/buying-brief/">2019–2020 RAV4 buying brief →</a> · <a href="/guides/rav4-gasoline-vs-hybrid/">Gasoline and Hybrid: compare your costs</a></section><section class="card"><h2>Here for the cars?</h2><p>Follow six engineering ideas through our collection.</p><a href="/discover/">Explore the design stories →</a></section>',description='Practical used-car guides for identity, recalls, inspections, ownership budgets, fuel savings and sourced design comparisons.')

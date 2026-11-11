@@ -74,4 +74,15 @@ node scripts/build_dashboard_client.mjs
 "$PY" scripts/qa_publication.py
 "$PY" -m unittest discover -s tests -v
 node --test workers/*.test.mjs assets/buying-*.test.mjs assets/catalogue-*.test.mjs assets/collection-*.test.mjs assets/privacy.test.mjs
+# A public release marker is emitted only after the actual publication gates pass.
+"$PY" - <<'PY_RELEASE'
+import datetime,json,os,subprocess
+from pathlib import Path
+preview=os.environ.get('MOTORJURY_PREVIEW')=='1'
+try: sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+except subprocess.CalledProcessError:
+ if not preview: raise
+ sha='local-preview'
+Path('site/release.json').write_text(json.dumps({'sha':sha,'checks':'passed','preview':preview,'built_at':datetime.datetime.now(datetime.timezone.utc).isoformat()})+'\n')
+PY_RELEASE
  echo "Verified site build complete; no deployment was performed."
