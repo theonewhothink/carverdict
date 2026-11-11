@@ -108,6 +108,8 @@ def main():
         value=r["complaint_count" if kind=="complaints" else "recall_count"]
         return f'{value:,}' if c and c["status"] in ("matched","empty") and value is not None else "Not verified"
     made=0
+    # Model hubs are noindex, so indexable year pages need a link from the indexable brand page.
+    indexed=defaultdict(list)
     for r in rows:
         by_model[(r["kslug"],r["mslug"])].append(r)
         url=f'/cars/{r["kslug"]}/{r["mslug"]}/{r["year"]}/'
@@ -132,6 +134,8 @@ def main():
         f=SITE / url.strip('/') / 'index.html'
         if not rc or rc['status'] not in ('matched','empty'):
             f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
+        else:
+            indexed[f'/cars/{r["kslug"]}/{r["mslug"]}/'].append(r["year"])
         made+=1
     for (ks,ms),rs in by_model.items():
         r=rs[0]; url=f'/cars/{ks}/{ms}/'
@@ -145,7 +149,7 @@ def main():
         f=SITE/url.strip('/')/'index.html';f.write_text(f.read_text().replace('</head>','<meta name="robots" content="noindex,follow"></head>'))
         by_make[ks].append((r['make'],r['model'],url));made+=1
     for ks,models in by_make.items():
-        links=''.join(f'<li><a href="{u}">{esc(model)}</a></li>' for _,model,u in models)
+        links=''.join(f'<li><a href="{u}">{esc(model)}</a>'+''.join(f' · <a href="{u}{y}/">{y}</a>' for y in indexed[u])+'</li>' for _,model,u in models)
         write('/cars/'+ks+'/',models[0][0]+' safety-record lookup',f'<section class="hero"><h1>{esc(models[0][0])} public records</h1><p class="lede">Choose a model. Source matching is being verified; this list is not a recommendation.</p></section><section class="card"><ul>{links}</ul></section>')
     links=''.join(f'<li><a href="/cars/{ks}/">{esc(models[0][0])}</a></li>' for ks,models in by_make.items())
     write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p></section><section class="card"><ul>{links}</ul></section>')
