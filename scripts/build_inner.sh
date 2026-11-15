@@ -66,6 +66,7 @@ PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" -c "from build_record_page
 "$PY" scripts/tag_site.py
 "$PY" scripts/localize.py
 "$PY" scripts/polish.py
+PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" "$PY" scripts/localize_jury.py
 "$PY" scripts/publication_policy.py
 "$PY" scripts/audit_dashboard_seo.py
 node scripts/build_dashboard_client.mjs

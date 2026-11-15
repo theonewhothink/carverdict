@@ -72,80 +72,82 @@ def home_block():
             f'<div><div class="jury-home-photos">{photos}</div><small>Photos: {credits}</small></div></section>')
 
 
-FAQ = [
-    ('How does the car jury work?',
-     'You are shown two cars and pick the one you would rather have. Each winner is parked in your garage until its ten bays are full. '
-     'After that, parking a new car means releasing one. On a keyboard, the left and right arrow keys pick a car. Every pick is also counted as one anonymous verdict toward the world ranking.'),
-    ('Which cars are in the jury?',
-     'A reviewed list of {n} cars from {b} marques, from the Ford Model T to current electric cars. A car enters only when its photograph '
-     'has a recorded author and a licence that allows reuse. The full MotorJury catalogue is larger; the jury list grows as photographs are checked.'),
-    ('How is the world ranking calculated?',
-     'Each car has a count of showings and a count of wins. The first world ranking is published once 1,000 verdicts are in. A car is ranked after five showings. The order uses the lower bound of a 95% '
-     'confidence interval on its win rate, so a car picked twice out of two cannot outrank one picked eight hundred times out of a thousand. '
-     'The ranking measures which car visitors would rather have. It is not a measure of quality, reliability or value.'),
-    ('What is “Today’s ten”?',
-     'Ten pairings that are the same for every visitor on a given day. When you finish, you see how often you sided with the majority, '
-     'and you can share the result. A new ten arrive at midnight, Coordinated Universal Time.'),
-    ('What is the jury room?',
-     'A place under the cars where signed-in visitors say which car they would take and why. Comments are plain text, shown under your first name. '
-     'Links are refused, and a comment reported by three people is hidden until the publisher reviews it.'),
-    ('What is “Name that car”?',
-     'A ten-question game. You see one photograph and choose the right name from four. Your best score is kept in this browser.'),
-    ('What do you store about me?',
-     'Your garage is saved in this browser only. The server receives the two car numbers of each verdict and counts them. It records the '
-     'country your request came from as a total per car, and uses a scrambled form of your network address only to limit abuse. '
-     'No account is needed and no verdict is stored with your identity. If you sign in, your garage is saved to your account and a comment you post is stored with your account and shown under your first name.'),
-]
+def page_body(lang, rows, brands):
+    from jury_i18n import PAGE, JS, LANGS, NAMES, path
+    P = PAGE[lang]
+    home = path(lang)
+    login = '/login/?next=' + home
+    n, b = len(rows), brands
+    faq = ''.join(f'<h3>{esc(q)}</h3><p>{esc(a.format(n=n, b=b))}</p>' for q, a in P['faq'])
+    strings = dict(JS['en'], **JS[lang])
+    data = json.dumps({'lang': lang, 'path': home, 's': strings}, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
+    switch = ' · '.join(f'<a href="{path(l)}" hreflang="{l}" lang="{l}"' + (' aria-current="page"' if l == lang else '') + f'>{NAMES[l]}</a>' for l in LANGS)
+    return (
+        f'<script type="application/json" data-jury-i18n>{data}</script>'
+        f'<section class="collection-hero compact jury-hero"><p class="eyebrow">{esc(P["eyebrow"])}</p><h1>{esc(P["h1"])}</h1>'
+        f'<p class="lede">{esc(P["lede"].format(n=n))}</p></section>'
+        f'<section class="jury-shared card" data-jury-shared hidden><p class="eyebrow">{esc(P["shared_eyebrow"])}</p><h2>{esc(P["shared_h2"])}</h2>'
+        f'<p class="note" data-jury-shared-taste></p><ol class="jury-bays" data-jury-shared-grid></ol><a class="button" href="{home}">{esc(P["build_own"])}</a></section>'
+        f'<section class="jury-arena" data-jury aria-label="{esc(P["arena_aria"], quote=True)}">'
+        f'<div class="jury-mode" role="group" aria-label="{esc(P["mode_aria"], quote=True)}"><button type="button" data-jury-mode="free" aria-pressed="true">{esc(P["mode_free"])}</button>'
+        f'<button type="button" data-jury-mode="daily" aria-pressed="false">{esc(P["mode_daily"])}</button><button type="button" data-jury-mode="quiz" aria-pressed="false">{esc(P["mode_quiz"])}</button></div>'
+        f'<p class="jury-progress" role="status" data-jury-progress>{esc(P["loading"])}</p>'
+        '<div class="jury-pair" data-jury-pair></div><p class="jury-credits" data-jury-credits></p>'
+        '<p class="jury-verdict" role="status" data-jury-verdict></p>'
+        f'<div class="jury-signin" data-jury-signin hidden><p><b>{esc(P["signin_b"])}</b> {esc(P["signin_text"])}</p>'
+        f'<div class="actions"><a class="button" href="{login}">{esc(P["signin_btn"])}</a><button type="button" class="secondary" data-jury-later>{esc(P["not_now"])}</button></div></div>'
+        f'<div class="actions"><button type="button" class="secondary" data-jury-skip>{esc(P["skip"])}</button></div>'
+        f'<details class="jury-talk" data-jury-talk><summary>{esc(P["talk_summary"])}</summary><ul data-jury-talk-list></ul><p class="note" role="status" data-jury-talk-status></p>'
+        f'<form hidden><label for="jury-say">{esc(P["your_view"])}</label><textarea id="jury-say" maxlength="300" rows="2" required placeholder="{esc(P["talk_ph"], quote=True)}"></textarea><div class="actions"><button>{esc(P["post"])}</button></div><p class="note" data-jury-talk-as></p></form>'
+        f'<p class="note" data-jury-talk-gate><a href="{login}">{esc(P["talk_gate_link"])}</a> {esc(P["talk_gate"])}</p></details>'
+        '<div class="jury-result" data-jury-result hidden></div>'
+        f'<noscript><p>{P["noscript"]}</p></noscript></section>'
+        f'<section class="jury-garage" data-jury-garage aria-label="{esc(P["garage_aria"], quote=True)}"><h2>{esc(P["garage_h2"])} <span data-jury-count></span></h2>'
+        '<p class="note" data-jury-taste></p><div class="jury-swap" data-jury-swap hidden></div><ol class="jury-bays" data-jury-bays></ol>'
+        f'<div class="actions"><button type="button" data-jury-share>{esc(P["share"])}</button><button type="button" class="secondary" data-jury-copy>{esc(P["copy"])}</button>'
+        f'<button type="button" class="secondary" data-jury-empty>{esc(P["empty"])}</button></div><p role="status" data-jury-status></p>'
+        f'<details><summary>{esc(P["garage_credits"])}</summary><ul data-jury-garage-credits></ul></details>'
+        f'<p class="note">{esc(P["saved_note"])}</p></section>'
+        f'<section class="card"><h2>{esc(P["verdict_h2"])}</h2><p data-jury-top-status>{esc(P["counting"])}</p><progress class="jury-bar" data-jury-top-bar hidden aria-label="{esc(P["bar_aria"], quote=True)}"></progress><ol data-jury-top-list></ol>'
+        f'<a href="{path(lang, "/jury/ranking/")}">{esc(P["full_ranking"])}</a></section>'
+        f'<section class="card"><h2>{esc(P["faq_h2"])}</h2>{faq}'
+        f'<p class="note">{esc(P["photo_note"])} <a href="/catalogue-notes/">{esc(P["photo_note_link"])}</a>.</p></section>'
+        f'<nav class="jury-langs" aria-label="{esc(P["languages"], quote=True)}">{esc(P["languages"])}: {switch}</nav>'), data
+
+
+def ranking_body(lang, data):
+    from jury_i18n import PAGE, path
+    P = PAGE[lang]
+    return (f'<script type="application/json" data-jury-i18n>{data}</script>'
+            f'<section class="collection-hero compact"><p class="eyebrow">{esc(P["eyebrow"])}</p><h1>{esc(P["r_h1"])}</h1>'
+            f'<p class="lede">{esc(P["r_lede"])}</p></section>'
+            f'<section class="card" data-jury-ranking><label for="jury-country">{esc(P["show_from"])}</label> <select id="jury-country" data-jury-country></select>'
+            f'<p role="status" data-jury-ranking-status>{esc(P["counting"])}</p><progress class="jury-bar" data-jury-ranking-bar hidden aria-label="{esc(P["bar_aria"], quote=True)}"></progress><ol class="jury-ranking-list" data-jury-ranking-list></ol>'
+            f'<noscript><p>{esc(P["r_noscript"])}</p></noscript><a class="button" href="{path(lang)}">{esc(P["add_verdicts"])}</a></section>')
+
+
+def app_schema(lang, n):
+    from jury_i18n import PAGE
+    P = PAGE[lang]
+    return [{'@context': 'https://schema.org', '@type': 'WebApplication', 'name': P['title'].split(':')[0].strip(),
+             'description': P['description'].format(n=n), 'applicationCategory': 'GameApplication', 'operatingSystem': 'Any',
+             'browserRequirements': 'Requires JavaScript', 'inLanguage': lang, 'isAccessibleForFree': True,
+             'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'}}]
 
 
 def main(write):
+    from jury_i18n import LANGS, PAGE, path
     rows = cars()
     script = assets()
     brands = len({r['b'] for r in rows})
-    faq = ''.join(f'<h3>{esc(q)}</h3><p>{esc(a.format(n=len(rows), b=brands))}</p>' for q, a in FAQ)
-    body = (
-        '<section class="collection-hero compact jury-hero"><p class="eyebrow">The world’s car jury</p><h1>Two cars. One verdict.</h1>'
-        f'<p class="lede">Pick the car you would rather have. Your picks fill a ten-bay dream garage and count toward the world ranking of {len(rows)} cars.</p></section>'
-        '<section class="jury-shared card" data-jury-shared hidden><p class="eyebrow">A garage shared with you</p><h2>Ten bays, someone else’s taste.</h2>'
-        '<p class="note" data-jury-shared-taste></p><ol class="jury-bays" data-jury-shared-grid></ol><a class="button" href="/jury/">Build my own garage →</a></section>'
-        '<section class="jury-arena" data-jury aria-label="Pick one of two cars">'
-        '<div class="jury-mode" role="group" aria-label="Game mode"><button type="button" data-jury-mode="free" aria-pressed="true">Free play</button>'
-        '<button type="button" data-jury-mode="daily" aria-pressed="false">Today’s ten</button><button type="button" data-jury-mode="quiz" aria-pressed="false">Name that car</button></div>'
-        '<p class="jury-progress" role="status" data-jury-progress>Loading the jury…</p>'
-        '<div class="jury-pair" data-jury-pair></div><p class="jury-credits" data-jury-credits></p>'
-        '<p class="jury-verdict" role="status" data-jury-verdict></p>'
-        '<div class="jury-signin" data-jury-signin hidden><p><b>Keep this garage.</b> Sign in once and it follows you to every device. You can also speak in the jury room.</p>'
-        '<div class="actions"><a class="button" href="/login/?next=/jury/">Sign in with Google or email →</a><button type="button" class="secondary" data-jury-later>Not now</button></div></div>'
-        '<div class="actions"><button type="button" class="secondary" data-jury-skip>Skip this pair</button></div>'
-        '<details class="jury-talk" data-jury-talk><summary>Jury room: talk about the cars</summary><ul data-jury-talk-list></ul><p class="note" role="status" data-jury-talk-status></p>'
-        '<form hidden><label for="jury-say">Your view</label><textarea id="jury-say" maxlength="300" rows="2" required placeholder="Which one, and why?"></textarea><div class="actions"><button>Post</button></div><p class="note" data-jury-talk-as></p></form>'
-        '<p class="note" data-jury-talk-gate><a href="/login/?next=/jury/">Sign in</a> to speak. Plain text only; links are refused. Three reports hide a comment.</p></details>'
-        '<div class="jury-result" data-jury-result hidden></div>'
-        '<noscript><p>The jury needs JavaScript. The <a href="/library/">car collection</a> and the <a href="/all-cars/">complete A–Z list</a> work without it.</p></noscript></section>'
-        '<section class="jury-garage" data-jury-garage aria-label="Your garage"><h2>Your ten-bay garage <span data-jury-count></span></h2>'
-        '<p class="note" data-jury-taste></p><div class="jury-swap" data-jury-swap hidden></div><ol class="jury-bays" data-jury-bays></ol>'
-        '<div class="actions"><button type="button" data-jury-share>Share my garage</button><button type="button" class="secondary" data-jury-copy>Copy garage link</button>'
-        '<button type="button" class="secondary" data-jury-empty>Empty garage</button></div><p role="status" data-jury-status></p>'
-        '<details><summary>Photo credits for your garage</summary><ul data-jury-garage-credits></ul></details>'
-        '<p class="note">Saved in this browser only. No account needed. Clearing browser data empties the garage.</p></section>'
-        '<section class="card"><h2>The world’s verdict so far</h2><p data-jury-top-status>Counting…</p><progress class="jury-bar" data-jury-top-bar hidden aria-label="Verdicts toward the first world ranking"></progress><ol data-jury-top-list></ol>'
-        '<a href="/jury/ranking/">See the full world ranking →</a></section>'
-        f'<section class="card"><h2>Questions about the jury</h2>{faq}'
-        '<p class="note">Reference photographs may show a different generation or trim from the one you have in mind. '
-        'Every photograph is credited beside the car; <a href="/catalogue-notes/">catalogue and photo notes</a>.</p></section>')
-    write('/jury/', 'Car Jury: pick one of two cars and build your dream garage', body, script,
-          description=f'Pick the car you would rather have, two at a time. Fill a ten-bay dream garage, share it, play today’s ten and see the world ranking of {len(rows)} cars.')
-    ranking = (
-        '<section class="collection-hero compact"><p class="eyebrow">The world’s car jury</p><h1>The cars the world would rather have.</h1>'
-        '<p class="lede">A live ranking from anonymous pick-one-of-two verdicts. It measures desire, not quality or reliability.</p></section>'
-        '<section class="card" data-jury-ranking><label for="jury-country">Show verdicts from</label> <select id="jury-country" data-jury-country></select>'
-        '<p role="status" data-jury-ranking-status>Counting…</p><progress class="jury-bar" data-jury-ranking-bar hidden aria-label="Verdicts toward the first world ranking"></progress><ol class="jury-ranking-list" data-jury-ranking-list></ol>'
-        '<noscript><p>The live ranking needs JavaScript.</p></noscript><a class="button" href="/jury/">Add my verdicts →</a></section>')
-    write('/jury/ranking/', 'World car ranking from the MotorJury car jury', ranking, script,
-          description='A live ranking of the cars visitors would rather have, from anonymous pick-one-of-two verdicts. Filter by country.')
-    # The ranking is rendered in the browser from live counts, so it stays out of search
-    # until it can be served as text. shortcut: client-rendered; upgrade to Worker-rendered
-    # HTML once the ranking has enough verdicts to be worth citing.
-    f = SITE / 'jury/ranking/index.html'
-    f.write_text(f.read_text().replace('</head>', '<meta name="robots" content="noindex,follow"></head>', 1))
-    print(f'JURY: {len(rows)} licensed cars from {brands} marques; game, garage, daily round and ranking built')
+    for lang in LANGS:
+        P = PAGE[lang]
+        body, data = page_body(lang, rows, brands)
+        write(path(lang), P['title'], body, script, description=P['description'].format(n=len(rows)), jsonld=app_schema(lang, len(rows)))
+        write(path(lang, '/jury/ranking/'), P['r_title'], ranking_body(lang, data), script, description=P['r_description'])
+        # The ranking is rendered in the browser from live counts, so it stays out of search
+        # until it can be served as text. shortcut: client-rendered; upgrade to Worker-rendered
+        # HTML once the ranking has enough verdicts to be worth citing.
+        f = SITE / path(lang, '/jury/ranking/').strip('/') / 'index.html'
+        f.write_text(f.read_text().replace('</head>', '<meta name="robots" content="noindex,follow"></head>', 1))
+    print(f'JURY: {len(rows)} licensed cars from {brands} marques in {len(LANGS)} languages; game, garage, daily round and ranking built')

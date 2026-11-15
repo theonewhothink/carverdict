@@ -61,15 +61,16 @@ export function agreement(picks, split, minimum = 5) {
   });
 }
 
-export function shareText(day, marks, origin = 'https://motorjury.com') {
+export function shareText(day, marks, origin = 'https://motorjury.com', tpl = {}, path = '/jury/') {
   const known = marks.filter((m) => m !== null);
   const grid = marks.map((m) => (m === null ? '⬜' : m ? '🟩' : '🟥')).join('');
-  const line = known.length ? `I sided with the world on ${known.filter(Boolean).length}/${known.length}` : 'I was among the first jurors today';
-  return `MotorJury Daily #${day}\n${line}\n${grid}\n${origin}/jury/`;
+  const fill = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k]);
+  const line = known.length ? fill(tpl.sided || 'I sided with the world on {a}/{b}', { a: known.filter(Boolean).length, b: known.length }) : (tpl.first || 'I was among the first jurors today');
+  return `${fill(tpl.title || 'MotorJury Daily #{day}', { day })}\n${line}\n${grid}\n${origin}${path}`;
 }
 
-export function garageLink(garage, origin = '') {
-  return origin + '/jury/?g=' + garage.map((id) => id.slice(1)).join('.');
+export function garageLink(garage, origin = '', path = '/jury/') {
+  return origin + path + '?g=' + garage.map((id) => id.slice(1)).join('.');
 }
 
 export function parseGarage(search, ids) {
@@ -78,13 +79,15 @@ export function parseGarage(search, ids) {
   return cleanGarage(raw.split('.').map((n) => 'Q' + n), ids);
 }
 
-export function taste(cars) {
+export function taste(cars, tpl = {}) {
   const count = new Map();
   for (const car of cars) count.set(car.b, (count.get(car.b) || 0) + 1);
   const [top] = [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   if (!top) return '';
-  return top[1] > 1 ? `${top[1]} of ${cars.length} bays hold a ${top[0]}` : `${count.size} marques, no two alike`;
+  const fill = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k]);
+  return top[1] > 1 ? fill(tpl.same || '{n} of {t} bays hold a {b}', { n: top[1], t: cars.length, b: top[0] }) : fill(tpl.mixed || '{n} marques, no two alike', { n: count.size });
 }
+
 
 /** One "name that car" question: the answer hidden among three other cars. */
 export function quizRound(ids, random = Math.random, used = []) {

@@ -74,3 +74,9 @@ test('a quiz question has four different options including the unused answer', a
   assert.deepEqual(nextStreak({ last: 5, n: 3 }, 5), { last: 5, n: 3 });
   assert.deepEqual(nextStreak({ last: 5, n: 3 }, 8), { last: 8, n: 1 });
 });
+
+test('templates translate the taste line, the shared result and the garage link', () => {
+  assert.equal(taste([{ b: 'Ferrari' }, { b: 'Ferrari' }], { same: '{n} de {t}: {b}' }), '2 de 2: Ferrari');
+  assert.equal(garageLink(['Q1'], 'https://x', '/pt/jury/'), 'https://x/pt/jury/?g=1');
+  assert.match(shareText(4, [true], 'https://x', { title: 'Diário #{day}', sided: '{a}/{b} certo' }, '/pt/jury/'), /^Diário #4\n1\/1 certo\n🟩\nhttps:\/\/x\/pt\/jury\/$/);
+});

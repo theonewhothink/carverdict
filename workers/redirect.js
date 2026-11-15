@@ -473,13 +473,17 @@ export default {
 
     // A shared garage link previews that garage: its cars in the title and its first
     // photograph as the image. The page itself is the ordinary jury page.
-    if (url.pathname === "/jury/" && url.searchParams.has("g") && req.method === "GET") {
+    if (/^\/(?:(?:pt|es|fr|de|he)\/)?jury\/$/.test(url.pathname) && url.searchParams.has("g") && req.method === "GET") {
       const cars = sharedGarage(url.search);
       const page = await serveWithRecovery(req, url, env);
       if (!cars.length || !page.ok || !(page.headers.get("Content-Type") || "").includes("text/html")) return page;
-      const title = `A ${cars.length}-car dream garage on MotorJury`;
+      const lang = (/^\/(pt|es|fr|de|he)\//.exec(url.pathname) || [, "en"])[1];
+      const words = { en: ["A {n}-car dream garage on MotorJury", "Pick yours."], pt: ["Uma garagem de sonho com {n} carros na MotorJury", "Escolha a sua."],
+        es: ["Un garaje soñado de {n} coches en MotorJury", "Elige el tuyo."], fr: ["Un garage de rêve de {n} voitures sur MotorJury", "Choisissez le vôtre."],
+        de: ["Eine Traumgarage mit {n} Autos auf MotorJury", "Wähle deine."], he: ["מוסך חלומות של {n} מכוניות ב־MotorJury", "בחרו את שלכם."] }[lang];
+      const title = words[0].replace("{n}", cars.length);
       const names = cars.map((c) => c.n).join(", ");
-      const description = (names.length > 170 ? names.slice(0, 167) + "…" : names) + ". Pick yours.";
+      const description = (names.length > 170 ? names.slice(0, 167) + "…" : names) + ". " + words[1];
       const set = (value) => ({ element(el) { el.setAttribute("content", value); } });
       return new HTMLRewriter()
         .on('meta[property="og:title"],meta[name="twitter:title"]', set(title))
