@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from i18n import LANGS, RTL, t
 import hashlib
 
-EDITOR = "Adir Trabelsi"
+EDITOR = "Miles Foreman"
 # No staff writers: library pages are assembled by the build from Wikidata, Wikipedia and
 # Wikimedia Commons. Naming a person as their author would be a claim that did not happen.
 

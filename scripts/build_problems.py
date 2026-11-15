@@ -202,7 +202,7 @@ def hall_of_shame(rows):
 <p class="sub">The 25 model years American owners complain about most, normalised per year on
 the road. Computed from the federal record on every build - nobody edits this list.</p></div></div>
 <div class="wrap" style="padding:8px 16px 40px;max-width:860px">
-<div class="card prose editorial">{HUB_NOTES.get("problems", "")}<p class="lib-note">Editor's note by <a href="/about/">Adir Trabelsi</a>.</p></div>
+<div class="card prose editorial">{HUB_NOTES.get("problems", "")}<p class="lib-note">Editor's note by <a href="/about/">Miles Foreman</a>.</p></div>
 <ol class="story-list">{items}</ol>
 <div class="card" style="margin-top:20px"><h2>Share the list</h2>
 {share_row(ORIGIN + url, "The 25 most complained-about cars in America, straight from the federal record:")}</div></div>"""

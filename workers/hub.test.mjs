@@ -87,7 +87,7 @@ test("the rate limiter opens a fresh window instead of leaking allowance", () =>
 
 test("email validation accepts real addresses and rejects the usual junk", () => {
   const ok = (e) => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e);
-  for (const e of ["adir@trabelsi.co", "a.b+tag@sub.example.com", "x@y.io"]) {
+  for (const e of ["someone@example.org", "a.b+tag@sub.example.com", "x@y.io"]) {
     assert.ok(ok(e), `${e} should be accepted`);
   }
   for (const e of ["", "no-at-sign", "a@b", "a@b.c", "two @spaces.com", "a@@b.com"]) {

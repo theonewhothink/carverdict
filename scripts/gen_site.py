@@ -376,7 +376,7 @@ def _load_editorial(name):
         return {}
 EDITOR_NOTES = _load_editorial("models.json")   # "make/model" -> {"note", "avoid"}
 HUB_NOTES = _load_editorial("hubs.json")
-EDITOR = "Adir Trabelsi"
+EDITOR = "Miles Foreman"
 # There are no staff writers. Every page under /cars/ and /library/ is produced by the
 # build from NHTSA, EPA and Wikidata records; putting a person's name on one would claim
 # authorship that did not happen, which is what Google's spam policy and the AdSense
@@ -501,7 +501,7 @@ def _org_ld():
             "@id": ORIGIN + "/#organization", "name": BRAND, "url": ORIGIN + "/",
             "logo": ORIGIN + "/icon-512.png",
             "description": "A car catalogue, sourced design stories and practical used-car viewing guides.",
-            "founder": {"@type": "Person", "name": "Adir Trabelsi"},
+            "founder": {"@type": "Person", "name": "Miles Foreman"},
             "publishingPrinciples": ORIGIN + "/editorial-policy/",
             "email": "hello@motorjury.com",
         }
@@ -588,7 +588,7 @@ def page(title, desc, canon, body, jsonld=None, extra_head="", og_type="website"
 </main>
 <footer><div class="wrap"><div class="cols">
 <div><b>{BRAND}</b><br>Every number traceable to NHTSA / EPA public data. Estimates labeled.</div>
-<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/reports/used-car-trap-years-{CURRENT_YEAR}/">Trap Years {CURRENT_YEAR} report</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/adir-trabelsi/">The editor</a><br><a href="/contact/">Contact</a></div>
+<div><a href="/guides/">Buyer's guides</a><br><a href="/years-to-avoid/">Years to avoid</a><br><a href="/reports/used-car-trap-years-{CURRENT_YEAR}/">Trap Years {CURRENT_YEAR} report</a><br><a href="/methodology/">Methodology</a><br><a href="/editorial-policy/">Editorial policy</a><br><a href="/about/">About</a><br><a href="/about/miles-foreman/">The editor</a><br><a href="/contact/">Contact</a></div>
 <div><a href="/privacy/">Privacy</a><br><a href="/privacy/" onclick="if(window.googlefc&&googlefc.showRevocationMessage){{googlefc.showRevocationMessage();return false}}">Privacy settings</a><br><a href="/terms/">Terms</a><br><a href="/disclosure/">Advertising disclosure</a><br><a href="/compare/">Head-to-head</a><br><a href="/recalls/">Recalls</a></div>
 <div>Data sources:<br><a href="https://www.nhtsa.gov" rel="noopener">NHTSA</a> · <a href="https://www.fueleconomy.gov" rel="noopener">EPA / fueleconomy.gov</a></div>
 </div>{SOCIAL_ROW}<p style="margin-top:18px">© {CURRENT_YEAR} {BRAND}. Not affiliated with any manufacturer. <a href="/disclosure/">Disclosure</a>.</p></div></footer>
@@ -2513,7 +2513,7 @@ def prose_page(path, title, paras):
                             ORIGIN + "/" + path.replace("index.html", ""), body))
 
 def gen_author_page():
-    """/about/adir-trabelsi/ — a real author page for the one person who actually owns the
+    """/about/miles-foreman/ — a real author page for the one person who actually owns the
     editorial on this site.
 
     Google's quality raters are told to look for who is responsible for a page and what
@@ -2529,7 +2529,7 @@ def gen_author_page():
     body = f"""<div class="wrap prose">
 <nav class="crumbs"><a href="/about/">About</a> › {EDITOR}</nav>
 <h1>{EDITOR}</h1>
-<p class="sub">Editor and publisher, {BRAND}.</p>
+<p class="sub">Editor and publisher, {BRAND}. Miles Foreman is a pen name: the foreman of the Car Jury.</p>
 
 <h2>What I do here</h2>
 <p>I built {BRAND} and I run it. I designed the scoring model that turns NHTSA complaint and
@@ -2568,24 +2568,24 @@ and the <a href="/methodology/">methodology</a> is the formula itself, in full.<
         {"@context": "https://schema.org", "@type": "ProfilePage",
          "mainEntity": {
              "@type": "Person", "name": EDITOR,
-             "url": ORIGIN + "/about/adir-trabelsi/",
+             "url": ORIGIN + "/about/miles-foreman/",
              "jobTitle": "Editor and publisher",
              "email": "mailto:hello@motorjury.com",
              "worksFor": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
              "knowsAbout": ["Used car reliability", "NHTSA complaint data",
                             "Vehicle recalls", "Car ownership costs"]},
-         "url": ORIGIN + "/about/adir-trabelsi/"},
+         "url": ORIGIN + "/about/miles-foreman/"},
         {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "About",
              "item": ORIGIN + "/about/"},
             {"@type": "ListItem", "position": 2, "name": EDITOR,
-             "item": ORIGIN + "/about/adir-trabelsi/"}]}]
-    return write("about/adir-trabelsi/index.html",
+             "item": ORIGIN + "/about/miles-foreman/"}]}]
+    return write("about/miles-foreman/index.html",
                  page(f"{EDITOR} — Editor, {BRAND} | {BRAND}",
                       (f"{EDITOR} built and edits {BRAND}: who is accountable for the "
                        f"verdicts, what the scoring model does, and every guide he has "
                        f"signed."),
-                      ORIGIN + "/about/adir-trabelsi/", body, ld))
+                      ORIGIN + "/about/miles-foreman/", body, ld))
 
 
 def gen_static():
@@ -2718,7 +2718,7 @@ publishes every complaint an owner files and every recall a manufacturer issues 
 free, and almost unreadable in raw form. This site turns them into a verdict per model year.</p>
 
 <h2>Who runs it</h2>
-<p>Operated and edited by <b><a href="/about/adir-trabelsi/">Adir Trabelsi</a></b>. Data engineering and publication are automated; the
+<p>Operated and edited by <b><a href="/about/miles-foreman/">Miles Foreman</a></b>. Data engineering and publication are automated; the
 methodology, the source selection and the editorial standards are human decisions, documented in full on
 the <a href="/methodology/">methodology page</a>. Nobody pays for a verdict, and no verdict is written by
 hand. The <a href="/guides/">buyer's guides</a> and the editor's notes on model pages are the written layer:
@@ -2742,7 +2742,7 @@ year without enough data does not get a page.</p>
 <h2>Independence</h2>
 <p>{BRAND} is not affiliated with any manufacturer, dealer, insurer or parts retailer. The site is funded by
 advertising and by affiliate links that are disclosed on the <a href="/disclosure/">disclosure page</a>.</p><h2 id="attribution">Sources and attribution</h2>
-<p>The buyer's guides are written and signed by Adir Trabelsi, the editor. Every other page on this site is computed by the build rather than written by a person, and says so in place of a byline. Complaint, recall and fuel-economy figures are from
+<p>The buyer's guides are written and signed by Miles Foreman, the editor. Every other page on this site is computed by the build rather than written by a person, and says so in place of a byline. Complaint, recall and fuel-economy figures are from
 NHTSA and the EPA. Catalogue facts (marque, years, designer, production) are from Wikidata. The background
 paragraphs in car biographies and the descriptions on the events pages are adapted from the corresponding
 English Wikipedia articles, used under the Creative Commons Attribution-ShareAlike licence
@@ -2770,7 +2770,7 @@ but are marked so search engines do not index them.</p>
 
 <h2>Written pages</h2>
 <p>Buyer's guides, car biographies, editor's notes on model pages, and the introductions to each section are
-written and edited by <b>Adir Trabelsi</b>, and carry his name and the date of the last revision. Pages
+written and edited by <b>Miles Foreman</b>, and carry his name and the date of the last revision. Pages
 without a human byline — the model-year verdicts, the ownership indexes, the catalogue entries — are
 produced by the build from the public record and carry an attribution line naming the sources and the
 method instead of an author, because no person wrote them. They draw on the same
@@ -2799,10 +2799,10 @@ Specification excerpts: Wikipedia, CC BY-SA, attributed on the page. MotorJury's
 may be quoted with a link to the page.</p>
 
 <h2>Contact</h2>
-<p>Editor: Adir Trabelsi · <a href="/contact/">contact page</a> · <a href="/about/">about {BRAND}</a>.</p>"""))
+<p>Editor: Miles Foreman · <a href="/contact/">contact page</a> · <a href="/about/">about {BRAND}</a>.</p>"""))
 
     gen.append(prose_page("contact/index.html", "Contact", f"""
-<p>{BRAND} is edited by <b>Adir Trabelsi</b>. Mail is read daily; corrections are answered first.</p>
+<p>{BRAND} is edited by <b>Miles Foreman</b>. Mail is read daily; corrections are answered first.</p>
 
 <h2>Corrections</h2>
 <p><a href="mailto:corrections@motorjury.com">corrections@motorjury.com</a> — include the page address and
@@ -2884,7 +2884,7 @@ verdict, computed from public data.</p></div></div>
 
     gen.append(prose_page("privacy/index.html", "Privacy Policy", f"""
 <p class="lib-note">Effective {TODAY}. This policy covers motorjury.com, published by MotorJury and
-operated by its editor, Adir Trabelsi, from Porto, Portugal. Questions and requests:
+operated by its editor, Miles Foreman, from Porto, Portugal. Questions and requests:
 <a href="mailto:privacy@motorjury.com">privacy@motorjury.com</a>, or the addresses on the
 <a href="/contact/">contact page</a>.</p>
 

@@ -385,7 +385,7 @@ def main():
                     if (SITE / "cars" / bs / "index.html").exists() else
                     ' This marque has no United States ownership record on the site; claims about it come from the manufacturer\'s published recall and warranty actions.')
         marque_note = (f'<div class="card prose editorial"><p>{note}</p>'
-                       f'<p class="lib-note">Editor\'s note by <a href="/about/">Adir Trabelsi</a>.{own_link}</p></div>') if note else ""
+                       f'<p class="lib-note">Editor\'s note by <a href="/about/">Miles Foreman</a>.{own_link}</p></div>') if note else ""
         body = f"""<div class="hero lib-hero"><div class="wrap hero-inner">
 <nav class="crumbs"><a href="/library/">{t("en", "nav_library")}</a> › {esc(b)}</nav>
 <h1>{esc(b)}: every model ever made</h1>

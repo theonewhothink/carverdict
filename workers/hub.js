@@ -14,7 +14,7 @@ import { juryDispatch, juryTables } from "./jury.mjs";
  * A Durable Object with the SQLite storage backend is the only database Cloudflare will
  * create for us with no console visit, no API token and no database id to paste into a
  * config file — the namespace is provisioned by the deploy itself. D1 or KV would each have
- * blocked this behind a credential only Mr. Adir can produce, and a feature that ships
+ * blocked this behind a credential only the owner can produce, and a feature that ships
  * "pending an account signup" has not shipped.
  *
  * One instance, named "hub", holds everything. At this site's traffic a single object is

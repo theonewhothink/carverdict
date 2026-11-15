@@ -287,14 +287,14 @@ volume (the method corrects within a nameplate, only partly across nameplates) a
 however many cars it covers. Hybrid variants that share a NHTSA model name with the petrol car can share its record.</p>
 <p><b>Cite as:</b> MotorJury, <i>Used-Car Trap Years {YEAR}</i>, {TODAY}, <a href="{ORIGIN}{URL}">{ORIGIN}{URL}</a>.
 The dataset is published under <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>:
-use it freely with a link to this page. The editor, <a href="/about/adir-trabelsi/">Adir Trabelsi</a>, is available for
+use it freely with a link to this page. The editor, <a href="/about/miles-foreman/">Miles Foreman</a>, is available for
 comment and for custom cuts of the data — <a href="/contact/">contact</a>.</p></div>
 </div>"""
     jsonld = [
         {"@context": "https://schema.org", "@type": "Report", "name": f"Used-Car Trap Years {YEAR}",
          "headline": f"Used-Car Trap Years {YEAR}: the model years the federal record says to avoid",
          "datePublished": TODAY, "dateModified": TODAY,
-         "author": {"@type": "Person", "name": gen_site.EDITOR, "url": ORIGIN + "/about/adir-trabelsi/"},
+         "author": {"@type": "Person", "name": gen_site.EDITOR, "url": ORIGIN + "/about/miles-foreman/"},
          "publisher": {"@type": "Organization", "name": BRAND, "url": ORIGIN},
          "mainEntityOfPage": ORIGIN + URL, "license": "https://creativecommons.org/licenses/by/4.0/"},
         {"@context": "https://schema.org", "@type": "Dataset",

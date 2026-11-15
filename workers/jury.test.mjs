@@ -83,7 +83,7 @@ test('a jury-room comment is plain text without links, markup or hidden characte
   assert.equal(cleanThread(A), A);
   assert.equal(cleanThread('daily:3', 3), 'daily:3');
   for (const bad of ['Q0', 'daily:0', 'daily:9', 'daily:x', '', null, 'x'.repeat(50)]) assert.throws(() => cleanThread(bad, 3));
-  assert.equal(publicName('Adir Trabelsi'), 'Adir');
+  assert.equal(publicName('Jane Doe'), 'Jane');
   assert.equal(publicName('<script>'), 'script');
   assert.equal(publicName(''), 'Juror');
   assert.deepEqual(sharedGarage('?g=' + A.slice(1) + '.' + B.slice(1) + '.0').map((c) => c.id), [A, B]);
@@ -91,11 +91,11 @@ test('a jury-room comment is plain text without links, markup or hidden characte
 });
 
 test('only a signed-in visitor can speak, and a rejected comment is not stored', async () => {
-  const hub = { ...fakeHub(), userForToken: async (t) => (t === 'ok' ? { id: 'u1', name: 'Adir Trabelsi' } : null) };
+  const hub = { ...fakeHub(), userForToken: async (t) => (t === 'ok' ? { id: 'u1', name: 'Jane Doe' } : null) };
   await assert.rejects(juryDispatch(hub, 'jury-talk', { token: '', thread: A, body: 'Hello there' }, {}), /Sign in/);
   await assert.rejects(juryDispatch(hub, 'jury-talk', { token: 'ok', thread: A, body: 'http://spam' }, {}));
   await assert.rejects(juryDispatch(hub, 'jury-talk', { token: 'ok', thread: 'Q0', body: 'Hello there' }, {}));
   assert.equal(hub.writes.length, 0);
   await juryDispatch(hub, 'jury-talk', { token: 'ok', thread: A, body: 'Hello there' }, {});
-  assert.deepEqual(hub.writes[0].slice(0, 4), [A, 'u1', 'Adir', 'Hello there']);
+  assert.deepEqual(hub.writes[0].slice(0, 4), [A, 'u1', 'Jane', 'Hello there']);
 });

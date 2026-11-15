@@ -54,7 +54,7 @@ const titleRules=[
  ['Subscription launch:',11,'depends','Validated value, payment QA, support and margin evidence precede charging.'],
  ['Search engines:',12,'access','Use verified official properties; the currently inactive connector does not establish console access.'],
  ['Daily indexing:',13,'access','Actual Search Console access and quota are required; inspection is not an indexing request.'],
- ['Social: register',14,'people','Adir completes final account verification and terms acceptance. Preparation can proceed now.'],
+ ['Social: register',14,'people','Owner completes final account verification and terms acceptance. Preparation can proceed now.'],
  ['Social operations:',15,'depends','Prepare a calendar now; publishing and moderation require launched authorised accounts.']
 ];
 export const executionLabels={now:'Execute now',access:'Account or data access',people:'Human participation',depends:'Prerequisite first',assessment:'Assess next',done:'Verified / retired'};

@@ -50,10 +50,10 @@ def page_entities(title, description, path, extra=None, origin=ORIGIN):
                 node['mainEntityOfPage'] = {'@id': canonical + '#webpage'}
             webpage.setdefault('mainEntity', {'@id': node['@id']})
         blocks.append(node)
-    if path == '/about/adir-trabelsi/':
+    if path == '/about/miles-foreman/':
         person = {'@context': 'https://schema.org', '@type': 'Person',
-                  '@id': canonical + '#person', 'name': 'Adir Trabelsi', 'url': canonical,
-                  'description': 'Publisher of MotorJury.'}
+                  '@id': canonical + '#person', 'name': 'Miles Foreman', 'url': canonical,
+                  'description': 'Pen name of the publisher of MotorJury.'}
         webpage['about'] = {'@id': person['@id']}
         blocks.append(person)
     return blocks
@@ -133,7 +133,7 @@ def build_sources(write, root=ROOT, origin=ORIGIN):
     body += '''</ul><h2 id="cite">How to cite MotorJury</h2>
 <p>Cite the specific article title, MotorJury, its canonical URL and the source-check date shown on that page. For a record snapshot, also retain the vehicle identity, service and timestamp. A page rebuild is not a fresh review.</p>
 <p>Keep the original primary-source link alongside an interpretation. Distinguish an editorial suggestion from a manufacturer statement, a recall notice from a support program, and a scenario from a market valuation.</p>
-<h2>Who is accountable</h2><p><a href="/about/adir-trabelsi/">Adir Trabelsi is the publisher</a>. The work is AI-assisted desk research; no road test, owner interview or specialist review is claimed unless the relevant page records that work.</p>
+<h2>Who is accountable</h2><p><a href="/about/miles-foreman/">Miles Foreman is the publisher</a>. The work is AI-assisted desk research; no road test, owner interview or specialist review is claimed unless the relevant page records that work.</p>
 <p><a href="/editorial-policy/">Editorial standards and corrections</a> · <a href="/contact/">Send a source-backed correction</a> · <a href="/catalogue-notes/">Catalogue and photo credits</a></p></article>'''
     body = body.replace('MATCHING_AUDIT_URL', report_url)
     dataset = {'@context': 'https://schema.org', '@type': 'Dataset',

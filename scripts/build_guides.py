@@ -273,7 +273,7 @@ signed by the editor and checked line by line against the federal complaint and 
 complaint components and recall campaigns say went wrong, which years escaped it, and what to check on the
 car in front of you before you pay. The year tables inside each guide are live: they are drawn from the
 same database as the model pages on the day the site was last built, so a guide written in September
-is still right in March. Guides are signed by <a href="/about/adir-trabelsi/">the editor</a>, dated, and
+is still right in March. Guides are signed by <a href="/about/miles-foreman/">the editor</a>, dated, and
 corrected under the <a href="/editorial-policy/">editorial policy</a>.</p></div>
 {sections}
 </div>"""
