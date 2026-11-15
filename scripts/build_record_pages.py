@@ -179,7 +179,7 @@ def main():
         links=''.join(f'<li><a href="{u}">{esc(model)}</a>'+''.join(f' · <a href="{u}{y}/">{y}</a>' for y in indexed[u])+'</li>' for _,model,u in models)
         write('/cars/'+ks+'/',models[0][0]+' safety-record lookup',f'<section class="hero"><h1>{esc(models[0][0])} public records</h1><p class="lede">Choose a model. Source matching is being verified; this list is not a recommendation.</p></section><section class="card"><ul>{links}</ul></section>')
     links=''.join(f'<li><a href="/cars/{ks}/">{esc(models[0][0])}</a></li>' for ks,models in by_make.items())
-    write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p><p><a href="/recall-campaigns/">Which model years carry the most recall campaigns →</a></p></section><section class="card"><ul>{links}</ul></section>')
+    write('/cars/','Look up a car in the public record',f'<section class="hero"><h1>Look up the record.<br>Then check the actual car.</h1><p class="lede">This US-market snapshot is being verified service by service. No automated reliability verdict is published.</p><p><a href="/recall-campaigns/">Which model years carry the most recall campaigns →</a></p></section><section class="card"><ul class="tile-list">{links}</ul></section>')
     # Preserve published comparison routes, even though the unsupported ranking
     # generator no longer selects pairs. Unknown versions stay unknown.
     model_keys={ks+'-'+ms:(ks,ms) for ks,ms in by_model}

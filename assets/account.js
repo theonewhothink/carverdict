@@ -52,7 +52,7 @@
         '<span class="acct-nm">' + esc((ME.name || ME.email).split(' ')[0]) + '</span></a>';
     } else {
       host.innerHTML = '<a class="acct-chip" href="/login/?next=' +
-        encodeURIComponent(location.pathname) + '">Sign in</a>';
+        encodeURIComponent(location.pathname) + '">' + ({pt:'Entrar',es:'Entrar',fr:'Connexion',de:'Anmelden',he:'כניסה'}[document.documentElement.lang] || 'Sign in') + '</a>';
     }
   }
 

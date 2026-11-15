@@ -48,7 +48,7 @@ def card(r,lazy=True):
     credit='<a class="collection-credit" href="'+esc(lib.commons_page(r['p']),quote=True)+'" rel="noopener">Photo &amp; attribution ↗</a>' if r['p'] else '<span class="collection-credit">Photo not yet catalogued</span>'
     save=f'<button type="button" class="save-car" data-save-car="{esc(r["u"],quote=True)}" data-car-name="{esc(r["n"],quote=True)}" aria-pressed="false">Save car +</button>'
     love=f'<div class="love-host card-love" data-love="model:{esc(r["q"],quote=True)}" data-love-name="{esc(r["n"],quote=True)}"></div>'
-    costs=f'<a class="collection-card-cost" href="{esc(r["u"],quote=True)}">Price: use the actual listing · See year-by-year ownership costs →</a>'
+    costs=f'<a class="collection-card-cost" href="{esc(r["u"],quote=True)}">Ownership costs →</a>'
     return f'<article class="collection-card"><a href="{esc(r["u"],quote=True)}">{image(r["p"],r["n"],lazy)}<div class="collection-card-body"><span class="collection-brand">{esc(r["b"])}</span><h3>{esc(r["n"])}</h3></div></a>{credit}{costs}{love}{save}</article>'
 
 def roster_row(r):
