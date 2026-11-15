@@ -73,7 +73,7 @@ node scripts/build_dashboard_client.mjs
 "$PY" scripts/qa_site.py
 "$PY" scripts/qa_publication.py
 "$PY" -m unittest discover -s tests -v
-node --test workers/*.test.mjs assets/buying-*.test.mjs assets/catalogue-*.test.mjs assets/collection-*.test.mjs assets/privacy.test.mjs
+node --test workers/*.test.mjs assets/buying-*.test.mjs assets/catalogue-*.test.mjs assets/collection-*.test.mjs assets/jury-*.test.mjs assets/privacy.test.mjs
 # A public release marker is emitted only after the actual publication gates pass.
 "$PY" - <<'PY_RELEASE'
 import datetime,json,os,subprocess

@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 ORIGIN = os.environ.get("SITE_ORIGIN", "https://motorjury.com").rstrip("/")
-NAV = ('<nav class="nav"><a href="/guides/">Guides</a><a href="/years-to-avoid/">Years to avoid</a>'
+NAV = ('<nav class="nav"><a href="/jury/">Car Jury</a><a href="/guides/">Guides</a><a href="/years-to-avoid/">Years to avoid</a>'
        '<a href="/compare/">Compare</a><a href="/cars/">Cars</a><a href="/library/">Library</a>'
        '<a href="/vin-check/">VIN check</a><a href="/calculators/">Calculators</a></nav>')
 

@@ -374,6 +374,28 @@ async function api(req, url, env) {
     return json(data, ok ? 200 : 400);
   }
 
+  if (path === "/api/jury/votes") {
+    // Country comes from Cloudflare's edge, never from the request body.
+    const { ok, data } = await call(env, "jury-votes", { v: body.v, ip, cc: req.cf?.country || "" });
+    return json(data, ok ? 200 : 400);
+  }
+
+  if (path === "/api/jury/ranking") {
+    const { ok, data } = await call(env, "jury-ranking", {},
+      new URLSearchParams({ cc: (url.searchParams.get("cc") || "").slice(0, 2) }).toString());
+    return json(data, ok ? 200 : 400, { "Cache-Control": "public, max-age=300", "Vary": "Accept-Encoding" });
+  }
+
+  if (path === "/api/jury/daily") {
+    if (req.method === "POST") {
+      const { ok, data } = await call(env, "jury-daily", { day: body.day, picks: body.picks, ip });
+      return json(data, ok ? 200 : 400);
+    }
+    const { ok, data } = await call(env, "jury-daily-read", {},
+      new URLSearchParams({ day: (url.searchParams.get("day") || "").slice(0, 6) }).toString());
+    return json(data, ok ? 200 : 400, { "Cache-Control": "public, max-age=120", "Vary": "Accept-Encoding" });
+  }
+
   if (path === "/api/stats") {
     const { data } = await call(env, "stats");
     return json(data, 200, { "Cache-Control": "public, max-age=600" });

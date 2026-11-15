@@ -1,5 +1,6 @@
 import { localLink, preferences, ownerAnswer } from "./public-controls.mjs";
 import { dashboardDispatch } from "./dashboard-store.mjs";
+import { juryDispatch, juryTables } from "./jury.mjs";
 /**
  * hub.js — MotorJury's account and engagement store.
  *
@@ -93,6 +94,7 @@ export class HubDO {
     s.exec(`CREATE TABLE IF NOT EXISTS subscribers(
       email TEXT PRIMARY KEY, created INTEGER, source TEXT)`);
     s.exec(`CREATE TABLE IF NOT EXISTS rate(k TEXT PRIMARY KEY, n INTEGER, window INTEGER)`);
+    juryTables(s);
     s.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`);
     s.exec(`CREATE INDEX IF NOT EXISTS idx_likes_item ON likes(item)`);
   }
@@ -188,6 +190,7 @@ export class HubDO {
   async dispatch(op, b, q) {
     const now = Date.now();
     if (op.startsWith("dashboard-")) return dashboardDispatch(this, op, b);
+    if (op.startsWith("jury-")) return juryDispatch(this, op, b, q);
     switch (op) {
 
       case "signup": {

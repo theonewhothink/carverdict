@@ -77,6 +77,7 @@ def machine_guide(origin=ORIGIN):
 - {origin}/editorial-policy/ — research standards and corrections
 - {origin}/about/ — publisher accountability and current coverage
 - {origin}/discover/ — researched car design stories
+- {origin}/jury/ — the car jury: anonymous pick-one-of-two verdicts, a ten-bay garage and a world ranking of desire (not quality or reliability)
 - {origin}/guides/ — practical used-car reader guides
 - {origin}/buying-brief/ — the 2019–2020 US RAV4 viewing brief
 - {origin}/legends/mate-rimac/ — the BMW conversion and Concept_One story

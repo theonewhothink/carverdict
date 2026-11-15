@@ -8,6 +8,7 @@ export const PUBLIC_METHODS = {
   '/api/stats':['GET'], '/api/auth/google':['GET'], '/api/auth/apple':['GET'],
   '/api/auth/google/callback':['GET'], '/api/auth/apple/callback':['GET','POST'],
   '/api/auth/google/token':['POST'],
+  '/api/jury/votes':['POST'], '/api/jury/ranking':['GET'], '/api/jury/daily':['GET','POST'],
 };
 export function accountWriteAllowed(req, origin) {
   return req.headers.get('Origin') === origin &&
