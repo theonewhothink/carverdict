@@ -74,3 +74,28 @@ test('the browser and the Worker agree on the daily round number', async () => {
   for (const now of [Date.UTC(2026, 10, 15), Date.UTC(2027, 1, 1, 23, 59)]) assert.equal(client.dayNumber(now), dayNumber(now));
   assert.equal(client.DAILY_PICKS, 10);
 });
+
+test('a jury-room comment is plain text without links, markup or hidden characters', async () => {
+  const { cleanComment, cleanThread, publicName, sharedGarage } = await import('./jury.mjs');
+  assert.equal(cleanComment('  The F40,\n easily.  '), 'The F40, easily.');
+  for (const bad of ['', 'x', 'a'.repeat(301), 'see http://x.y', 'visit www.spam.example', 'cheap-cars.com now', '<b>hi</b>', 7, null]) assert.throws(() => cleanComment(bad));
+  assert.equal(cleanComment('right‮evil'), 'right evil');
+  assert.equal(cleanThread(A), A);
+  assert.equal(cleanThread('daily:3', 3), 'daily:3');
+  for (const bad of ['Q0', 'daily:0', 'daily:9', 'daily:x', '', null, 'x'.repeat(50)]) assert.throws(() => cleanThread(bad, 3));
+  assert.equal(publicName('Adir Trabelsi'), 'Adir');
+  assert.equal(publicName('<script>'), 'script');
+  assert.equal(publicName(''), 'Juror');
+  assert.deepEqual(sharedGarage('?g=' + A.slice(1) + '.' + B.slice(1) + '.0').map((c) => c.id), [A, B]);
+  assert.deepEqual(sharedGarage('?g=<script>'), []);
+});
+
+test('only a signed-in visitor can speak, and a rejected comment is not stored', async () => {
+  const hub = { ...fakeHub(), userForToken: async (t) => (t === 'ok' ? { id: 'u1', name: 'Adir Trabelsi' } : null) };
+  await assert.rejects(juryDispatch(hub, 'jury-talk', { token: '', thread: A, body: 'Hello there' }, {}), /Sign in/);
+  await assert.rejects(juryDispatch(hub, 'jury-talk', { token: 'ok', thread: A, body: 'http://spam' }, {}));
+  await assert.rejects(juryDispatch(hub, 'jury-talk', { token: 'ok', thread: 'Q0', body: 'Hello there' }, {}));
+  assert.equal(hub.writes.length, 0);
+  await juryDispatch(hub, 'jury-talk', { token: 'ok', thread: A, body: 'Hello there' }, {});
+  assert.deepEqual(hub.writes[0].slice(0, 4), [A, 'u1', 'Adir', 'Hello there']);
+});

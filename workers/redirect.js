@@ -30,6 +30,7 @@ import { PUBLIC_METHODS, accountWriteAllowed, boundedJson } from "./public-contr
 // which rejected every deploy and silently froze production. In code there is no cap: the
 // same JSON the generator writes is bundled here and prefix-matched per request.
 import { handleDashboard } from "./dashboard.mjs";
+import { sharedGarage } from "./jury.mjs";
 import MODEL_REDIRECTS from "../data/model_redirects.json";
 import { inspectVin } from "./vin.mjs";
 import { geniusEnabled, handleGenius } from "./genius.mjs";
@@ -386,6 +387,26 @@ async function api(req, url, env) {
     return json(data, ok ? 200 : 400, { "Cache-Control": "public, max-age=300", "Vary": "Accept-Encoding" });
   }
 
+  if (path === "/api/jury/stats") {
+    const { ok, data } = await call(env, "jury-stats");
+    return json(data, ok ? 200 : 400, { "Cache-Control": "public, max-age=300", "Vary": "Accept-Encoding" });
+  }
+
+  if (path === "/api/jury/talk") {
+    if (req.method === "POST") {
+      const { ok, data } = await call(env, "jury-talk", { thread: body.thread, body: body.body, token: token || "" });
+      return json(data, ok ? 200 : 400);
+    }
+    const { ok, data } = await call(env, "jury-talk-read", {},
+      new URLSearchParams({ thread: (url.searchParams.get("thread") || "").slice(0, 20) }).toString());
+    return json(data, ok ? 200 : 400, { "Cache-Control": "public, max-age=20", "Vary": "Accept-Encoding" });
+  }
+
+  if (path === "/api/jury/talk/report") {
+    const { ok, data } = await call(env, "jury-talk-report", { id: body.id, token: token || "", ip });
+    return json(data, ok ? 200 : 400);
+  }
+
   if (path === "/api/jury/daily") {
     if (req.method === "POST") {
       const { ok, data } = await call(env, "jury-daily", { day: body.day, picks: body.picks, ip });
@@ -448,6 +469,26 @@ export default {
       } catch (e) {
         return json({ error: "Something went wrong on our side." }, 500);
       }
+    }
+
+    // A shared garage link previews that garage: its cars in the title and its first
+    // photograph as the image. The page itself is the ordinary jury page.
+    if (url.pathname === "/jury/" && url.searchParams.has("g") && req.method === "GET") {
+      const cars = sharedGarage(url.search);
+      const page = await serveWithRecovery(req, url, env);
+      if (!cars.length || !page.ok || !(page.headers.get("Content-Type") || "").includes("text/html")) return page;
+      const title = `A ${cars.length}-car dream garage on MotorJury`;
+      const names = cars.map((c) => c.n).join(", ");
+      const description = (names.length > 170 ? names.slice(0, 167) + "…" : names) + ". Pick yours.";
+      const set = (value) => ({ element(el) { el.setAttribute("content", value); } });
+      return new HTMLRewriter()
+        .on('meta[property="og:title"],meta[name="twitter:title"]', set(title))
+        .on('meta[property="og:description"],meta[name="twitter:description"]', set(description))
+        .on('meta[property="og:image"]', set(cars[0].t))
+        .on('meta[property="og:image:alt"]', set(cars[0].n + " · reference photograph"))
+        .on('meta[property="og:image:width"],meta[property="og:image:height"]', { element(el) { el.remove(); } })
+        .on("head", { element(el) { el.append('<meta name="robots" content="noindex,follow">', { html: true }); } })
+        .transform(page);
     }
 
     return serveWithRecovery(req, url, env);

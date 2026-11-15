@@ -50,6 +50,37 @@ export function rank(rows, limit = 50, minShows = 5) {
     .sort((a, b) => b.r - a.r || b.s - a.s || a.id.localeCompare(b.id)).slice(0, limit);
 }
 
+/** A garage link carries car numbers only; anything else is not a garage. */
+export function sharedGarage(search) {
+  const raw = new URLSearchParams(search).get('g') || '';
+  if (!/^\d{1,12}(\.\d{1,12}){0,9}$/.test(raw)) return [];
+  const byId = new Map(CARS.map((c) => [c.id, c]));
+  return [...new Set(raw.split('.').map((n) => 'Q' + n))].filter((id) => byId.has(id)).map((id) => byId.get(id));
+}
+
+/** Jury-room threads belong to one car or to one recent daily round. */
+export function cleanThread(value, today = dayNumber()) {
+  if (typeof value === 'string' && IDS.has(value)) return value;
+  const m = /^daily:(\d{1,6})$/.exec(typeof value === 'string' ? value : '');
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= today + 1) return 'daily:' + Number(m[1]);
+  throw new Error('Unknown jury room.');
+}
+
+/** Plain text only: no links, no markup, no control characters. */
+export function cleanComment(value) {
+  if (typeof value !== 'string') throw new Error('Write a comment first.');
+  const text = value.replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length < 2 || text.length > 300) throw new Error('Keep it between 2 and 300 characters.');
+  if (/https?:|www\.|[<>]|\b[\w-]+\.(com|net|org|io|ru|cn|co|info|xyz|top|shop|app|link|me)\b/i.test(text)) throw new Error('Links and markup are not allowed in the jury room.');
+  return text;
+}
+
+/** Only a first name is shown in public. */
+export function publicName(name) {
+  const first = String(name || '').replace(/[^\p{L}\p{N} '-]/gu, '').trim().split(/\s+/)[0] || 'Juror';
+  return first.slice(0, 24);
+}
+
 async function visitor(ip) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('jury|' + (ip || '?')));
   return 'j:' + [...new Uint8Array(bytes)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -59,6 +90,11 @@ export function juryTables(sql) {
   sql.exec(`CREATE TABLE IF NOT EXISTS jury_counts(
     id TEXT, cc TEXT, wins INTEGER NOT NULL DEFAULT 0, shows INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(id, cc))`);
+  sql.exec(`CREATE TABLE IF NOT EXISTS jury_talk(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, thread TEXT, user_id TEXT, name TEXT, body TEXT,
+    created INTEGER, reports INTEGER NOT NULL DEFAULT 0)`);
+  sql.exec(`CREATE INDEX IF NOT EXISTS idx_jury_talk_thread ON jury_talk(thread, id)`);
+  sql.exec(`CREATE TABLE IF NOT EXISTS jury_talk_reports(comment_id INTEGER, reporter TEXT, PRIMARY KEY(comment_id, reporter))`);
   sql.exec(`CREATE TABLE IF NOT EXISTS jury_daily(
     day INTEGER, idx INTEGER, a INTEGER NOT NULL DEFAULT 0, b INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(day, idx))`);
@@ -88,6 +124,39 @@ export async function juryDispatch(hub, op, b, q) {
       const rows = hub.rows(`SELECT id, wins, shows FROM jury_counts WHERE cc=?`, cc);
       const total = rows.reduce((n, r) => n + r.wins, 0);
       return { cc, total, cars: rank(rows) };
+    }
+    case 'jury-stats': {
+      const out = {};
+      for (const r of hub.rows(`SELECT id, wins, shows FROM jury_counts WHERE cc=''`)) if (IDS.has(r.id)) out[r.id] = [r.wins, r.shows];
+      return { cars: out };
+    }
+    case 'jury-talk-read': {
+      const thread = cleanThread(q.thread);
+      return { thread, comments: hub.rows(`SELECT id, name, body, created FROM jury_talk
+        WHERE thread=? AND reports < 3 ORDER BY id DESC LIMIT 30`, thread) };
+    }
+    case 'jury-talk': {
+      const user = await hub.userForToken(b.token);
+      if (!user) throw new Error('Sign in to speak in the jury room.');
+      const thread = cleanThread(b.thread), body = cleanComment(b.body);
+      if (!hub.limit('jt:' + user.id + ':m', 5, 600) || !hub.limit('jt:' + user.id + ':d', 30, 86400)) {
+        throw new Error('You are posting quickly. Try again in a few minutes.');
+      }
+      hub.sql.exec(`INSERT INTO jury_talk(thread,user_id,name,body,created) VALUES(?,?,?,?,?)`,
+        thread, user.id, publicName(user.name), body, Date.now());
+      return juryDispatch(hub, 'jury-talk-read', {}, { thread });
+    }
+    case 'jury-talk-report': {
+      const id = Number(b.id);
+      if (!Number.isInteger(id) || id < 1) throw new Error('Unknown comment.');
+      const user = await hub.userForToken(b.token);
+      const reporter = user ? 'u:' + user.id : await visitor(b.ip);
+      if (!hub.limit(reporter + ':report', 20, 86400)) throw new Error('Too many reports today.');
+      if (!hub.rows(`SELECT id FROM jury_talk WHERE id=?`, id).length) throw new Error('Unknown comment.');
+      hub.sql.exec(`INSERT OR IGNORE INTO jury_talk_reports(comment_id,reporter) VALUES(?,?)`, id, reporter);
+      // Three different reporters hide a comment until the publisher reviews it.
+      hub.sql.exec(`UPDATE jury_talk SET reports=(SELECT COUNT(*) FROM jury_talk_reports WHERE comment_id=?) WHERE id=?`, id, id);
+      return { ok: true };
     }
     case 'jury-daily': {
       const { day, picks } = cleanDaily(b);

@@ -1,6 +1,6 @@
 // The car jury: pick one of two, fill ten bays, share the garage, see the world's verdict.
 // Picks are anonymous. The garage lives in this browser; only verdict pairs reach the server.
-import {BAYS,DAILY_PICKS,agreement,cleanGarage,dailyPairs,dayNumber,drawPair,garageLink,park,parseGarage,shareText,swap,taste} from './jury-core.mjs';
+import {BAYS,DAILY_PICKS,agreement,cleanGarage,dailyPairs,dayNumber,drawPair,garageLink,nextStreak,park,parseGarage,quizRound,shareText,swap,taste} from './jury-core.mjs';
 
 const KEY='motorjury.jury.v1';
 const COUNTRIES=[['','World'],['US','United States'],['GB','United Kingdom'],['DE','Germany'],['FR','France'],['IT','Italy'],['ES','Spain'],['PT','Portugal'],['NL','Netherlands'],['PL','Poland'],['SE','Sweden'],['IL','Israel'],['TR','Turkey'],['AE','United Arab Emirates'],['IN','India'],['JP','Japan'],['AU','Australia'],['CA','Canada'],['MX','Mexico'],['BR','Brazil']];
@@ -23,10 +23,17 @@ function credit(c){const span=node('span');span.setAttribute('data-photo-attribu
 if(rankingHost)ranking();
 if(!arena)return;
 
-let state={garage:[],daily:null,picks:0};let persistent=true;
-try{const saved=JSON.parse(localStorage.getItem(KEY)||'{}');state.garage=cleanGarage(saved.garage,idSet);state.picks=Number.isInteger(saved.picks)&&saved.picks>0?saved.picks:0;const d=saved.daily;if(d&&Number.isInteger(d.day)&&Array.isArray(d.picks)&&d.picks.length<=DAILY_PICKS&&d.picks.every(p=>p===0||p===1))state.daily={day:d.day,picks:d.picks,sent:d.sent===true};}catch{persistent=false;}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));persistent=true;}catch{persistent=false;}}
+let state={garage:[],daily:null,picks:0,streak:null,asked:false,best:0};let persistent=true;
+try{const saved=JSON.parse(localStorage.getItem(KEY)||'{}');state.garage=cleanGarage(saved.garage,idSet);state.picks=Number.isInteger(saved.picks)&&saved.picks>0?saved.picks:0;const d=saved.daily;if(d&&Number.isInteger(d.day)&&Array.isArray(d.picks)&&d.picks.length<=DAILY_PICKS&&d.picks.every(p=>p===0||p===1))state.daily={day:d.day,picks:d.picks,sent:d.sent===true};const k=saved.streak;if(k&&Number.isInteger(k.last)&&Number.isInteger(k.n)&&k.n>0)state.streak={last:k.last,n:k.n};state.asked=saved.asked===true;state.best=Number.isInteger(saved.best)&&saved.best>=0&&saved.best<=10?saved.best:0;}catch{persistent=false;}
+let me=null,synced='';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));persistent=true;}catch{persistent=false;}sync();}
+// Signed in: the garage follows the account. A device with an empty garage adopts the saved one.
+function sync(){if(!me)return;const now=state.garage.join('.');if(now===synced)return;synced=now;fetch('/api/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefs:{juryGarage:state.garage}})}).catch(()=>{});}
+function account(user){me=user||null;if(!me)return;const stored=cleanGarage(me.prefs&&me.prefs.juryGarage,idSet);if(!state.garage.length&&stored.length){state.garage=stored;synced=stored.join('.');save();if(typeof garage==='function')garage();}else sync();const bar=$('[data-jury-signin]');if(bar)bar.hidden=true;talk();}
+document.addEventListener('cv:me',e=>account(e.detail));
 
+const verdict=$('[data-jury-verdict]'),signin=$('[data-jury-signin]'),talkHost=$('[data-jury-talk]');let stats=null,thread=null,quiz=null;
+fetch('/api/jury/stats').then(r=>r.ok?r.json():null).then(d=>{stats=d&&d.cars;}).catch(()=>{});
 const pairHost=$('[data-jury-pair]'),progress=$('[data-jury-progress]'),credits=$('[data-jury-credits]'),result=$('[data-jury-result]'),skip=$('[data-jury-skip]'),status=$('[data-jury-status]'),swapHost=$('[data-jury-swap]'),bays=$('[data-jury-bays]');
 let mode='free',deck=[],pair=null,busy=false,queue=[];
 const today=dayNumber(),todays=dailyPairs(ids,today);
@@ -38,7 +45,8 @@ addEventListener('pagehide',()=>flush(true));document.addEventListener('visibili
 
 function say(text){status.textContent=text;}
 function show(){
-  result.hidden=true;pairHost.hidden=false;skip.hidden=mode==='daily';
+  result.hidden=true;pairHost.hidden=false;skip.hidden=mode!=='free';pairHost.classList.toggle('quiz',mode==='quiz');
+  if(mode==='quiz'){askQuiz();return;}
   if(mode==='daily'){const i=state.daily?state.daily.picks.length:0;if(i>=DAILY_PICKS){finishDaily();return;}pair=todays[i];progress.textContent=`Today’s ten · pick ${i+1} of ${DAILY_PICKS}. Same pairs for everyone today.`;}
   else{const next=drawPair(deck,ids);pair=next.pair;deck=next.deck;progress.textContent=state.picks?`${state.picks.toLocaleString()} verdict${state.picks===1?'':'s'} returned. Which would you rather have?`:'Which would you rather have?';}
   pairHost.replaceChildren();credits.replaceChildren('Photos: ');
@@ -51,10 +59,14 @@ function choose(side){
   queue.push([winner,loser]);state.picks++;
   if(mode==='daily'){state.daily=state.daily||{day:today,picks:[]};state.daily.picks.push(side);}
   const parked=park(state.garage,winner);state.garage=parked.garage;save();
-  if(parked.state==='parked'){say(`${car.n} parked in bay ${state.garage.length} of ${BAYS}.`+(persistent?'':' Browser storage is unavailable, so this garage lasts only for this visit.'));swapHost.hidden=true;if(state.garage.length===BAYS)track('garage_full');}
+  if(parked.state==='parked'){say(`${car.n} parked in bay ${state.garage.length} of ${BAYS}.`+(persistent?'':' Browser storage is unavailable, so this garage lasts only for this visit.'));swapHost.hidden=true;if(state.garage.length===BAYS){track('garage_full');say('All ten bays are full. Share your garage, or keep judging to trade up.');$('[data-jury-share]').classList.add('nudge');}}
   else if(parked.state==='full')offerSwap(car);
   else swapHost.hidden=true;
   garage();
+  const seen=stats&&stats[winner],video=node('a','Watch '+car.n+' videos ↗');video.href='https://www.youtube.com/results?search_query='+encodeURIComponent(car.n);video.rel='noopener';video.target='_blank';
+  verdict.replaceChildren(seen&&seen[1]>=5?`Jurors pick the ${car.n} in ${Math.round(100*seen[0]/seen[1])}% of its showings. `:`Verdict recorded for the ${car.n}. `,video);
+  if(!me&&!state.asked&&state.picks>=4&&window.CV&&Object.prototype.hasOwnProperty.call(window.CV,'me'))signin.hidden=false;
+  thread=winner;if(talkHost.open)talk();else $('summary',talkHost).textContent='Jury room: talk about the '+car.n;
   if(state.picks===1)track('first_pick');if(state.picks===10)track('ten_picks');
   if(queue.length>=8)flush();
   const chosen=pairHost.querySelector(`[data-pick="${side}"]`);if(chosen)chosen.classList.add('picked');
@@ -129,10 +141,12 @@ async function finishDaily(){
   const picks=state.daily.picks;let split=null;
   try{
     const sent=state.daily.sent;const r=sent?await fetch('/api/jury/daily?day='+today):await fetch('/api/jury/daily',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({day:today,picks})});
-    if(r.ok){split=(await r.json()).split;if(!sent){state.daily.sent=true;save();track('daily_done');}}
+    if(r.ok){split=(await r.json()).split;if(!sent){state.daily.sent=true;state.streak=nextStreak(state.streak,today);save();track('daily_done');}}
   }catch{/* The result still shows without the world's split. */}
   const marks=split?agreement(picks,split):picks.map(()=>null),known=marks.filter(m=>m!==null);
   result.replaceChildren(node('h3',known.length?`You sided with the world on ${known.filter(Boolean).length} of ${known.length}.`:'You are among today’s first jurors.'));
+  if(state.streak&&state.streak.n>1)result.append(node('p',`🔥 ${state.streak.n}-day streak. Come back tomorrow to keep it.`,'jury-streak'));
+  thread='daily:'+today;$('summary',talkHost).textContent='Jury room: argue about today’s ten';if(talkHost.open)talk();
   if(!known.length)result.append(node('p','Too few verdicts are in to call a majority. Come back later today to see how the world voted.','note'));
   const list=node('ol','','jury-daily-list');
   todays.forEach((p,i)=>{const mine=byId.get(p[picks[i]]),other=byId.get(p[1-picks[i]]),li=node('li');const total=split?split[i][0]+split[i][1]:0;li.append(node('span',marks[i]===null?'⬜':marks[i]?'🟩':'🟥'),node('b',mine.n),' over '+other.n+(total>=5?` · ${Math.round(100*split[i][picks[i]]/total)}% agreed`:''));list.append(li);});
@@ -143,6 +157,44 @@ async function finishDaily(){
   actions.append(share,back);result.append(list,actions,node('p','A new ten arrive at midnight, Coordinated Universal Time.','note'));
 }
 
+/* ---- name that car ---- */
+function askQuiz(){
+  if(!quiz)quiz={n:0,marks:[],used:[]};
+  if(quiz.n>=10){endQuiz();return;}
+  const q=quizRound(ids,Math.random,quiz.used),car=byId.get(q.answer);quiz.used.push(q.answer);quiz.answer=q.answer;
+  progress.textContent=`Name that car · ${quiz.n+1} of 10 · ${quiz.marks.filter(Boolean).length} right so far`;
+  verdict.replaceChildren();credits.replaceChildren('Photo: ',credit(car));
+  const options=node('div','','jury-options');
+  for(const id of q.options){const b=node('button',byId.get(id).n,'secondary');b.type='button';b.dataset.answer=id;options.append(b);}
+  const frame=photo(car,true);frame.querySelector('img').alt='A car to identify';pairHost.replaceChildren(frame,options);busy=false;
+}
+pairHost.addEventListener('click',e=>{const b=e.target.closest('[data-answer]');if(!b||busy||mode!=='quiz')return;busy=true;const right=b.dataset.answer===quiz.answer;quiz.marks.push(right);quiz.n++;b.classList.add(right?'right':'wrong');const good=pairHost.querySelector(`[data-answer="${quiz.answer}"]`);if(good)good.classList.add('right');say(right?'Correct.':'It was the '+byId.get(quiz.answer).n+'.');setTimeout(()=>{if(mode==='quiz')askQuiz();},right?600:1400);});
+function endQuiz(){
+  const score=quiz.marks.filter(Boolean).length,grid=quiz.marks.map(m=>m?'🟩':'🟥').join('');quiz=null;
+  if(score>state.best){state.best=score;save();}track('quiz_done');
+  pairHost.hidden=true;credits.replaceChildren();result.hidden=false;progress.textContent='Name that car · finished';
+  const text=`MotorJury · Name That Car\n${score}/10 ${grid}\n${location.origin}/jury/`;
+  const actions=node('div','','actions'),share=node('button','Share my score'),again=node('button','Play again','secondary');share.type=again.type='button';
+  share.addEventListener('click',async()=>{track('quiz_share');try{if(navigator.share){await navigator.share({text});return;}}catch(e){if(e&&e.name==='AbortError')return;}copy(text,'Score copied. Paste it anywhere.');});
+  again.addEventListener('click',show);actions.append(share,again);
+  result.replaceChildren(node('h3',`${score} out of 10.`),node('p',grid),node('p',`Your best: ${state.best} out of 10.`,'note'),actions);
+}
+
+/* ---- sign-in ask, once, after the fourth pick ---- */
+if(signin){$('[data-jury-later]',signin).addEventListener('click',()=>{signin.hidden=true;state.asked=true;save();});$('a',signin).addEventListener('click',()=>{state.asked=true;save();track('signin_click');});}
+
+/* ---- the jury room: signed-in visitors talk about a car or the daily round ---- */
+function talk(){
+  if(!thread||!talkHost.open)return;
+  const list=$('[data-jury-talk-list]',talkHost),form=$('form',talkHost),gate=$('[data-jury-talk-gate]',talkHost),note=$('[data-jury-talk-status]',talkHost);
+  form.hidden=!me;gate.hidden=!!me;if(me)$('[data-jury-talk-as]',form).textContent='Posts publicly under your first name.';
+  const asked=thread;
+  const draw=d=>{if(asked!==thread)return;list.replaceChildren(...d.comments.map(c=>{const li=node('li');const flag=node('button','Report','jury-report');flag.type='button';flag.addEventListener('click',()=>{fetch('/api/jury/talk/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:c.id})}).then(()=>{flag.textContent='Reported';flag.disabled=true;}).catch(()=>{});});li.append(node('b',c.name),' · ',node('time',new Date(c.created).toLocaleDateString()),node('p',c.body),flag);return li;}));note.textContent=d.comments.length?'':'Nobody has spoken yet. Open the debate.';};
+  fetch('/api/jury/talk?thread='+encodeURIComponent(thread)).then(r=>r.ok?r.json():Promise.reject()).then(draw).catch(()=>{note.textContent='The jury room is unavailable right now.';});
+  form.onsubmit=e=>{e.preventDefault();const box=$('textarea',form),body=box.value;if(!body.trim())return;fetch('/api/jury/talk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({thread,body})}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'Could not post.');box.value='';track('talk_post');draw(d);}).catch(err=>{note.textContent=err.message;});};
+}
+talkHost.addEventListener('toggle',talk);
+
 /* ---- a garage someone shared ---- */
 const shared=parseGarage(location.search,idSet),sharedHost=$('[data-jury-shared]');
 if(shared.length&&sharedHost){sharedHost.hidden=false;const mineToo=shared.map(id=>byId.get(id));$('[data-jury-shared-grid]',sharedHost).replaceChildren(...mineToo.map(c=>bay(c,false)));$('[data-jury-shared-taste]',sharedHost).textContent=mineToo.length>1?taste(mineToo)+'.':'';const list=node('p','Photos: ','jury-credits');mineToo.forEach((c,i)=>list.append(credit(c),i<mineToo.length-1?' · ':''));sharedHost.append(list);track('shared_garage_view');}
@@ -151,7 +203,7 @@ if(shared.length&&sharedHost){sharedHost.hidden=false;const mineToo=shared.map(i
 const top=$('[data-jury-top-list]');
 if(top)fetch('/api/jury/ranking').then(r=>r.ok?r.json():Promise.reject()).then(d=>{const s=$('[data-jury-top-status]');s.textContent=d.total?`${d.total.toLocaleString()} verdict${d.total===1?'':'s'} returned so far.`+(d.cars.length<5?' The ranking appears once enough cars have had a fair hearing.':''):'No verdicts yet. Yours can be the first.';if(d.cars.length>=5)top.replaceChildren(...d.cars.slice(0,5).filter(r=>byId.has(r.id)).map(r=>{const c=byId.get(r.id),li=node('li'),a=node('a',c.n);a.href=c.u;li.append(a,` · picked ${Math.round(100*r.w/r.s)}% of ${r.s.toLocaleString()} showings`);return li;}));}).catch(()=>{$('[data-jury-top-status]').textContent='The ranking is unavailable right now.';});
 
-garage();show();
+garage();show();if(window.CV&&Object.prototype.hasOwnProperty.call(window.CV,'me'))account(window.CV.me);
 
 function ranking(){
   const list=$('[data-jury-ranking-list]'),s=$('[data-jury-ranking-status]'),select=$('[data-jury-country]');

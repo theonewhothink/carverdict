@@ -9,6 +9,7 @@ export const PUBLIC_METHODS = {
   '/api/auth/google/callback':['GET'], '/api/auth/apple/callback':['GET','POST'],
   '/api/auth/google/token':['POST'],
   '/api/jury/votes':['POST'], '/api/jury/ranking':['GET'], '/api/jury/daily':['GET','POST'],
+  '/api/jury/stats':['GET'], '/api/jury/talk':['GET','POST'], '/api/jury/talk/report':['POST'],
 };
 export function accountWriteAllowed(req, origin) {
   return req.headers.get('Origin') === origin &&

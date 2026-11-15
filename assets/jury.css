@@ -16,6 +16,11 @@
 .jury-name small{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 .jury-name b{display:block;font-size:clamp(18px,2.4vw,26px);line-height:1.2;margin-top:3px;overflow-wrap:anywhere}
 .jury-or{font-weight:800;color:var(--muted);text-transform:uppercase;font-size:13px;letter-spacing:2px}
+.jury-verdict{margin:10px 0 0;min-height:1.5em;font-weight:600}.jury-verdict a{font-weight:500;margin-left:6px}
+.jury-signin{background:#10201d;color:#f5f3ed;border-radius:14px;padding:18px 20px;margin:14px 0}.jury-signin p{margin:0 0 4px;color:#f5f3ed}.jury-signin .button{background:#f5f3ed;color:#10201d}
+.jury-talk{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:14px 0}.jury-talk summary{font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}.jury-talk ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:12px}.jury-talk li p{margin:2px 0 4px;overflow-wrap:anywhere}.jury-talk time{color:var(--muted);font-size:12px}.jury-talk textarea{width:100%;box-sizing:border-box}.jury-report{min-height:28px;padding:0 8px;font-size:11px;border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer}
+.jury-pair.quiz{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}.jury-pair.quiz .jury-photo{border-radius:16px}.jury-options{display:grid;gap:10px}.jury-options button{width:100%;justify-content:flex-start;text-align:left;font-size:17px}.jury-options .right{background:#1f7a4d;color:#fff;border-color:#1f7a4d}.jury-options .wrong{background:#a33a2a;color:#fff;border-color:#a33a2a}
+.jury-streak{font-weight:700}.nudge{box-shadow:0 0 0 4px #bd7c1655}
 .jury-credits{font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.6}
 .jury-credits a{color:inherit}
 .jury-result{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px}

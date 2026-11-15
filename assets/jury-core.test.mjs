@@ -59,3 +59,18 @@ test('the taste line reports only what the garage contains', () => {
   assert.equal(taste([{ b: 'Ferrari' }, { b: 'Lotus' }]), '2 marques, no two alike');
   assert.equal(taste([]), '');
 });
+
+test('a quiz question has four different options including the unused answer', async () => {
+  const { quizRound, nextStreak } = await import('./jury-core.mjs');
+  const random = seededRandom(9);
+  for (let i = 0; i < 20; i++) {
+    const q = quizRound(ids, random, ['Q1', 'Q2']);
+    assert.equal(new Set(q.options).size, 4);
+    assert.ok(q.options.includes(q.answer));
+    assert.ok(!['Q1', 'Q2'].includes(q.answer));
+  }
+  assert.deepEqual(nextStreak(null, 5), { last: 5, n: 1 });
+  assert.deepEqual(nextStreak({ last: 5, n: 3 }, 6), { last: 6, n: 4 });
+  assert.deepEqual(nextStreak({ last: 5, n: 3 }, 5), { last: 5, n: 3 });
+  assert.deepEqual(nextStreak({ last: 5, n: 3 }, 8), { last: 8, n: 1 });
+});

@@ -86,10 +86,15 @@ FAQ = [
     ('What is “Today’s ten”?',
      'Ten pairings that are the same for every visitor on a given day. When you finish, you see how often you sided with the majority, '
      'and you can share the result. A new ten arrive at midnight, Coordinated Universal Time.'),
+    ('What is the jury room?',
+     'A place under the cars where signed-in visitors say which car they would take and why. Comments are plain text, shown under your first name. '
+     'Links are refused, and a comment reported by three people is hidden until the publisher reviews it.'),
+    ('What is “Name that car”?',
+     'A ten-question game. You see one photograph and choose the right name from four. Your best score is kept in this browser.'),
     ('What do you store about me?',
      'Your garage is saved in this browser only. The server receives the two car numbers of each verdict and counts them. It records the '
      'country your request came from as a total per car, and uses a scrambled form of your network address only to limit abuse. '
-     'No account is needed and no verdict is stored with your identity.'),
+     'No account is needed and no verdict is stored with your identity. If you sign in, your garage is saved to your account and a comment you post is stored with your account and shown under your first name.'),
 ]
 
 
@@ -105,10 +110,16 @@ def main(write):
         '<p class="note" data-jury-shared-taste></p><ol class="jury-bays" data-jury-shared-grid></ol><a class="button" href="/jury/">Build my own garage →</a></section>'
         '<section class="jury-arena" data-jury aria-label="Pick one of two cars">'
         '<div class="jury-mode" role="group" aria-label="Game mode"><button type="button" data-jury-mode="free" aria-pressed="true">Free play</button>'
-        '<button type="button" data-jury-mode="daily" aria-pressed="false">Today’s ten</button></div>'
+        '<button type="button" data-jury-mode="daily" aria-pressed="false">Today’s ten</button><button type="button" data-jury-mode="quiz" aria-pressed="false">Name that car</button></div>'
         '<p class="jury-progress" role="status" data-jury-progress>Loading the jury…</p>'
         '<div class="jury-pair" data-jury-pair></div><p class="jury-credits" data-jury-credits></p>'
+        '<p class="jury-verdict" role="status" data-jury-verdict></p>'
+        '<div class="jury-signin" data-jury-signin hidden><p><b>Keep this garage.</b> Sign in once and it follows you to every device. You can also speak in the jury room.</p>'
+        '<div class="actions"><a class="button" href="/login/?next=/jury/">Sign in with Google or email →</a><button type="button" class="secondary" data-jury-later>Not now</button></div></div>'
         '<div class="actions"><button type="button" class="secondary" data-jury-skip>Skip this pair</button></div>'
+        '<details class="jury-talk" data-jury-talk><summary>Jury room: talk about the cars</summary><ul data-jury-talk-list></ul><p class="note" role="status" data-jury-talk-status></p>'
+        '<form hidden><label for="jury-say">Your view</label><textarea id="jury-say" maxlength="300" rows="2" required placeholder="Which one, and why?"></textarea><div class="actions"><button>Post</button></div><p class="note" data-jury-talk-as></p></form>'
+        '<p class="note" data-jury-talk-gate><a href="/login/?next=/jury/">Sign in</a> to speak. Plain text only; links are refused. Three reports hide a comment.</p></details>'
         '<div class="jury-result" data-jury-result hidden></div>'
         '<noscript><p>The jury needs JavaScript. The <a href="/library/">car collection</a> and the <a href="/all-cars/">complete A–Z list</a> work without it.</p></noscript></section>'
         '<section class="jury-garage" data-jury-garage aria-label="Your garage"><h2>Your ten-bay garage <span data-jury-count></span></h2>'

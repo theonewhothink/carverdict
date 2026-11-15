@@ -85,3 +85,17 @@ export function taste(cars) {
   if (!top) return '';
   return top[1] > 1 ? `${top[1]} of ${cars.length} bays hold a ${top[0]}` : `${count.size} marques, no two alike`;
 }
+
+/** One "name that car" question: the answer hidden among three other cars. */
+export function quizRound(ids, random = Math.random, used = []) {
+  const pool = shuffle(ids.filter((id) => !used.includes(id)), random);
+  const answer = pool[0];
+  const options = shuffle([answer, ...shuffle(ids.filter((id) => id !== answer), random).slice(0, 3)], random);
+  return { answer, options };
+}
+
+/** A streak grows on consecutive days, survives a repeat of the same day and restarts after a gap. */
+export function nextStreak(streak, day) {
+  if (streak && streak.last === day) return streak;
+  return { last: day, n: streak && streak.last === day - 1 ? streak.n + 1 : 1 };
+}
