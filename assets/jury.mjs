@@ -3,6 +3,8 @@
 import {BAYS,DAILY_PICKS,agreement,cleanGarage,dailyPairs,dayNumber,drawPair,garageLink,nextStreak,park,parseGarage,quizRound,shareText,swap,taste} from './jury-core.mjs';
 
 const KEY='motorjury.jury.v1';
+// The ranking is published once it means something; until then the page shows the count toward it.
+const PUBLISH_AT=1000;
 const COUNTRIES=[['','World'],['US','United States'],['GB','United Kingdom'],['DE','Germany'],['FR','France'],['IT','Italy'],['ES','Spain'],['PT','Portugal'],['NL','Netherlands'],['PL','Poland'],['SE','Sweden'],['IL','Israel'],['TR','Turkey'],['AE','United Arab Emirates'],['IN','India'],['JP','Japan'],['AU','Australia'],['CA','Canada'],['MX','Mexico'],['BR','Brazil']];
 const $=(sel,root=document)=>root.querySelector(sel);
 function node(tag,text,cls){const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;}
@@ -201,7 +203,7 @@ if(shared.length&&sharedHost){sharedHost.hidden=false;const mineToo=shared.map(i
 
 /* ---- the world's verdict, top five ---- */
 const top=$('[data-jury-top-list]');
-if(top)fetch('/api/jury/ranking').then(r=>r.ok?r.json():Promise.reject()).then(d=>{const s=$('[data-jury-top-status]');s.textContent=d.total?`${d.total.toLocaleString()} verdict${d.total===1?'':'s'} returned so far.`+(d.cars.length<5?' The ranking appears once enough cars have had a fair hearing.':''):'No verdicts yet. Yours can be the first.';if(d.cars.length>=5)top.replaceChildren(...d.cars.slice(0,5).filter(r=>byId.has(r.id)).map(r=>{const c=byId.get(r.id),li=node('li'),a=node('a',c.n);a.href=c.u;li.append(a,` · picked ${Math.round(100*r.w/r.s)}% of ${r.s.toLocaleString()} showings`);return li;}));}).catch(()=>{$('[data-jury-top-status]').textContent='The ranking is unavailable right now.';});
+if(top)fetch('/api/jury/ranking').then(r=>r.ok?r.json():Promise.reject()).then(d=>{const s=$('[data-jury-top-status]'),bar=$('[data-jury-top-bar]');if(d.total<PUBLISH_AT||d.cars.length<5){s.textContent=`The jury opened on 15 November 2026. The world ranking is published at ${PUBLISH_AT.toLocaleString()} verdicts; ${d.total.toLocaleString()} are in.`;bar.hidden=false;bar.max=PUBLISH_AT;bar.value=d.total;return;}s.textContent=`${d.total.toLocaleString()} verdicts returned so far.`;top.replaceChildren(...d.cars.slice(0,5).filter(r=>byId.has(r.id)).map(r=>{const c=byId.get(r.id),li=node('li'),a=node('a',c.n);a.href=c.u;li.append(a,` · picked ${Math.round(100*r.w/r.s)}% of ${r.s.toLocaleString()} showings`);return li;}));}).catch(()=>{$('[data-jury-top-status]').textContent='The ranking is unavailable right now.';});
 
 garage();show();if(window.CV&&Object.prototype.hasOwnProperty.call(window.CV,'me'))account(window.CV.me);
 
@@ -211,7 +213,9 @@ function ranking(){
   function draw(){
     s.textContent='Counting…';
     fetch('/api/jury/ranking'+(select.value?'?cc='+select.value:'')).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-      const where=select.value?' from '+select.selectedOptions[0].textContent:'';
+      const where=select.value?' from '+select.selectedOptions[0].textContent:'',bar=$('[data-jury-ranking-bar]');
+      if(!select.value&&d.total<PUBLISH_AT){s.textContent=`The jury opened on 15 November 2026. The world ranking is published at ${PUBLISH_AT.toLocaleString()} verdicts; ${d.total.toLocaleString()} are in. Every pick you make moves it closer.`;bar.hidden=false;bar.max=PUBLISH_AT;bar.value=d.total;list.replaceChildren();return;}
+      bar.hidden=true;
       s.textContent=d.total?`${d.total.toLocaleString()} verdict${d.total===1?'':'s'}${where} so far. A car is ranked after five showings; the order uses the cautious end of its win rate, so a small sample cannot jump the queue.`:`No verdicts${where} yet.`;
       list.replaceChildren(...d.cars.filter(r=>byId.has(r.id)).map(r=>{const c=byId.get(r.id),li=node('li','','jury-rank'),a=node('a');a.href=c.u;a.append(photo(c,false),node('b',c.n));li.append(a,node('span',`Picked ${Math.round(100*r.w/r.s)}% of ${r.s.toLocaleString()} showings`),credit(c));return li;}));
     }).catch(()=>{s.textContent='The ranking is unavailable right now. Try again shortly.';});

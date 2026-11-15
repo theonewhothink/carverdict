@@ -80,7 +80,7 @@ FAQ = [
      'A reviewed list of {n} cars from {b} marques, from the Ford Model T to current electric cars. A car enters only when its photograph '
      'has a recorded author and a licence that allows reuse. The full MotorJury catalogue is larger; the jury list grows as photographs are checked.'),
     ('How is the world ranking calculated?',
-     'Each car has a count of showings and a count of wins. A car is ranked after five showings. The order uses the lower bound of a 95% '
+     'Each car has a count of showings and a count of wins. The first world ranking is published once 1,000 verdicts are in. A car is ranked after five showings. The order uses the lower bound of a 95% '
      'confidence interval on its win rate, so a car picked twice out of two cannot outrank one picked eight hundred times out of a thousand. '
      'The ranking measures which car visitors would rather have. It is not a measure of quality, reliability or value.'),
     ('What is “Today’s ten”?',
@@ -128,7 +128,7 @@ def main(write):
         '<button type="button" class="secondary" data-jury-empty>Empty garage</button></div><p role="status" data-jury-status></p>'
         '<details><summary>Photo credits for your garage</summary><ul data-jury-garage-credits></ul></details>'
         '<p class="note">Saved in this browser only. No account needed. Clearing browser data empties the garage.</p></section>'
-        '<section class="card"><h2>The world’s verdict so far</h2><p data-jury-top-status>Counting…</p><ol data-jury-top-list></ol>'
+        '<section class="card"><h2>The world’s verdict so far</h2><p data-jury-top-status>Counting…</p><progress class="jury-bar" data-jury-top-bar hidden aria-label="Verdicts toward the first world ranking"></progress><ol data-jury-top-list></ol>'
         '<a href="/jury/ranking/">See the full world ranking →</a></section>'
         f'<section class="card"><h2>Questions about the jury</h2>{faq}'
         '<p class="note">Reference photographs may show a different generation or trim from the one you have in mind. '
@@ -139,7 +139,7 @@ def main(write):
         '<section class="collection-hero compact"><p class="eyebrow">The world’s car jury</p><h1>The cars the world would rather have.</h1>'
         '<p class="lede">A live ranking from anonymous pick-one-of-two verdicts. It measures desire, not quality or reliability.</p></section>'
         '<section class="card" data-jury-ranking><label for="jury-country">Show verdicts from</label> <select id="jury-country" data-jury-country></select>'
-        '<p role="status" data-jury-ranking-status>Counting…</p><ol class="jury-ranking-list" data-jury-ranking-list></ol>'
+        '<p role="status" data-jury-ranking-status>Counting…</p><progress class="jury-bar" data-jury-ranking-bar hidden aria-label="Verdicts toward the first world ranking"></progress><ol class="jury-ranking-list" data-jury-ranking-list></ol>'
         '<noscript><p>The live ranking needs JavaScript.</p></noscript><a class="button" href="/jury/">Add my verdicts →</a></section>')
     write('/jury/ranking/', 'World car ranking from the MotorJury car jury', ranking, script,
           description='A live ranking of the cars visitors would rather have, from anonymous pick-one-of-two verdicts. Filter by country.')
