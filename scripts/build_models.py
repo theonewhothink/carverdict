@@ -986,6 +986,9 @@ def main():
                 {"@type": "ListItem", "position": 3, "name": m["n"],
                  "item": ORIGIN + url}]},
         ], separators=(",", ":"))
+        if profile and profile.get('film'):
+            from collection_stories import video_object
+            jsonld=json.dumps(json.loads(jsonld)+[video_object(profile['film'],ORIGIN+url)],separators=(",", ":"))
         # Only an explicitly researched profile may leave the reference-page index hold.
         if profile:
             if url in THIN_PAGES:THIN_PAGES.remove(url)

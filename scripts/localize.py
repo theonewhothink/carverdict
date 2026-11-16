@@ -93,7 +93,9 @@ def localize_html(html, lang, urls, rel=""):
     # noindex,follow and carry no hreflang cluster. The English page is the only indexed one.
     html = RE_HREFLANG.sub("", html)
     html = re.sub(r'<link rel="alternate" hreflang="x-default" href="[^"]+">', "", html)
-    if 'name="robots"' not in html:
+    # The home page is the exception: localize_home.py rewrites it as a full translation
+    # after polish, so it stays indexable and enters the sitemap here.
+    if 'name="robots"' not in html and rel != "index.html":
         html = html.replace("</head>", '<meta name="robots" content="noindex,follow"></head>', 1)
     # translated title + description
     html = set_meta(html, rel, lang)

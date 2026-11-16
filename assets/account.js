@@ -107,6 +107,10 @@
      (an owner response) side by side, both account-backed, both from the same database.
      The star row writes the "overall" field of the owner survey below it, so a quick tap
      and the full form are one record, not two rating systems. */
+  /* Engagement labels follow the page language; English is the default. */
+  var EW = {"pt": {"love": "Adoro", "loved": "Adorado", "rate": "Avaliar", "mine": "A sua avaliação", "rated": "{n} avaliações", "owners": "{n} proprietários", "star": "Avaliar com {i} de 5", "title": "Adoro este carro"}, "es": {"love": "Me encanta", "loved": "Te encanta", "rate": "Valorar", "mine": "Tu valoración", "rated": "{n} valoraciones", "owners": "{n} propietarios", "star": "Valorar con {i} de 5", "title": "Me encanta este coche"}, "fr": {"love": "J’adore", "loved": "Adorée", "rate": "Noter", "mine": "Votre note", "rated": "{n} notes", "owners": "{n} propriétaires", "star": "Noter {i} sur 5", "title": "J’adore cette voiture"}, "de": {"love": "Lieblingsauto", "loved": "Geliebt", "rate": "Bewerten", "mine": "Ihre Bewertung", "rated": "{n} Bewertungen", "owners": "{n} Besitzer", "star": "Mit {i} von 5 bewerten", "title": "Ich liebe dieses Auto"}, "he": {"love": "אוהב", "loved": "אהבתי", "rate": "דרגו", "mine": "הדירוג שלכם", "rated": "{n} דירוגים", "owners": "{n} בעלים", "star": "דרגו {i} מתוך 5", "title": "אני אוהב את המכונית הזו"}}[document.documentElement.lang] || null;
+  function ew(k, en, v) { var s = EW ? EW[k] : en; for (var key in (v || {})) s = s.replace('{' + key + '}', v[key]); return s; }
+
   var PENDING_RATING = {};
   var RATING = {};   // item -> {mine: overall|null, n, avg}
 
@@ -114,21 +118,21 @@
     var r = RATING[item] || {};
     var mine = r.mine || 0, out = '';
     for (var i = 1; i <= 5; i++) out += '<button type="button" data-quick-star="' + i + '" class="' +
-      (i <= mine ? 'on' : '') + '" aria-label="Rate ' + i + ' out of 5" aria-pressed="' +
+      (i <= mine ? 'on' : '') + '" aria-label="' + ew('star', 'Rate {i} out of 5', {i: i}) + '" aria-pressed="' +
       (i === mine ? 'true' : 'false') + '">★</button>';
     var summary = r.n >= MIN_RESPONSES
-      ? '<b>' + (r.avg || 0).toFixed(1) + '</b>/5 · ' + r.n + ' owners'
-      : (r.n ? r.n + ' owner' + (r.n > 1 ? 's' : '') + ' rated it' : (mine ? 'Your rating' : 'Rate it'));
-    return '<span class="quick-rate" data-quick-rate="' + esc(item) + '"><span class="stars" role="group" aria-label="Your rating">' +
+      ? '<b>' + (r.avg || 0).toFixed(1) + '</b>/5 · ' + ew('owners', '{n} owners', {n: r.n})
+      : (r.n ? (EW ? ew('rated', '', {n: r.n}) : r.n + ' owner' + (r.n > 1 ? 's' : '') + ' rated it') : (mine ? ew('mine', 'Your rating') : ew('rate', 'Rate it')));
+    return '<span class="quick-rate" data-quick-rate="' + esc(item) + '"><span class="stars" role="group" aria-label="' + ew('mine', 'Your rating') + '">' +
       out + '</span><small>' + summary + '</small></span>';
   }
 
   function loveMarkup(n, mine) {
     return '<button class="love' + (mine ? ' on' : '') + '" data-love-btn' +
-      ' aria-pressed="' + (mine ? 'true' : 'false') + '" title="Love this car">' +
+      ' aria-pressed="' + (mine ? 'true' : 'false') + '" title="' + ew('title', 'Love this car') + '">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.7-9.5-9C1 8.6 2.6 5 6.2 5 8.4 5 10 6.3 12 8.6 14 6.3 15.6 5 17.8 5c3.6 0 5.2 3.6 3.7 7-2 4.3-9.5 9-9.5 9z"/></svg>' +
       (n ? '<span class="love-n" data-love-n>' + n + '</span>' : '') +
-      '<span class="love-lbl">' + (mine ? 'Loved' : 'Love it') + '</span></button>';
+      '<span class="love-lbl">' + (mine ? ew('loved', 'Loved') : ew('love', 'Love it')) + '</span></button>';
   }
 
   var LOVE_EVENTS_BOUND = false;

@@ -1,4 +1,4 @@
-title: Before buying a 2019–2020 RAV4: the checks that matter
+title: Before buying a 2019–2020 RAV4: checks that matter
 slug: toyota-rav4-years-to-avoid
 date: 2026-09-01
 updated: 2026-10-06

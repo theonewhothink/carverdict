@@ -47,7 +47,15 @@
         ]
       ],
       "seo_title": "Ferrari F40 history: the 1987 road-car design",
-      "description": "Explore the 1987 Ferrari F40: turbocharged V8 packaging, lightweight design and its road-car brief, with linked Ferrari archive sources."
+      "description": "Explore the 1987 Ferrari F40: turbocharged V8 packaging, lightweight design and its road-car brief, with linked Ferrari archive sources.",
+      "film": {
+        "id": "5vTtwSb1Ais",
+        "title": "A journey through the iconic Ferrari F40 Legacy Tour",
+        "channel": "Ferrari",
+        "uploaded": "2024-07-13",
+        "seconds": 127,
+        "note": "Ferrari’s own film of F40 owners driving together on its Legacy Tour."
+      }
     },
     {
       "name": "Lamborghini Miura",
@@ -94,7 +102,15 @@
         ]
       ],
       "seo_title": "Lamborghini Miura history: its transverse V12 layout",
-      "description": "Explore the Lamborghini Miura family from its 1966 debut: the transverse V12 layout, design decisions and version scope, with primary sources."
+      "description": "Explore the Lamborghini Miura family from its 1966 debut: the transverse V12 layout, design decisions and version scope, with primary sources.",
+      "film": {
+        "id": "gP09PdpNcwc",
+        "title": "Lamborghini Miura P400 SV 1971 restored by PoloStorico",
+        "channel": "Lamborghini",
+        "uploaded": "2016-12-30",
+        "seconds": 55,
+        "note": "Lamborghini’s heritage department shows a 1971 Miura SV after a full factory restoration."
+      }
     },
     {
       "name": "Mazda MX-5",
@@ -147,7 +163,15 @@
       ],
       "illustration": "Mazda MX-5 (NA) IMG 0206.jpg",
       "seo_title": "Mazda MX-5 NA history: the original roadster brief",
-      "description": "Explore the original 1989 Mazda MX-5 / NA design: lightness, open-top simplicity and the roadster brief, with linked Mazda history sources."
+      "description": "Explore the original 1989 Mazda MX-5 / NA design: lightness, open-top simplicity and the roadster brief, with linked Mazda history sources.",
+      "film": {
+        "id": "VKijau6pi4g",
+        "title": "Mazda MX-5: Since 1989",
+        "channel": "Mazda UK",
+        "uploaded": "2019-07-23",
+        "seconds": 115,
+        "note": "Mazda’s short history of the roadster, from the 1989 original to the current car."
+      }
     },
     {
       "name": "BMW M3",
@@ -195,7 +219,15 @@
       ],
       "illustration": "BMW M3 E30 (12569363305).jpg",
       "seo_title": "BMW E30 M3 history: a road car with a racing brief",
-      "description": "Explore the original E30 BMW M3 introduced in 1986: the racing brief, design choices and why later M3s need their own context."
+      "description": "Explore the original E30 BMW M3 introduced in 1986: the racing brief, design choices and why later M3s need their own context.",
+      "film": {
+        "id": "X2gUrmPvmBA",
+        "title": "The BMW M3 (E30) film. Everything about the first BMW M3 generation.",
+        "channel": "BMW",
+        "uploaded": "2015-12-17",
+        "seconds": 239,
+        "note": "BMW’s film on the development of the first, E30-generation M3."
+      }
     },
     {
       "name": "Honda NSX",
@@ -243,7 +275,15 @@
       ],
       "illustration": "Honda E-NA1 NSX (23110313233).jpg",
       "seo_title": "Honda NSX history: the first-generation design brief",
-      "description": "Explore the first-generation Honda NSX project introduced in 1990: engineering priorities and a different supercar brief, with Honda archive sources."
+      "description": "Explore the first-generation Honda NSX project introduced in 1990: engineering priorities and a different supercar brief, with Honda archive sources.",
+      "film": {
+        "id": "3v2HHOcnl5E",
+        "title": "The Original Acura NSX Was Honda’s Most Successful Failure — Revelations with Jason Cammisa Ep. 32",
+        "channel": "Hagerty",
+        "uploaded": "2023-07-27",
+        "seconds": 1004,
+        "note": "An independent Hagerty history of the first-generation, all-aluminium NSX."
+      }
     },
     {
       "name": "Mercedes-Benz 300 SL",
@@ -290,7 +330,15 @@
         ]
       ],
       "seo_title": "Mercedes-Benz 300 SL history: why gullwing doors?",
-      "description": "Discover why the 1954 Mercedes-Benz 300 SL W198 coupé has gullwing doors, and how its structure shaped the design. Read the linked archive sources."
+      "description": "Discover why the 1954 Mercedes-Benz 300 SL W198 coupé has gullwing doors, and how its structure shaped the design. Read the linked archive sources.",
+      "film": {
+        "id": "wPmuAfoO4ig",
+        "title": "The Mercedes 300SL Gullwing should have been a failure | Revelations with Jason Cammisa | Ep. 18",
+        "channel": "Hagerty",
+        "uploaded": "2022-01-13",
+        "seconds": 896,
+        "note": "An independent Hagerty history of the 300 SL, from the W194 racer to the Gullwing road car."
+      }
     },
     {
       "name": "Lotus Carlton",
@@ -338,7 +386,15 @@
       ],
       "seo_title": "Lotus Carlton / Omega history: the 1990–1992 saloon",
       "description": "Why the Lotus Carlton is also called the Omega, what Lotus changed and how the 1990–1992 saloon differs from a clean-sheet supercar.",
-      "reviewed_at": "2026-10-26"
+      "reviewed_at": "2026-10-26",
+      "film": {
+        "id": "FYfyPtA9sNI",
+        "title": "The Lotus Carlton / Omega Sedan Was a World-Beating PR Nightmare - Jason Cammisa Revelations Ep. 28",
+        "channel": "Hagerty",
+        "uploaded": "2023-02-23",
+        "seconds": 1109,
+        "note": "An independent Hagerty history of the Lotus Carlton and Omega and the controversy over its speed."
+      }
     },
     {
       "name": "Subaru Impreza 22B STi-Version",
@@ -384,9 +440,17 @@
           "Photographer attribution, description and public-domain release; not chassis authentication."
         ]
       ],
-      "seo_title": "Subaru Impreza 22B STi: 1998 launch, engine and design",
+      "seo_title": "Subaru Impreza 22B STi: 1998 launch, engine, design",
       "description": "Read Subaru’s 1998 22B-STi launch details: rally-inspired bodywork, 2.2-litre engine and the scope of the 400-car Japanese sales plan.",
-      "reviewed_at": "2026-10-26"
+      "reviewed_at": "2026-10-26",
+      "film": {
+        "id": "a535xyidmF0",
+        "title": "Subaru Vintage Garage- 1998 Impreza 22B STI",
+        "channel": "Subaru",
+        "uploaded": "2013-12-05",
+        "seconds": 262,
+        "note": "Subaru’s own look at a 1998 Impreza 22B STI from its heritage collection."
+      }
     },
     {
       "name": "McLaren F1",
@@ -435,7 +499,15 @@
       ],
       "seo_title": "McLaren F1 history: the road car and 1995 F1 GTR",
       "description": "Explore McLaren F1 history, carbon-fibre construction and its link to the 1995 Le Mans-winning F1 GTR, with the variants kept distinct.",
-      "reviewed_at": "2026-10-26"
+      "reviewed_at": "2026-10-26",
+      "film": {
+        "id": "OgIQmKfhHrE",
+        "title": "McLaren F1: 25 years on",
+        "channel": "McLaren Automotive",
+        "uploaded": "2017-08-16",
+        "seconds": 240,
+        "note": "McLaren’s film in which designer Gordon Murray recalls the vision behind the F1 road car."
+      }
     }
   ]
 }

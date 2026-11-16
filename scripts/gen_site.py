@@ -2442,7 +2442,7 @@ to checking a VIN and its recalls</a> walks through it step by step.</p></div>
 <div class="table-wrap"><table class="cost-table recall-feed-table"><thead><tr><th>Vehicle</th><th>Campaign</th><th>Component and summary</th><th></th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <p class="src-note">Source: NHTSA recall campaigns, as held in the site's dataset on {TODAY}. Each vehicle links to the
 model-year page with its full recall list and complaint record.</p></div></div>"""
-    return write("recalls/index.html", page(f"Car Recall Campaigns: The Newest on Record, and How to Read Them | {BRAND}",
+    return write("recalls/index.html", page(f"Car Recall Campaigns and How to Read Them | {BRAND}",
                  f"{n_all:,} NHTSA recall campaigns across the model years MotorJury scores — how to read a campaign, "
                  "which ones are safety-critical, and how to check the car in front of you.",
                  ORIGIN + "/recalls/", body))

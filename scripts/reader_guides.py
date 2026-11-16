@@ -6,17 +6,17 @@ from reader_guide_explainers import guide_visual
 ROOT=Path(__file__).resolve().parent.parent
 SLUGS=('before-a-used-car-viewing','what-car-photos-cannot-tell-you','recalls-history-and-inspections','fuel-economy-label-to-your-budget','seller-promise-to-written-evidence','complaint-counts-without-failure-rates','inspection-report-next-step','ev-charging-before-you-buy','used-car-tire-questions','used-car-ownership-budget','hybrid-fuel-break-even','match-car-version-before-you-buy','recall-check-to-dealer-record','car-design-timeline','compare-car-design-briefs')
 SEARCH_TITLES={
- 'before-a-used-car-viewing':'Used-car viewing checklist: questions before you travel',
+ 'before-a-used-car-viewing':'Used-car viewing checklist: ask before you travel',
  'what-car-photos-cannot-tell-you':'Buying a used car from photos: what to verify',
- 'recalls-history-and-inspections':'Used-car recall checks, history reports and inspections',
+ 'recalls-history-and-inspections':'Used-car recall checks, history reports, inspections',
  'fuel-economy-label-to-your-budget':'How to calculate annual fuel costs from MPG',
- 'seller-promise-to-written-evidence':'Used-car seller promises: ask for written repair evidence',
+ 'seller-promise-to-written-evidence':'Used-car seller promises: get written repair evidence',
  'complaint-counts-without-failure-rates':'Do NHTSA complaint counts measure car reliability?',
  'inspection-report-next-step':'Used-car inspection report: questions to ask next',
  'ev-charging-before-you-buy':'Buying a used EV: home charging and backup checklist',
- 'used-car-tire-questions':'Used-car tire checks: age, specification and condition',
+ 'used-car-tire-questions':'Used-car tire checks: age, size and condition',
 }
-SEARCH_TITLES.update({'used-car-ownership-budget': 'Used-car ownership budget: a cash-cost breakdown', 'hybrid-fuel-break-even': 'Hybrid fuel savings: calculate a fuel-only payback', 'match-car-version-before-you-buy': 'Match a used car’s year, version and market', 'recall-check-to-dealer-record': 'Recall checks: from model campaign to dealer records', 'car-design-timeline': 'Car design timeline: distinguish the milestone and version', 'compare-car-design-briefs': 'Compare Miura, original NSX and McLaren F1 design briefs'})
+SEARCH_TITLES.update({'used-car-ownership-budget': 'Used-car ownership budget: a cash-cost breakdown', 'hybrid-fuel-break-even': 'Hybrid fuel savings: calculate a fuel-only payback', 'match-car-version-before-you-buy': 'Match a used car’s year, version and market', 'recall-check-to-dealer-record': 'Recall checks: from model campaign to dealer records', 'car-design-timeline': 'Car design timeline: milestone versus version', 'compare-car-design-briefs': 'Miura, original NSX and McLaren F1 design briefs'})
 RELATED={
  'before-a-used-car-viewing':('inspection-report-next-step','recalls-history-and-inspections','used-car-tire-questions'),
  'what-car-photos-cannot-tell-you':('before-a-used-car-viewing','used-car-tire-questions'),

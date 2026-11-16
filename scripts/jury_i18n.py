@@ -16,7 +16,7 @@ def path(lang, rest='/jury/'):
 # ---------------------------------------------------------------- page text
 PAGE = {
 'en': dict(
-    title='Car Jury: pick one of two cars and build your dream garage',
+    title='Car Jury: pick one of two cars, build a dream garage',
     description='Pick the car you would rather have, two at a time. Fill a ten-bay dream garage, share it, play today’s ten and name that car. {n} cars, free.',
     eyebrow='The world’s car jury', h1='Two cars. One verdict.',
     lede='Pick the car you would rather have. Your picks fill a ten-bay dream garage and count toward the world ranking of {n} cars.',
@@ -51,7 +51,7 @@ PAGE = {
     og_alt='Two cars, one verdict: the MotorJury car jury',
 ),
 'pt': dict(
-    title='Júri de Carros: escolha um de dois carros e monte a sua garagem de sonho',
+    title='Júri de Carros: escolha e monte a garagem de sonho',
     description='Escolha o carro que preferia ter, dois de cada vez. Encha uma garagem de sonho com dez lugares, partilhe-a, jogue os dez do dia e adivinhe o carro. {n} carros, grátis.',
     eyebrow='O júri mundial de carros', h1='Dois carros. Um veredicto.',
     lede='Escolha o carro que preferia ter. As suas escolhas enchem uma garagem de sonho com dez lugares e contam para o ranking mundial de {n} carros.',
@@ -86,7 +86,7 @@ PAGE = {
     og_alt='Dois carros, um veredicto: o júri de carros MotorJury',
 ),
 'es': dict(
-    title='Jurado de Coches: elige uno de dos coches y crea tu garaje soñado',
+    title='Jurado de Coches: elige y crea tu garaje soñado',
     description='Elige el coche que preferirías tener, de dos en dos. Llena un garaje soñado de diez plazas, compártelo, juega los diez del día y adivina el coche. {n} coches, gratis.',
     eyebrow='El jurado mundial de coches', h1='Dos coches. Un veredicto.',
     lede='Elige el coche que preferirías tener. Tus elecciones llenan un garaje soñado de diez plazas y cuentan para el ranking mundial de {n} coches.',
@@ -121,8 +121,8 @@ PAGE = {
     og_alt='Dos coches, un veredicto: el jurado de coches MotorJury',
 ),
 'fr': dict(
-    title='Jury Auto : choisissez une voiture sur deux et créez votre garage de rêve',
-    description='Choisissez la voiture que vous préféreriez avoir, deux par deux. Remplissez un garage de rêve de dix places, partagez-le, jouez aux dix du jour et devinez la voiture. {n} voitures, gratuit.',
+    title='Jury Auto : choisissez et créez votre garage de rêve',
+    description='Choisissez la voiture que vous préféreriez, deux par deux. Remplissez un garage de rêve de dix places, partagez-le, jouez aux dix du jour. {n} voitures, gratuit.',
     eyebrow='Le jury automobile mondial', h1='Deux voitures. Un verdict.',
     lede='Choisissez la voiture que vous préféreriez avoir. Vos choix remplissent un garage de rêve de dix places et comptent pour le classement mondial de {n} voitures.',
     shared_eyebrow='Un garage partagé avec vous', shared_h2='Dix places, le goût de quelqu’un d’autre.', build_own='Créer mon propre garage →',
@@ -156,8 +156,8 @@ PAGE = {
     og_alt='Deux voitures, un verdict : le jury automobile MotorJury',
 ),
 'de': dict(
-    title='Auto-Jury: Wähle eines von zwei Autos und baue deine Traumgarage',
-    description='Wähle das Auto, das du lieber hättest, immer zwei auf einmal. Fülle eine Traumgarage mit zehn Stellplätzen, teile sie, spiele die Zehn des Tages und errate das Auto. {n} Autos, kostenlos.',
+    title='Auto-Jury: wählen und die Traumgarage bauen',
+    description='Wähle das Auto, das du lieber hättest, immer zwei auf einmal. Fülle eine Traumgarage mit zehn Plätzen, teile sie und spiele die Zehn des Tages. {n} Autos, gratis.',
     eyebrow='Die weltweite Auto-Jury', h1='Zwei Autos. Ein Urteil.',
     lede='Wähle das Auto, das du lieber hättest. Deine Wahl füllt eine Traumgarage mit zehn Stellplätzen und zählt für die Weltrangliste von {n} Autos.',
     shared_eyebrow='Eine mit dir geteilte Garage', shared_h2='Zehn Stellplätze, der Geschmack eines anderen.', build_own='Meine eigene Garage bauen →',
@@ -191,7 +191,7 @@ PAGE = {
     og_alt='Zwei Autos, ein Urteil: die MotorJury Auto-Jury',
 ),
 'he': dict(
-    title='חבר המושבעים לרכב: בחרו אחת משתי מכוניות ובנו את מוסך החלומות שלכם',
+    title='חבר המושבעים לרכב: בחרו ובנו את מוסך החלומות',
     description='בחרו את המכונית שהייתם מעדיפים, שתיים בכל פעם. מלאו מוסך חלומות של עשרה מקומות, שתפו אותו, שחקו בעשרה של היום ונחשו את המכונית. {n} מכוניות, בחינם.',
     eyebrow='חבר המושבעים העולמי לרכב', h1='שתי מכוניות. פסק דין אחד.',
     lede='בחרו את המכונית שהייתם מעדיפים. הבחירות שלכם ממלאות מוסך חלומות של עשרה מקומות ונספרות בדירוג העולמי של {n} מכוניות.',

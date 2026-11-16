@@ -12,6 +12,26 @@ def catalogue_revision():
     inputs=('car_library.json','photo_additions.json','photo_delivery.json','photo_credits.json','collection_profiles.json')
     return hashlib.sha256(b''.join((ROOT/'data'/name).read_bytes() for name in inputs)).hexdigest()[:10]
 
+def film(f,car=''):
+    """Click-to-load video: the page shows a linked thumbnail; YouTube loads only after Play."""
+    if not f:return ''
+    i,title=f['id'],esc(f['title'],quote=True)
+    url='https://www.youtube.com/watch?v='+i
+    m,s=divmod(f['seconds'],60)
+    return (f'<section class="story-film" aria-labelledby="film-{i}"><h2 id="film-{i}">On film: the {esc(car)}</h2>'
+            f'<div class="story-film-stage" data-video-slot><a href="{url}" target="_blank" rel="noopener noreferrer" aria-label="Watch {title} on YouTube">'
+            f'<img src="https://i.ytimg.com/vi/{i}/hqdefault.jpg" width="480" height="360" alt="Video thumbnail: {title}" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a>'
+            f'<button type="button" class="story-film-play" data-video="{i}" aria-label="Play {title}" hidden><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6 27 16 11 26Z" fill="currentColor"/></svg></button><span class="story-film-time">{m}:{s:02d}</span></div>'
+            f'<p>{esc(f["note"])}</p><p class="note">Video by {esc(f["channel"])} on YouTube. Nothing loads from YouTube until you press play. <a href="{url}" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a></p></section>')
+
+def video_object(f,page):
+    """schema.org VideoObject for the film shown on a profile page."""
+    m,s=divmod(f['seconds'],60)
+    return {"@context":"https://schema.org","@type":"VideoObject","name":f['title'],"description":f['note'],
+            "thumbnailUrl":f"https://i.ytimg.com/vi/{f['id']}/hqdefault.jpg","uploadDate":f['uploaded'],"duration":f"PT{m}M{s}S",
+            "embedUrl":f"https://www.youtube-nocookie.com/embed/{f['id']}","contentUrl":f"https://www.youtube.com/watch?v={f['id']}",
+            "author":{"@type":"Organization","name":f['channel']},"isPartOf":{"@id":page}}
+
 def story(name):
     p=PROFILES.get(name)
     if not p:return ''
@@ -24,6 +44,7 @@ def story(name):
     if slot and rendered:
         rendered.insert(1, '<ins class="adsbygoogle bio-ad" style="display:block;text-align:center" data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="ca-pub-6675837012921030" data-ad-slot="'+esc(slot,quote=True)+'"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>')
     sections=''.join(rendered)
+    sections+=film(p.get('film'),p['name'])
     sources=''.join(f'<li><a href="{esc(url,quote=True)}" rel="noopener">{esc(title)}</a><p class="note">{esc(scope)}</p></li>' for title,url,scope in p['sources'])
     return f'<div class="collection-story" data-reviewed-profile><p class="eyebrow">The design story · {esc(p["scope"])}</p><h2>{esc(p["title"])}</h2><p class="lede">{esc(p["intro"])}</p>{sections}<aside class="callout"><b>A question worth keeping</b><p>{esc(p["question"])}</p></aside><h2>Check the source, then the version</h2><ul>{sources}</ul><p class="note">Research checked {esc(p.get("reviewed_at", DATA["reviewed_at"]))}. {esc(DATA["method"])} Manufacturer accounts are primary records of their projects, not independent evidence of ownership quality. This profile does not establish an individual car’s condition or value.</p></div>'
 
