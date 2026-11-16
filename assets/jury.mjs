@@ -25,8 +25,8 @@ fetch('/assets/jury-data.json?v=__JURY_VERSION__').then(r=>{if(!r.ok)throw Error
 
 function start(cars){
 const byId=new Map(cars.map(c=>[c.id,c])),ids=cars.map(c=>c.id),idSet=new Set(ids);
-const filePage=c=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(c.p.replace(/ /g,'_'));
-function photo(c,eager){const frame=node('span','','jury-photo'),img=node('img');img.src=c.t;img.srcset=c.t.replace('/960px-','/330px-')+' 330w, '+c.t+' 960w';img.sizes='(max-width:700px) 92vw, 600px';img.alt=t('photo_alt',{car:c.n});img.width=960;img.height=600;img.decoding='async';img.referrerPolicy='no-referrer';if(eager)img.fetchPriority='high';else img.loading='lazy';img.addEventListener('error',()=>{frame.classList.add('photo-missing');frame.replaceChildren(node('span',t('photo_unavailable')));},{once:true});frame.append(img);return frame;}
+const filePage=c=>c.s||'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(c.p.replace(/ /g,'_'));
+function photo(c,eager){const frame=node('span','','jury-photo'),img=node('img');img.src=c.t;img.srcset=c.t.replace('/960px-','/330px-').replace('_b.jpg','_n.jpg')+' 330w, '+c.t+' 960w';img.sizes='(max-width:700px) 92vw, 600px';img.alt=t('photo_alt',{car:c.n});img.width=960;img.height=600;img.decoding='async';img.referrerPolicy='no-referrer';if(eager)img.fetchPriority='high';else img.loading='lazy';img.addEventListener('error',()=>{frame.classList.add('photo-missing');frame.replaceChildren(node('span',t('photo_unavailable')));},{once:true});frame.append(img);return frame;}
 function credit(c){const span=node('span');span.setAttribute('data-photo-attribution','');const file=node('a',t('photo_of',{car:c.n}));file.href=filePage(c);file.rel='noopener';const lic=node('a',c.l);lic.href=c.lu;lic.rel='noopener license';span.append(file,t('by',{author:c.a||t('author_unknown')}),lic);return span;}
 
 if(rankingHost)ranking();

@@ -24,8 +24,9 @@ def cars():
             raise ValueError('Jury car lacks a checked photograph record: ' + str(row.get('n')))
         if row['id'] in ids:
             raise ValueError('Duplicate jury car: ' + row['id'])
-        if not row['t'].startswith('https://upload.wikimedia.org/wikipedia/commons/thumb/') or not row['lu'].startswith('https://'):
-            raise ValueError('Jury photograph must be a licensed Commons file: ' + row['n'])
+        flickr = row['t'].startswith('https://live.staticflickr.com/') and row.get('s', '').startswith('https://www.flickr.com/photos/')
+        if not (row['t'].startswith('https://upload.wikimedia.org/wikipedia/commons/thumb/') or flickr) or not row['lu'].startswith('https://'):
+            raise ValueError('Jury photograph must be a licensed Commons or Flickr file: ' + row['n'])
         ids.add(row['id'])
     return rows
 
@@ -49,7 +50,11 @@ def assets():
 
 
 def commons(row):
-    return 'https://commons.wikimedia.org/wiki/File:' + row['p'].replace(' ', '_')
+    return row.get('s') or 'https://commons.wikimedia.org/wiki/File:' + row['p'].replace(' ', '_')
+
+
+def small(url):
+    return url.replace('/960px-', '/330px-').replace('_b.jpg', '_n.jpg')
 
 
 def credit(row):
@@ -62,7 +67,7 @@ def home_block():
     """Front-door invitation; two fixed, credited photographs so the page works without JavaScript."""
     by_name = {r['n']: r for r in cars()}
     pair = [by_name[n] for n in ('Ferrari F40', 'Lamborghini Countach') if n in by_name]
-    photos = ''.join(f'<img src="{esc(r["t"].replace("/960px-", "/330px-"), quote=True)}" alt="{esc(r["n"])} · reference photograph" '
+    photos = ''.join(f'<img src="{esc(small(r["t"]), quote=True)}" alt="{esc(r["n"])} · reference photograph" '
                      f'width="330" height="206" loading="lazy" decoding="async" referrerpolicy="no-referrer">' for r in pair)
     credits = ' · '.join(credit(r) for r in pair)
     return ('<section class="jury-home"><div><p class="eyebrow">New · the world’s car jury</p><h2>Two cars. One verdict. Yours.</h2>'
