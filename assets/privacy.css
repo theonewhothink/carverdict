@@ -8,3 +8,4 @@
  .privacy-choice h2{font-size:15px}.privacy-choice p{font-size:12px}
  .privacy-choice button{min-height:40px;padding:0 12px;font-size:13px}
 }
+section.privacy-choice.inline{position:static;width:auto;margin:16px 0;box-shadow:none;transform:none}

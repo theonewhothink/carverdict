@@ -63,3 +63,18 @@
 .jury-bay b{padding:5px 6px 7px;font-size:11px;line-height:1.2}.jury-release{top:3px;inset-inline-end:3px;min-height:26px;padding:0 7px;font-size:11px}
 .jury-home h2{font-size:26px}}
 @media(min-width:701px){.jury-hero{padding:14px 0 2px!important}.jury-hero h1{font-size:clamp(32px,3.6vw,46px)!important;margin:6px 0 8px!important}.jury-hero .lede{margin:0 0 6px}.jury-arena{margin-top:0}.jury-progress{margin:10px 0 8px}.jury-pair .jury-photo{aspect-ratio:1.8}.page-tools+main .jury-hero,.jury-hero{margin-top:-34px}}
+@media(prefers-reduced-motion:no-preference){
+.jury-pair .jury-card{animation:juryIn .32s cubic-bezier(.2,.8,.2,1) both}.jury-pair .jury-card:nth-of-type(2){animation-delay:.06s}
+.jury-card.picked{animation:juryWin .5s cubic-bezier(.2,.9,.3,1.2) both!important;z-index:1}
+.jury-card.picked::after{content:"✓";position:absolute;top:12px;inset-inline-end:12px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--teal);color:#fff;font-size:24px;font-weight:800;box-shadow:0 6px 18px #0005;animation:juryStamp .34s cubic-bezier(.2,1.4,.4,1) both}
+.jury-card.lost{animation:juryLose .42s ease both!important}
+.jury-bay.fresh{animation:juryPark .55s cubic-bezier(.2,1.3,.4,1) both}
+.jury-confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.jury-confetti i{position:absolute;top:-16px;width:9px;height:15px;border-radius:2px;animation:juryFall linear both}
+}
+@keyframes juryIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes juryWin{0%{transform:none}45%{transform:scale(1.035)}100%{transform:scale(1.02);box-shadow:0 0 0 4px #174f4355,0 18px 40px #142e2230}}
+@keyframes juryStamp{from{opacity:0;transform:scale(2.2) rotate(-18deg)}to{opacity:1;transform:none}}
+@keyframes juryLose{to{opacity:.25;transform:scale(.96);filter:grayscale(1)}}
+@keyframes juryPark{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes juryFall{to{top:105%;transform:translateX(40px) rotate(720deg)}}

@@ -70,3 +70,10 @@
 .app-tabs,.app-search,.app-sheet,.app-scrim,.app-actionbar,.app-hdr-btn{display:none!important}
 .social-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:14px 0 10px}.social-lbl{font-size:14px;color:var(--muted)}
 [dir=rtl] header[data-site-search-header] nav{-webkit-mask-image:linear-gradient(270deg,#000 88%,transparent);mask-image:linear-gradient(270deg,#000 88%,transparent)}
+/* Legibility floor and touch targets (2026-11-16) */
+body figcaption small,body figcaption small span,body figcaption small a,body figcaption a,body .collection-credit,body .collection-brand,body .jury-credits,body .jury-credits span,body .jury-credits a,body .bp-kicker,body .bp-kicker span,body .bp-jump a,body .eyebrow,body .jury-card .jury-name small,body .jury-home small,body .jury-home small span,body .jury-home small a{font-size:12px}
+@media(pointer:coarse){
+ body figcaption a,body .jury-credits a,body .jury-home small a,body .collection-credit,body .collection-card-cost,body footer .wrap p a,body .note a,body .bp-footnote a,body .bp-milestone-heading h3 a,body .bp-film-copy a,body .brand-portal ol li a,body .collection-bottom a,body .bp-breadcrumb a{display:inline-block;padding-block:9px}
+ body footer .wrap p{line-height:1.3}
+}
+body .brand-portal figcaption small,body .brand-portal figcaption span,body .brand-portal .bp-breadcrumb span,body .brand-portal .bp-film-duration,body .brand-portal .bp-kicker,body .brand-portal .bp-issue-meta span{font-size:12px!important}
