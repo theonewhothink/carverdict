@@ -25,7 +25,10 @@ class SearchPresenceTest(unittest.TestCase):
         self.assertEqual(by_type['Article']['citation'], source['citation'])
         self.assertNotIn('datePublished', by_type['Article'])
         self.assertNotIn('@id', source)
-        self.assertNotIn('sameAs', by_type['Organization'])
+        # sameAs lists only profiles that exist in data/social.json
+        profiles = [v for k, v in json.loads((Path(__file__).resolve().parents[1] / 'data' / 'social.json').read_text()).items()
+                    if not k.startswith('_') and v]
+        self.assertEqual(by_type['Organization'].get('sameAs', []), profiles)
 
     def test_modern_shell_has_working_asset_path_and_parseable_schema(self):
         with patch.object(build_buying_brief, 'shell_assets', return_value=('', '/assets/genius.js')), \
@@ -82,4 +85,5 @@ class SearchPresenceTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 

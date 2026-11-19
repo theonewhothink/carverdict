@@ -9,6 +9,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ORIGIN = os.environ.get('SITE_ORIGIN', 'https://motorjury.com').rstrip('/')
 esc = html.escape
+try:  # data/social.json: only profiles that exist (non-empty URL) are declared
+    SOCIAL_PROFILES = [v for k, v in json.load(open(ROOT / 'data' / 'social.json')).items()
+                       if not k.startswith('_') and v]
+except Exception:
+    SOCIAL_PROFILES = []
 
 
 def page_entities(title, description, path, extra=None, origin=ORIGIN):
@@ -25,6 +30,8 @@ def page_entities(title, description, path, extra=None, origin=ORIGIN):
         'publishingPrinciples': origin + '/editorial-policy/',
         'correctionsPolicy': origin + '/editorial-policy/',
     }
+    if SOCIAL_PROFILES:
+        organization['sameAs'] = SOCIAL_PROFILES
     website = {
         '@context': 'https://schema.org', '@type': 'WebSite', '@id': site_id,
         'name': 'MotorJury', 'url': origin + '/', 'publisher': {'@id': org_id},

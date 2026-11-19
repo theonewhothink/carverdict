@@ -505,6 +505,8 @@ def _org_ld():
             "publishingPrinciples": ORIGIN + "/editorial-policy/",
             "email": "hello@motorjury.com",
         }
+        if _SOCIAL_URLS:
+            ORG_LD["sameAs"] = list(_SOCIAL_URLS.values())
     return ORG_LD
 
 
