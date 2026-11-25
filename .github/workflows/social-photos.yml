@@ -17,14 +17,21 @@ jobs:
         run: |
           mkdir -p photos
           python3 - <<'PY'
-          import json, urllib.request, hashlib
+          import json, urllib.request, urllib.error, hashlib, time
           d = json.load(open('data/social_duels.json'))
           for pair in d['duels']:
               for car in pair:
                   name = hashlib.sha1(car['t'].encode()).hexdigest()[:16] + '.jpg'
                   req = urllib.request.Request(car['t'], headers={'User-Agent': 'MotorJury social cards (hello@motorjury.com)'})
-                  open('photos/' + name, 'wb').write(urllib.request.urlopen(req, timeout=60).read())
+                  for attempt in range(5):  # Wikimedia answers 429 to bursts: back off and retry
+                      try:
+                          open('photos/' + name, 'wb').write(urllib.request.urlopen(req, timeout=60).read())
+                          break
+                      except urllib.error.HTTPError as e:
+                          if e.code != 429 or attempt == 4: raise
+                          time.sleep(20 * (attempt + 1))
                   print(name, car['n'])
+                  time.sleep(3)
           PY
           cd photos && zip -q ../social-photos.zip *.jpg
       - name: Publish
