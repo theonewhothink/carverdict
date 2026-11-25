@@ -1,0 +1,35 @@
+name: Social photos
+# Mirrors the free-licence photos named in data/social_duels.json into the
+# "social-photos" release, so the social-card builder can work offline.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [data/social_duels.json]
+permissions:
+  contents: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download photos
+        run: |
+          mkdir -p photos
+          python3 - <<'PY'
+          import json, urllib.request, hashlib
+          d = json.load(open('data/social_duels.json'))
+          for pair in d['duels']:
+              for car in pair:
+                  name = hashlib.sha1(car['t'].encode()).hexdigest()[:16] + '.jpg'
+                  req = urllib.request.Request(car['t'], headers={'User-Agent': 'MotorJury social cards (hello@motorjury.com)'})
+                  open('photos/' + name, 'wb').write(urllib.request.urlopen(req, timeout=60).read())
+                  print(name, car['n'])
+          PY
+          cd photos && zip -q ../social-photos.zip *.jpg
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view social-photos >/dev/null 2>&1 || gh release create social-photos --title "Social photos" --notes "Free-licence photos for MotorJury social cards (credits in data/social_duels.json)."
+          gh release upload social-photos social-photos.zip --clobber

@@ -1,0 +1,117 @@
+{
+ "_note": "Weekly car-duel posts. Photos come from data/jury_cars.json (free licences); credits are printed on every card and caption. The Social photos workflow mirrors these photos into the social-photos release.",
+ "duels": [
+  [
+   {
+    "n": "Ferrari F40",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Ferrari_F40_7.jpg/960px-Ferrari_F40_7.jpg",
+    "a": "Calreyn88",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/ferrari/ferrari-f40/"
+   },
+   {
+    "n": "Porsche 959",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Porsche_959_GIMS_2024_1X7A2269.jpg/960px-Porsche_959_GIMS_2024_1X7A2269.jpg",
+    "a": "Alexander-93",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/porsche/porsche-959/"
+   }
+  ],
+  [
+   {
+    "n": "Lamborghini Countach",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Lamborghini_Countach_25th_Anniversary_IMG_2994.jpg/960px-Lamborghini_Countach_25th_Anniversary_IMG_2994.jpg",
+    "a": "Alexander Migl",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/lamborghini/lamborghini-countach/"
+   },
+   {
+    "n": "Ferrari Testarossa",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/1987_Ferrari_Testarossa_Classic-Gala_2025_DSC_1131.jpg/960px-1987_Ferrari_Testarossa_Classic-Gala_2025_DSC_1131.jpg",
+    "a": "Alexander Migl",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/ferrari/ferrari-testarossa/"
+   }
+  ],
+  [
+   {
+    "n": "Toyota Supra",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Toyota_GR_Supra_%2854487414218%29.jpg/960px-Toyota_GR_Supra_%2854487414218%29.jpg",
+    "a": "Tony Hisgett",
+    "l": "CC BY 2.0",
+    "u": "/library/toyota/toyota-supra/"
+   },
+   {
+    "n": "Nissan Skyline GT-R",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/2001_Nissan_Skyline_GT-R_V-Spec_II_R34.jpg/960px-2001_Nissan_Skyline_GT-R_V-Spec_II_R34.jpg",
+    "a": "MrWalkr",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/nissan/#m-nissan-skyline-gt-r"
+   }
+  ],
+  [
+   {
+    "n": "Ford Mustang",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/2010_Mustang_Convertible_%283978957062%29.jpg/960px-2010_Mustang_Convertible_%283978957062%29.jpg",
+    "a": "Rennett Stowe from USA",
+    "l": "CC BY 2.0",
+    "u": "/library/ford/ford-mustang/"
+   },
+   {
+    "n": "Chevrolet Camaro",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/%2716_Chevrolet_Camaro_Convertible_%28MIAS_%2716%29.jpg/960px-%2716_Chevrolet_Camaro_Convertible_%28MIAS_%2716%29.jpg",
+    "a": "Bull-Doser",
+    "l": "Public domain",
+    "u": "/library/chevrolet/chevrolet-camaro/"
+   }
+  ],
+  [
+   {
+    "n": "McLaren F1",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/1996_McLaren_F1_Chassis_No_63_6.1_Front.jpg/960px-1996_McLaren_F1_Chassis_No_63_6.1_Front.jpg",
+    "a": "Chelsea Jay",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/mclaren/mclaren-f1/"
+   },
+   {
+    "n": "Bugatti Veyron",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Bugatti_Veyron_16.4_%E2%80%93_Frontansicht_%283%29%2C_5._April_2012%2C_D%C3%BCsseldorf.jpg/960px-Bugatti_Veyron_16.4_%E2%80%93_Frontansicht_%283%29%2C_5._April_2012%2C_D%C3%BCsseldorf.jpg",
+    "a": "M 93",
+    "l": "CC BY-SA 3.0 de",
+    "u": "/library/bugatti/bugatti-veyron/"
+   }
+  ],
+  [
+   {
+    "n": "Mazda MX-5",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mazda_MX-5_%28NA%29_IMG_0206.jpg/960px-Mazda_MX-5_%28NA%29_IMG_0206.jpg",
+    "a": "Alexander-93",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/mazda/mazda-mx-5/"
+   },
+   {
+    "n": "Honda S2000",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/HondaS2000-002.jpg/960px-HondaS2000-002.jpg",
+    "a": "Rich Niewiroski Jr.",
+    "l": "CC BY 2.5",
+    "u": "/library/honda/honda-s2000/"
+   }
+  ],
+  [
+   {
+    "n": "Jaguar E-Type",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Ol_car06a.JPG/960px-Ol_car06a.JPG",
+    "a": "Tedmek",
+    "l": "Public domain",
+    "u": "/library/jaguar-cars/jaguar-e-type/"
+   },
+   {
+    "n": "Aston Martin DB5",
+    "t": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/1964_Aston_Martin_DB5_LC23.jpg/960px-1964_Aston_Martin_DB5_LC23.jpg",
+    "a": "MrWalkr",
+    "l": "CC BY-SA 4.0",
+    "u": "/library/aston-martin/aston-martin-db5/"
+   }
+  ]
+ ]
+}
